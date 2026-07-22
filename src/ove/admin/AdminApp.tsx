@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Layout, Menu } from "antd";
-import { DashboardOutlined, FileProtectOutlined, PlusCircleOutlined, AlertOutlined, HistoryOutlined, BarChartOutlined, CalendarOutlined, ToolOutlined, DeploymentUnitOutlined } from "@ant-design/icons";
+import { DashboardOutlined, FileProtectOutlined, PlusCircleOutlined, AlertOutlined, HistoryOutlined, BarChartOutlined, CalendarOutlined, ToolOutlined, DeploymentUnitOutlined, TeamOutlined } from "@ant-design/icons";
 import { AdminDashboard } from "./AdminDashboard";
 import { ProtocolCatalog } from "./ProtocolCatalog";
 import { ProtocolWizard } from "./ProtocolWizard";
@@ -10,8 +10,9 @@ import { Reportes } from "./Reportes";
 import { Planning } from "./Planning";
 import { WorkOrders } from "./WorkOrders";
 import { Assets } from "./Assets";
+import { Resources } from "./Resources";
 
-type Key = "dashboard" | "catalog" | "new" | "planning" | "orders" | "assets" | "incidents" | "bitacora" | "reportes";
+type Key = "dashboard" | "catalog" | "new" | "planning" | "orders" | "assets" | "resources" | "incidents" | "bitacora" | "reportes";
 
 export function AdminApp() {
   const [key, setKey] = useState<Key>("dashboard");
@@ -36,6 +37,7 @@ export function AdminApp() {
             { key: "planning", icon: <CalendarOutlined />, label: "Programación" },
             { key: "orders", icon: <ToolOutlined />, label: "Órdenes de trabajo" },
             { key: "assets", icon: <DeploymentUnitOutlined />, label: "Activos" },
+            { key: "resources", icon: <TeamOutlined />, label: "Recursos" },
             { key: "incidents", icon: <AlertOutlined />, label: "Incidencias" },
             { key: "bitacora", icon: <HistoryOutlined />, label: "Bitácora" },
             { key: "reportes", icon: <BarChartOutlined />, label: "Reportes" },
@@ -49,6 +51,7 @@ export function AdminApp() {
         {key === "planning" && <Planning />}
         {key === "orders" && <WorkOrders />}
         {key === "assets" && <Assets />}
+        {key === "resources" && <Resources />}
         {key === "incidents" && <IncidentsList />}
         {key === "bitacora" && <Bitacora />}
         {key === "reportes" && <Reportes />}

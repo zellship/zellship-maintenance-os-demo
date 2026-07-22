@@ -1,4 +1,4 @@
-import { Card, Col, Row, Statistic, Table, Tag, Typography, Space, Button, List, Avatar, Progress } from "antd";
+import { Card, Col, Row, Statistic, Table, Tag, Typography, Space, Button, List, Avatar, Progress, message } from "antd";
 import { CheckCircleOutlined, ClockCircleOutlined, AlertOutlined, DashboardOutlined, ExclamationCircleOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useStore } from "../store";
@@ -6,7 +6,7 @@ import { statusTag } from "../ui";
 import { seedAssets } from "../seed";
 
 export function AdminDashboard({ onNav }: { onNav: (k: string) => void }) {
-  const { schedules, protocols, incidents } = useStore();
+  const { schedules, protocols, incidents, setIncidents } = useStore();
   const today = dayjs().format("YYYY-MM-DD");
   const todays = schedules.filter((s) => s.date === today);
   const completed = todays.filter((s) => s.status === "Completed").length;
@@ -67,7 +67,7 @@ export function AdminDashboard({ onNav }: { onNav: (k: string) => void }) {
               dataSource={openIncidents}
               locale={{ emptyText: "Sin alertas" }}
               renderItem={(i) => (
-                <List.Item actions={[<Button size="small" type="primary">Resolver</Button>]}>
+                <List.Item actions={[<Button size="small" type="primary" onClick={() => { setIncidents(incidents.map(item => item.id === i.id ? { ...item, status: "Resolved" } : item)); message.success("Incidencia resuelta y registrada en bitácora"); }}>Resolver</Button>]}> 
                   <List.Item.Meta
                     avatar={<Avatar style={{ background: "#fff1f0", color: "#cf1322" }} icon={<AlertOutlined />} />}
                     title={<Tag color={i.type === "NotExecuted" ? "red" : i.type === "LateExecution" ? "orange" : "purple"}>{i.type}</Tag>}

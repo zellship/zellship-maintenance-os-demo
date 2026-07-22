@@ -3,8 +3,8 @@ import { Card, Steps, Form, Input, Select, Button, Space, Radio, InputNumber, Sw
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useStore } from "../store";
-import { branches, categories, operators, supervisors, seedAssets } from "../seed";
-import type { Protocol, EvidenceConfig, FormField, EvidenceType } from "../types";
+import { branches, categories, operators, supervisors, seedAssets, seedSkills } from "../seed";
+import type { Protocol, EvidenceConfig, FormField, EvidenceType, MaterialRequirement } from "../types";
 
 const EVIDENCE_TYPES: EvidenceType[] = ["Photo", "Video", "Signature", "GPS", "Timestamp", "QR", "File"];
 const FIELD_TYPES: { value: FormField["type"]; label: string }[] = [
@@ -24,6 +24,7 @@ export function ProtocolWizard({ onDone }: { onDone: () => void }) {
     evidenceConfig: [{ type: "GPS", required: true, radius: 80 }, { type: "Photo", required: true, minCount: 1 }, { type: "Signature", required: true }],
     formConfig: [], supervisors: ["Roberto Salas"], operators: ["Ana Torres"], channels: ["System"],
     assetIds: ["AC-01"], materials: [], safetyInstructions: ["Aplicar bloqueo LOTO"], estimatedMinutes: 45,
+    allowRescheduling: true, requiredSkillIds: ["sk-loto"], requiredToolIds: [], materialRequirements: [],
     preAlertMinutes: 15, requiresValidation: true, status: "Draft",
   });
 
@@ -51,6 +52,10 @@ export function ProtocolWizard({ onDone }: { onDone: () => void }) {
       materials: data.materials || [],
       safetyInstructions: data.safetyInstructions || [],
       estimatedMinutes: data.estimatedMinutes || 45,
+      allowRescheduling: data.allowRescheduling ?? true,
+      requiredSkillIds: data.requiredSkillIds || [],
+      requiredToolIds: data.requiredToolIds || [],
+      materialRequirements: data.materialRequirements || [],
     };
     setProtocols([p, ...protocols]);
     message.success(status === "Active" ? "Protocolo publicado" : "Borrador guardado");
@@ -135,7 +140,7 @@ function Step2({ data, update }: any) {
           <Button icon={<PlusOutlined />} onClick={addSchedule}>Agregar horario</Button>
         </Space>
       </Form.Item>
-      <Form.Item><Space><Switch defaultChecked /> Permitir reprogramación</Space></Form.Item>
+      <Form.Item><Space><Switch checked={data.allowRescheduling} onChange={(v) => update({ allowRescheduling: v })} /> Permitir reprogramación</Space></Form.Item>
     </Form>
   );
 }
@@ -217,7 +222,7 @@ function Step4({ data, update }: any) {
 function FormPreview({ fields }: { fields: FormField[] }) {
   if (!fields.length) return <Typography.Text type="secondary">Sin campos aún</Typography.Text>;
   return (
-    <Form layout="vertical">
+    <Form layout="vertical" disabled>
       {fields.map(f => {
         if (f.type === "separator") return <Divider key={f.id}>{f.label}</Divider>;
         return (
@@ -239,12 +244,22 @@ function FormPreview({ fields }: { fields: FormField[] }) {
 }
 
 function Step5({ data, update }: any) {
+  const { tools, inventory } = useStore();
+  const materialIds = (data.materialRequirements || []).map((m: MaterialRequirement) => m.inventoryItemId);
+  const setMaterials = (ids: string[]) => {
+    const current = data.materialRequirements || [];
+    update({ materialRequirements: ids.map(id => current.find((m: MaterialRequirement) => m.inventoryItemId === id) || { inventoryItemId: id, mode: "Exact", quantity: 1 }) });
+  };
+  const updateMaterial = (id: string, patch: Partial<MaterialRequirement>) => update({ materialRequirements: (data.materialRequirements || []).map((m: MaterialRequirement) => m.inventoryItemId === id ? { ...m, ...patch } : m) });
   return (
     <Form layout="vertical">
       <Row gutter={16}>
         <Col xs={24} md={12}><Form.Item label="Activos aplicables"><Select mode="multiple" value={data.assetIds} onChange={(v) => update({ assetIds: v })} options={seedAssets.map(a => ({ label: `${a.id} · ${a.name}`, value: a.id }))} /></Form.Item></Col>
         <Col xs={24} md={12}><Form.Item label="Duración estimada"><InputNumber min={5} max={480} addonAfter="min" value={data.estimatedMinutes} onChange={(v) => update({ estimatedMinutes: Number(v) || 45 })} style={{ width: "100%" }} /></Form.Item></Col>
-        <Col xs={24} md={12}><Form.Item label="Materiales y herramientas"><Select mode="tags" value={data.materials} onChange={(v) => update({ materials: v })} placeholder="Ej. Filtro AF-20 · 1 pza" /></Form.Item></Col>
+        <Col xs={24} md={12}><Form.Item label="Skills y certificaciones requeridas"><Select mode="multiple" value={data.requiredSkillIds} onChange={(v) => update({ requiredSkillIds: v })} options={seedSkills.map(s => ({ label: s.name, value: s.id }))} /></Form.Item></Col>
+        <Col xs={24} md={12}><Form.Item label="Equipos y herramientas requeridas"><Select mode="multiple" value={data.requiredToolIds} onChange={(v) => update({ requiredToolIds: v })} options={tools.map(t => ({ label: `${t.name} · ${t.serial}`, value: t.id }))} /></Form.Item></Col>
+        <Col xs={24}><Form.Item label="Consumibles y materiales"><Select mode="multiple" value={materialIds} onChange={setMaterials} options={inventory.map(i => ({ label: `${i.sku} · ${i.name} · ${i.onHand - i.reserved - i.quarantine} ${i.unit} disponibles`, value: i.id }))} /></Form.Item></Col>
+        <Col xs={24}>{(data.materialRequirements || []).map((requirement: MaterialRequirement) => { const item = inventory.find(i => i.id === requirement.inventoryItemId); return <Card size="small" key={requirement.inventoryItemId} style={{ marginBottom: 10 }}><Row gutter={12} align="middle"><Col xs={24} md={8}><b>{item?.name}</b><br /><Typography.Text type="secondary">{item?.sku} · {item?.unit}</Typography.Text></Col><Col xs={12} md={6}><Select value={requirement.mode} style={{ width: "100%" }} onChange={(mode) => updateMaterial(requirement.inventoryItemId, { mode })} options={["Exact", "Range", "Variable"].map(value => ({ value, label: value === "Exact" ? "Consumo exacto" : value === "Range" ? "Rango permitido" : "Variable capturado" }))} /></Col><Col xs={12} md={10}>{requirement.mode === "Exact" ? <InputNumber min={0} value={requirement.quantity} addonAfter={item?.unit} style={{ width: "100%" }} onChange={(quantity) => updateMaterial(requirement.inventoryItemId, { quantity: Number(quantity) || 0 })} /> : <Space.Compact style={{ width: "100%" }}><InputNumber min={0} placeholder="Mín." value={requirement.min} onChange={(min) => updateMaterial(requirement.inventoryItemId, { min: Number(min) || 0 })} /><InputNumber min={0} placeholder="Máx." value={requirement.max} onChange={(max) => updateMaterial(requirement.inventoryItemId, { max: Number(max) || 0 })} addonAfter={item?.unit} /></Space.Compact>}</Col></Row></Card>; })}</Col>
         <Col xs={24} md={12}><Form.Item label="Condiciones de seguridad"><Select mode="tags" value={data.safetyInstructions} onChange={(v) => update({ safetyInstructions: v })} placeholder="Ej. Aplicar bloqueo LOTO" /></Form.Item></Col>
         <Col xs={24} md={12}><Form.Item label="Responsables (operadores)"><Select mode="multiple" value={data.operators} onChange={(v) => update({ operators: v })} options={operators.map(c => ({ label: c, value: c }))} /></Form.Item></Col>
         <Col xs={24} md={12}><Form.Item label="Supervisores"><Select mode="multiple" value={data.supervisors} onChange={(v) => update({ supervisors: v })} options={supervisors.map(c => ({ label: c, value: c }))} /></Form.Item></Col>
@@ -259,7 +274,7 @@ function Step5({ data, update }: any) {
         Evidencias: {(data.evidenceConfig || []).map((e: any) => e.type).join(", ") || "—"}<br />
         Campos formulario: {(data.formConfig || []).length}<br />
         Activos: {(data.assetIds || []).join(", ") || "—"} · Duración estimada: {data.estimatedMinutes || 45} min<br />
-        Materiales: {(data.materials || []).join(", ") || "—"}<br />
+        Recursos: {(data.requiredSkillIds || []).length} skills · {(data.requiredToolIds || []).length} herramientas · {(data.materialRequirements || []).length} materiales<br />
         Operadores: {(data.operators || []).join(", ") || "—"} · Supervisores: {(data.supervisors || []).join(", ") || "—"}
       </Typography.Paragraph>
     </Form>

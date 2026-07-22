@@ -7,6 +7,8 @@ export type EvidenceType = "Photo" | "Video" | "Signature" | "GPS" | "QR" | "Tim
 export type EvidenceStatus = "Pending" | "Valid" | "Invalid";
 export type IncidentType = "NotExecuted" | "LateExecution" | "InvalidEvidence" | "Rejected" | "Escalated";
 export type IncidentStatus = "Open" | "Review" | "Resolved" | "Closed";
+export type ResourceStatus = "Available" | "Reserved" | "InUse" | "Calibration" | "Unavailable";
+export type ConsumptionMode = "Exact" | "Range" | "Variable";
 
 export interface FormField {
   id: string;
@@ -46,6 +48,74 @@ export interface Protocol {
   materials?: string[];
   safetyInstructions?: string[];
   estimatedMinutes?: number;
+  allowRescheduling?: boolean;
+  requiredSkillIds?: string[];
+  requiredToolIds?: string[];
+  materialRequirements?: MaterialRequirement[];
+}
+
+export interface Skill {
+  id: string;
+  name: string;
+  category: "Technical" | "Safety" | "Certification";
+}
+
+export interface Person {
+  id: string;
+  name: string;
+  role: "Technician" | "Supervisor";
+  plant: string;
+  shift: "Morning" | "Afternoon" | "Night";
+  skillIds: string[];
+  certificationValidUntil?: string;
+  status: "Available" | "Assigned" | "OffShift";
+}
+
+export interface MaintenanceTool {
+  id: string;
+  name: string;
+  serial: string;
+  plant: string;
+  location: string;
+  status: ResourceStatus;
+  calibrationValidUntil?: string;
+}
+
+export interface InventoryItem {
+  id: string;
+  sku: string;
+  name: string;
+  unit: string;
+  plant: string;
+  warehouse: string;
+  onHand: number;
+  reserved: number;
+  quarantine: number;
+  reorderPoint: number;
+}
+
+export interface MaterialRequirement {
+  inventoryItemId: string;
+  mode: ConsumptionMode;
+  quantity?: number;
+  min?: number;
+  max?: number;
+}
+
+export interface MaterialAllocation extends MaterialRequirement {
+  reservedQuantity: number;
+  actualQuantity?: number;
+}
+
+export interface ResourceReservation {
+  id: string;
+  scheduleId: string;
+  resourceType: "Asset" | "Person" | "Tool" | "Material";
+  resourceId: string;
+  startAt: string;
+  endAt: string;
+  quantity?: number;
+  status: "Reserved" | "InUse" | "Released" | "Cancelled";
 }
 
 export interface Schedule {
@@ -59,6 +129,9 @@ export interface Schedule {
   assetId?: string;
   plant?: string;
   workOrder?: string;
+  toolIds?: string[];
+  materialAllocations?: MaterialAllocation[];
+  eligibilityValidated?: boolean;
 }
 
 export interface EvidenceRecord {
@@ -83,6 +156,9 @@ export interface Execution {
   formAnswers: Record<string, unknown>;
   approval?: { supervisor: string; decision: "Approved" | "Rejected"; comments: string; at: string };
   score?: number;
+  toolIds?: string[];
+  materialConsumptions?: MaterialAllocation[];
+  resourceCheckInAt?: string;
 }
 
 export interface Asset {

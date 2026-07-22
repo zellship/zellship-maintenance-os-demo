@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import type { Role, Protocol, Schedule, Execution, Incident, Notification } from "./types";
-import { seedProtocols, seedSchedules, seedExecutions, seedIncidents, seedNotifications } from "./seed";
+import type { Role, Protocol, Schedule, Execution, Incident, Notification, Person, MaintenanceTool, InventoryItem, ResourceReservation } from "./types";
+import { seedProtocols, seedSchedules, seedExecutions, seedIncidents, seedNotifications, seedPeople, seedTools, seedInventory, seedReservations } from "./seed";
 
 interface State {
   role: Role;
@@ -9,6 +9,10 @@ interface State {
   executions: Execution[];
   incidents: Incident[];
   notifications: Notification[];
+  people: Person[];
+  tools: MaintenanceTool[];
+  inventory: InventoryItem[];
+  reservations: ResourceReservation[];
 }
 
 interface Store extends State {
@@ -18,11 +22,15 @@ interface Store extends State {
   setExecutions: (e: Execution[]) => void;
   setIncidents: (i: Incident[]) => void;
   setNotifications: (n: Notification[]) => void;
+  setPeople: (p: Person[]) => void;
+  setTools: (t: MaintenanceTool[]) => void;
+  setInventory: (i: InventoryItem[]) => void;
+  setReservations: (r: ResourceReservation[]) => void;
   reset: () => void;
 }
 
 const StoreCtx = createContext<Store | null>(null);
-const KEY = "zellship-maintenance-os-v2";
+const KEY = "zellship-maintenance-os-v3";
 
 const initial: State = {
   role: "admin",
@@ -31,6 +39,10 @@ const initial: State = {
   executions: seedExecutions,
   incidents: seedIncidents,
   notifications: seedNotifications,
+  people: seedPeople,
+  tools: seedTools,
+  inventory: seedInventory,
+  reservations: seedReservations,
 };
 
 export function StoreProvider({ children }: { children: ReactNode }) {
@@ -55,6 +67,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setExecutions: (executions) => setState((s) => ({ ...s, executions })),
     setIncidents: (incidents) => setState((s) => ({ ...s, incidents })),
     setNotifications: (notifications) => setState((s) => ({ ...s, notifications })),
+    setPeople: (people) => setState((s) => ({ ...s, people })),
+    setTools: (tools) => setState((s) => ({ ...s, tools })),
+    setInventory: (inventory) => setState((s) => ({ ...s, inventory })),
+    setReservations: (reservations) => setState((s) => ({ ...s, reservations })),
     reset: () => setState(initial),
   }), [state]);
 

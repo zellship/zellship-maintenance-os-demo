@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import type { Asset, Protocol, Schedule, Execution, Incident, Notification } from "./types";
+import type { Asset, Protocol, Schedule, Execution, Incident, Notification, Skill, Person, MaintenanceTool, InventoryItem, ResourceReservation } from "./types";
 
 const today = dayjs().format("YYYY-MM-DD");
 
@@ -8,6 +8,40 @@ export const seedAssets: Asset[] = [
   { id: "HP-02", name: "Bomba centrífuga HP-02", family: "Bombas", plant: "Planta Monterrey", area: "Proceso · Línea 1", criticality: "High", status: "Available", availability: 98.1, health: 96, runtimeHours: 6240, lastService: dayjs().subtract(18, "day").toISOString() },
   { id: "MTR-07", name: "Motor eléctrico MTR-07", family: "Motores", plant: "Planta Monterrey", area: "Empaque · Línea 3", criticality: "Critical", status: "Risk", availability: 81.4, health: 63, runtimeHours: 11390, lastService: dayjs().subtract(74, "day").toISOString() },
   { id: "CV-03", name: "Transportador CV-03", family: "Transportadores", plant: "Planta Saltillo", area: "Ensamble · Línea 4", criticality: "Medium", status: "Available", availability: 96.8, health: 91, runtimeHours: 4380, lastService: dayjs().subtract(12, "day").toISOString() },
+];
+
+export const seedSkills: Skill[] = [
+  { id: "sk-comp", name: "Mantenimiento de compresores", category: "Technical" },
+  { id: "sk-pump", name: "Mantenimiento de bombas", category: "Technical" },
+  { id: "sk-elec", name: "Diagnóstico eléctrico", category: "Technical" },
+  { id: "sk-vib", name: "Análisis de vibración Nivel I", category: "Certification" },
+  { id: "sk-loto", name: "Bloqueo y etiquetado LOTO", category: "Safety" },
+  { id: "sk-height", name: "Trabajo seguro en alturas", category: "Safety" },
+];
+
+export const seedPeople: Person[] = [
+  { id: "per-ana", name: "Ana Torres", role: "Technician", plant: "Planta Monterrey", shift: "Morning", skillIds: ["sk-comp", "sk-pump", "sk-loto"], certificationValidUntil: dayjs().add(10, "month").format("YYYY-MM-DD"), status: "Assigned" },
+  { id: "per-jorge", name: "Jorge Ruiz", role: "Technician", plant: "Planta Monterrey", shift: "Morning", skillIds: ["sk-pump", "sk-vib", "sk-loto"], certificationValidUntil: dayjs().add(7, "month").format("YYYY-MM-DD"), status: "Available" },
+  { id: "per-laura", name: "Laura Díaz", role: "Technician", plant: "Planta Monterrey", shift: "Morning", skillIds: ["sk-elec", "sk-vib", "sk-loto"], certificationValidUntil: dayjs().add(4, "month").format("YYYY-MM-DD"), status: "Available" },
+  { id: "per-diego", name: "Diego Luna", role: "Technician", plant: "Planta Saltillo", shift: "Morning", skillIds: ["sk-loto", "sk-height"], certificationValidUntil: dayjs().add(11, "month").format("YYYY-MM-DD"), status: "Available" },
+  { id: "per-roberto", name: "Roberto Salas", role: "Supervisor", plant: "Planta Monterrey", shift: "Morning", skillIds: ["sk-comp", "sk-pump", "sk-loto"], status: "Available" },
+  { id: "per-monica", name: "Mónica Reyes", role: "Supervisor", plant: "Planta Monterrey", shift: "Afternoon", skillIds: ["sk-elec", "sk-vib", "sk-loto"], status: "Available" },
+];
+
+export const seedTools: MaintenanceTool[] = [
+  { id: "tool-torque", name: "Torquímetro digital 20–200 Nm", serial: "TQ-88421", plant: "Planta Monterrey", location: "Pañol MRO-01", status: "Reserved", calibrationValidUntil: dayjs().add(8, "month").format("YYYY-MM-DD") },
+  { id: "tool-vib", name: "Analizador de vibración", serial: "AV-3108", plant: "Planta Monterrey", location: "Laboratorio predictivo", status: "Available", calibrationValidUntil: dayjs().add(5, "month").format("YYYY-MM-DD") },
+  { id: "tool-thermal", name: "Cámara termográfica", serial: "CT-9021", plant: "Planta Monterrey", location: "Laboratorio predictivo", status: "Available", calibrationValidUntil: dayjs().add(6, "month").format("YYYY-MM-DD") },
+  { id: "tool-loto", name: "Kit LOTO industrial", serial: "LOTO-114", plant: "Planta Monterrey", location: "Seguridad industrial", status: "Reserved" },
+  { id: "tool-grease", name: "Pistola de engrase calibrada", serial: "PG-207", plant: "Planta Saltillo", location: "Pañol MRO-02", status: "Available", calibrationValidUntil: dayjs().add(9, "month").format("YYYY-MM-DD") },
+];
+
+export const seedInventory: InventoryItem[] = [
+  { id: "mat-filter", sku: "AF-20", name: "Filtro de aire AF-20", unit: "pza", plant: "Planta Monterrey", warehouse: "MRO-01", onHand: 8, reserved: 1, quarantine: 0, reorderPoint: 3 },
+  { id: "mat-oil", sku: "LUB-ISO46", name: "Aceite ISO VG 46", unit: "L", plant: "Planta Monterrey", warehouse: "LUB-01", onHand: 24, reserved: 2, quarantine: 1, reorderPoint: 8 },
+  { id: "mat-clean", sku: "CLN-KIT", name: "Kit de limpieza industrial", unit: "pza", plant: "Planta Monterrey", warehouse: "MRO-01", onHand: 12, reserved: 1, quarantine: 0, reorderPoint: 4 },
+  { id: "mat-cloth", sku: "PAÑO-IND", name: "Paño industrial", unit: "pza", plant: "Planta Monterrey", warehouse: "MRO-01", onHand: 40, reserved: 0, quarantine: 0, reorderPoint: 10 },
+  { id: "mat-grease", sku: "GR-EP2", name: "Grasa EP-2", unit: "g", plant: "Planta Saltillo", warehouse: "LUB-02", onHand: 6200, reserved: 0, quarantine: 0, reorderPoint: 2000 },
 ];
 
 export const seedProtocols: Protocol[] = [
@@ -42,6 +76,14 @@ export const seedProtocols: Protocol[] = [
     materials: ["Filtro AF-20 · 1 pza", "Aceite ISO VG 46 · 2 L", "Kit de limpieza · 1 pza"],
     safetyInstructions: ["Aplicar bloqueo LOTO", "Liberar presión antes de intervenir", "Usar lentes, guantes y protección auditiva"],
     estimatedMinutes: 45,
+    allowRescheduling: true,
+    requiredSkillIds: ["sk-comp", "sk-loto"],
+    requiredToolIds: ["tool-torque", "tool-loto"],
+    materialRequirements: [
+      { inventoryItemId: "mat-filter", mode: "Exact", quantity: 1 },
+      { inventoryItemId: "mat-oil", mode: "Range", min: 1.5, max: 2.5 },
+      { inventoryItemId: "mat-clean", mode: "Variable", min: 0, max: 1 },
+    ],
     lastExecution: dayjs().subtract(30, "day").toISOString(),
   },
   {
@@ -64,6 +106,8 @@ export const seedProtocols: Protocol[] = [
     requiresValidation: true, assetIds: ["HP-02"], materials: ["Paño industrial · 2 pzas"],
     safetyInstructions: ["Verificar guardas instaladas", "No intervenir con bomba energizada"], estimatedMinutes: 35,
     lastExecution: dayjs().subtract(1, "day").toISOString(),
+    allowRescheduling: true, requiredSkillIds: ["sk-pump", "sk-loto"], requiredToolIds: ["tool-vib"],
+    materialRequirements: [{ inventoryItemId: "mat-cloth", mode: "Range", min: 1, max: 3 }],
   },
   {
     id: "p3",
@@ -83,6 +127,7 @@ export const seedProtocols: Protocol[] = [
     requiresValidation: true, assetIds: ["MTR-07"], materials: ["Cámara termográfica", "Analizador de vibración"],
     safetyInstructions: ["Mantener distancia de partes móviles", "Usar equipo de medición calibrado"], estimatedMinutes: 30,
     lastExecution: dayjs().subtract(7, "day").toISOString(),
+    allowRescheduling: false, requiredSkillIds: ["sk-elec", "sk-vib", "sk-loto"], requiredToolIds: ["tool-vib", "tool-thermal"], materialRequirements: [],
   },
   {
     id: "p4",
@@ -93,17 +138,25 @@ export const seedProtocols: Protocol[] = [
     formConfig: [{ id: "f1", type: "text", label: "Lote del lubricante", required: true }, { id: "f2", type: "yesno", label: "Puntos lubricados completos", required: true }],
     supervisors: ["Mónica Reyes"], operators: ["Diego Luna"], channels: ["System"], preAlertMinutes: 15, requiresValidation: false,
     assetIds: ["CV-03"], materials: ["Grasa EP-2 · 500 g"], safetyInstructions: ["Detener y bloquear transportador"], estimatedMinutes: 25,
+    allowRescheduling: true, requiredSkillIds: ["sk-loto"], requiredToolIds: ["tool-grease"], materialRequirements: [{ inventoryItemId: "mat-grease", mode: "Range", min: 350, max: 550 }],
   },
 ];
 
 export const seedSchedules: Schedule[] = [
-  { id: "s1", protocolId: "p1", date: today, hour: "10:00", tolerance: 20, operator: "Ana Torres", status: "Pending", assetId: "AC-01", plant: "Planta Monterrey", workOrder: "OT-2407-018" },
+  { id: "s1", protocolId: "p1", date: today, hour: "10:00", tolerance: 20, operator: "Ana Torres", status: "Pending", assetId: "AC-01", plant: "Planta Monterrey", workOrder: "OT-2407-018", toolIds: ["tool-torque", "tool-loto"], eligibilityValidated: true, materialAllocations: [{ inventoryItemId: "mat-filter", mode: "Exact", quantity: 1, reservedQuantity: 1 }, { inventoryItemId: "mat-oil", mode: "Range", min: 1.5, max: 2.5, reservedQuantity: 2 }, { inventoryItemId: "mat-clean", mode: "Variable", min: 0, max: 1, reservedQuantity: 1 }] },
   { id: "s2", protocolId: "p2", date: today, hour: "08:00", tolerance: 30, operator: "Jorge Ruiz", status: "Completed", assetId: "HP-02", plant: "Planta Monterrey", workOrder: "OT-2407-014" },
   { id: "s3", protocolId: "p3", date: today, hour: "09:00", tolerance: 15, operator: "Laura Díaz", status: "Completed", assetId: "MTR-07", plant: "Planta Monterrey", workOrder: "OT-2407-015" },
   { id: "s4", protocolId: "p4", date: today, hour: "07:30", tolerance: 20, operator: "Diego Luna", status: "Completed", assetId: "CV-03", plant: "Planta Saltillo", workOrder: "OT-2407-016" },
   { id: "s5", protocolId: "p2", date: today, hour: "09:15", tolerance: 30, operator: "Jorge Ruiz", status: "Completed", assetId: "HP-02", plant: "Planta Monterrey", workOrder: "OT-2407-017" },
   { id: "s6", protocolId: "p1", date: today, hour: "06:45", tolerance: 20, operator: "Ana Torres", status: "Completed", assetId: "AC-01", plant: "Planta Monterrey", workOrder: "OT-2407-013" },
   { id: "s7", protocolId: "p3", date: dayjs().subtract(1, "day").format("YYYY-MM-DD"), hour: "11:30", tolerance: 15, operator: "Laura Díaz", status: "Expired", assetId: "MTR-07", plant: "Planta Monterrey", workOrder: "OT-2407-009" },
+];
+
+export const seedReservations: ResourceReservation[] = [
+  { id: "res-s1-asset", scheduleId: "s1", resourceType: "Asset", resourceId: "AC-01", startAt: dayjs(`${today} 10:00`).toISOString(), endAt: dayjs(`${today} 10:00`).add(45, "minute").toISOString(), status: "Reserved" },
+  { id: "res-s1-person", scheduleId: "s1", resourceType: "Person", resourceId: "per-ana", startAt: dayjs(`${today} 10:00`).toISOString(), endAt: dayjs(`${today} 10:00`).add(45, "minute").toISOString(), status: "Reserved" },
+  { id: "res-s1-tool1", scheduleId: "s1", resourceType: "Tool", resourceId: "tool-torque", startAt: dayjs(`${today} 10:00`).toISOString(), endAt: dayjs(`${today} 10:00`).add(45, "minute").toISOString(), status: "Reserved" },
+  { id: "res-s1-tool2", scheduleId: "s1", resourceType: "Tool", resourceId: "tool-loto", startAt: dayjs(`${today} 10:00`).toISOString(), endAt: dayjs(`${today} 10:00`).add(45, "minute").toISOString(), status: "Reserved" },
 ];
 
 const validEvidence = (executionId: string) => [

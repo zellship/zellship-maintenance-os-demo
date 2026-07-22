@@ -7,7 +7,7 @@ import { seedAssets } from "../seed";
 import { statusTag } from "../ui";
 
 export function WorkOrders() {
-  const { schedules, protocols, executions } = useStore();
+  const { schedules, protocols, executions, tools, inventory, setRole } = useStore();
   const [selectedId, setSelectedId] = useState<string | null>("s1");
   const selected = schedules.find(s => s.id === selectedId);
   const protocol = protocols.find(p => p.id === selected?.protocolId);
@@ -44,6 +44,8 @@ export function WorkOrders() {
             <Descriptions.Item label="Responsable">{selected.operator}</Descriptions.Item>
             <Descriptions.Item label="Ventana">{dayjs(selected.date).format("DD MMM YYYY")} · {selected.hour} ± {selected.tolerance} min</Descriptions.Item>
             <Descriptions.Item label="Materiales">{protocol.materials?.join(" · ") || "Sin materiales"}</Descriptions.Item>
+            <Descriptions.Item label="Herramientas reservadas">{(selected.toolIds || []).map(id => tools.find(t => t.id === id)?.name).filter(Boolean).join(" · ") || "Sin herramientas"}</Descriptions.Item>
+            <Descriptions.Item label="Inventario reservado">{(selected.materialAllocations || []).map(a => { const item = inventory.find(i => i.id === a.inventoryItemId); return `${item?.name}: ${a.reservedQuantity} ${item?.unit}`; }).join(" · ") || "Sin consumibles"}</Descriptions.Item>
             <Descriptions.Item label="Seguridad">{protocol.safetyInstructions?.join(" · ")}</Descriptions.Item>
           </Descriptions>
           <Typography.Title level={5} style={{ marginTop: 22 }}>Trazabilidad</Typography.Title>
@@ -53,7 +55,7 @@ export function WorkOrders() {
             { color: execution ? "green" : "gray", children: execution ? `${execution.evidences.length} evidencias y ${Object.keys(execution.formAnswers).length} respuestas registradas` : "Ejecución pendiente desde la aplicación móvil" },
             { color: execution?.status === "Validated" ? "green" : "gray", children: execution?.status === "Validated" ? `Validada con calificación ${execution.score || 94}%` : "Validación pendiente" },
           ]} />
-          {selected.status === "Pending" && <Button type="primary" block size="large" icon={<MobileOutlined />}>Disponible en la operación móvil</Button>}
+          {selected.status === "Pending" && <Button type="primary" block size="large" icon={<MobileOutlined />} onClick={() => setRole("operator")}>Abrir en operación móvil</Button>}
         </>}
       </Drawer>
     </div>

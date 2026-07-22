@@ -1,31 +1,43 @@
 import { useRef, useState } from "react";
-import { Card, Typography, Button, Space, Steps, Tag, Form, Input, Select, InputNumber, Radio, Rate, Progress, Alert, message, Result, Divider, Descriptions } from "antd";
-import { ArrowLeftOutlined, CameraOutlined, EnvironmentOutlined, EditOutlined, QrcodeOutlined, CheckCircleOutlined } from "@ant-design/icons";
+import { Card, Typography, Button, Space, Steps, Tag, Form, Input, Select, InputNumber, Radio, Rate, Progress, Alert, message, Result, Divider, Descriptions, List } from "antd";
+import { ArrowLeftOutlined, CameraOutlined, EnvironmentOutlined, QrcodeOutlined, CheckCircleOutlined, ToolOutlined, DatabaseOutlined, SafetyCertificateOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useStore } from "../store";
-import type { EvidenceType, FormField, Execution, EvidenceRecord } from "../types";
-import { seedAssets } from "../seed";
+import type { EvidenceType, FormField, Execution, EvidenceRecord, MaterialAllocation } from "../types";
+import { seedAssets, seedSkills } from "../seed";
 
 export function ExecutionFlow({ scheduleId, onClose }: { scheduleId: string; onClose: () => void }) {
-  const { schedules, protocols, executions, setExecutions, setSchedules } = useStore();
+  const { schedules, protocols, executions, setExecutions, setSchedules, people, tools, setTools, inventory, setInventory, reservations, setReservations, incidents, setIncidents } = useStore();
   const schedule = schedules.find(s => s.id === scheduleId);
   const protocol = protocols.find(p => p.id === schedule?.protocolId);
   const asset = seedAssets.find(a => a.id === schedule?.assetId);
-  const [phase, setPhase] = useState<"intro" | "evidence" | "form" | "confirm" | "done">("intro");
+  const [phase, setPhase] = useState<"intro" | "resources" | "evidence" | "form" | "consumption" | "confirm" | "done">("intro");
   const [evidenceIdx, setEvidenceIdx] = useState(0);
   const [evidences, setEvidences] = useState<EvidenceRecord[]>([]);
   const [answers, setAnswers] = useState<Record<string, unknown>>({});
+  const [consumptions, setConsumptions] = useState<MaterialAllocation[]>(() => (schedule?.materialAllocations || []).map(a => ({ ...a, actualQuantity: a.mode === "Exact" ? a.quantity : a.min ?? a.reservedQuantity })));
   const startRef = useRef<string>(dayjs().toISOString());
 
   if (!schedule || !protocol) return <Result status="error" title="No encontrado" extra={<Button onClick={onClose}>Volver</Button>} />;
 
   const evidences_cfg = protocol.evidenceConfig;
   const current = evidences_cfg[evidenceIdx];
+  const technician = people.find(p => p.name === schedule.operator);
+  const assignedTools = tools.filter(t => schedule.toolIds?.includes(t.id));
+  const missingSkills = protocol.requiredSkillIds?.filter(id => !technician?.skillIds.includes(id)) || [];
+  const deviations = consumptions.filter(isConsumptionDeviation);
 
   const start = () => {
     startRef.current = dayjs().toISOString();
-    setPhase("evidence");
-    message.success("Orden iniciada · cronómetro y trazabilidad activos");
+    setPhase("resources");
+  };
+
+  const confirmResources = () => {
+    setTools(tools.map(t => schedule.toolIds?.includes(t.id) ? { ...t, status: "InUse" } : t));
+    setReservations(reservations.map(r => r.scheduleId === scheduleId && r.status === "Reserved" ? { ...r, status: "InUse" } : r));
+    setSchedules(schedules.map(s => s.id === scheduleId ? { ...s, status: "InProgress" } : s));
+    setPhase(evidences_cfg.length ? "evidence" : "form");
+    message.success("Recursos entregados · cronómetro y trazabilidad activos");
   };
 
   const captureEvidence = (data: string, extra?: Partial<EvidenceRecord>) => {
@@ -51,6 +63,7 @@ export function ExecutionFlow({ scheduleId, onClose }: { scheduleId: string; onC
 
   const submit = () => {
     const id = `e${Date.now()}`;
+    const score = Math.max(70, 96 - deviations.length * 8);
     const exec: Execution = {
       id, scheduleId, protocolId: protocol.id,
       startAt: startRef.current, endAt: dayjs().toISOString(),
@@ -58,10 +71,21 @@ export function ExecutionFlow({ scheduleId, onClose }: { scheduleId: string; onC
       status: protocol.requiresValidation ? "PendingValidation" : "Completed",
       evidences: evidences.map(e => ({ ...e, executionId: id, status: "Pending" })),
       formAnswers: answers,
-      score: 94,
+      score,
+      toolIds: schedule.toolIds || [],
+      materialConsumptions: consumptions,
+      resourceCheckInAt: dayjs().toISOString(),
     };
     setExecutions([exec, ...executions]);
     setSchedules(schedules.map(s => s.id === scheduleId ? { ...s, status: "Completed" } : s));
+    setTools(tools.map(t => schedule.toolIds?.includes(t.id) ? { ...t, status: "Available" } : t));
+    setReservations(reservations.map(r => r.scheduleId === scheduleId ? { ...r, status: "Released" } : r));
+    setInventory(inventory.map(item => {
+      const consumption = consumptions.find(c => c.inventoryItemId === item.id);
+      if (!consumption) return item;
+      return { ...item, onHand: Math.max(0, item.onHand - (consumption.actualQuantity || 0)), reserved: Math.max(0, item.reserved - consumption.reservedQuantity) };
+    }));
+    if (deviations.length) setIncidents([{ id: `i${Date.now()}`, executionId: id, scheduleId, protocolId: protocol.id, type: "Escalated", status: "Review", description: `${deviations.length} consumo(s) fuera del rango configurado; requiere revisión del supervisor.`, createdAt: dayjs().toISOString() }, ...incidents]);
     setPhase("done");
     message.success("Ejecución enviada");
   };
@@ -85,8 +109,12 @@ export function ExecutionFlow({ scheduleId, onClose }: { scheduleId: string; onC
           <Typography.Text strong>Hora programada:</Typography.Text> {schedule.hour}<br />
           <Typography.Text strong>Tolerancia:</Typography.Text> {schedule.tolerance} min<br />
           <Typography.Text strong>Supervisor:</Typography.Text> {protocol.supervisors.join(", ")}
-          <Divider>Materiales y seguridad</Divider>
-          <Typography.Paragraph>{protocol.materials?.join(" · ") || "Sin materiales requeridos"}</Typography.Paragraph>
+          <Divider>Recursos reservados</Divider>
+          <Space wrap style={{ marginBottom: 12 }}>
+            <Tag icon={<SafetyCertificateOutlined />} color={missingSkills.length ? "red" : "green"}>{missingSkills.length ? "Elegibilidad pendiente" : "Técnico habilitado"}</Tag>
+            <Tag icon={<ToolOutlined />} color="purple">{assignedTools.length} herramientas</Tag>
+            <Tag icon={<DatabaseOutlined />} color="blue">{consumptions.length} materiales</Tag>
+          </Space>
           <Alert type="warning" showIcon message="Antes de comenzar" description={protocol.safetyInstructions?.join(" · ") || "Confirma condiciones seguras de intervención."} />
           <Divider>Requerimientos</Divider>
           <Space wrap>
@@ -94,6 +122,18 @@ export function ExecutionFlow({ scheduleId, onClose }: { scheduleId: string; onC
           </Space>
           <Divider />
           <Button type="primary" size="large" block onClick={start}>Comenzar ejecución</Button>
+        </Card>
+      )}
+
+      {phase === "resources" && (
+        <Card title="Entrega y verificación de recursos">
+          <Alert type={missingSkills.length ? "error" : "success"} showIcon message={missingSkills.length ? "Técnico no habilitado" : `${technician?.name} · elegibilidad validada`} description={missingSkills.length ? `Faltan: ${missingSkills.map(id => seedSkills.find(s => s.id === id)?.name).join(", ")}` : `Skills: ${(protocol.requiredSkillIds || []).map(id => seedSkills.find(s => s.id === id)?.name).join(" · ")}`} />
+          <Divider>Herramientas asignadas</Divider>
+          <List size="small" dataSource={assignedTools} locale={{ emptyText: "Sin herramientas requeridas" }} renderItem={tool => <List.Item extra={<Tag color="green">Entregada</Tag>}><List.Item.Meta avatar={<ToolOutlined />} title={tool.name} description={`Serie ${tool.serial} · ${tool.location}`} /></List.Item>} />
+          <Divider>Materiales reservados</Divider>
+          <List size="small" dataSource={consumptions} locale={{ emptyText: "Sin consumibles requeridos" }} renderItem={allocation => { const item = inventory.find(i => i.id === allocation.inventoryItemId); return <List.Item extra={<Tag color="blue">{allocation.reservedQuantity} {item?.unit}</Tag>}><List.Item.Meta avatar={<DatabaseOutlined />} title={item?.name || allocation.inventoryItemId} description={`${item?.sku} · lote disponible en ${item?.warehouse}`} /></List.Item>; }} />
+          <Divider />
+          <Button type="primary" size="large" block disabled={missingSkills.length > 0} onClick={confirmResources}>Confirmar entrega e iniciar</Button>
         </Card>
       )}
 
@@ -114,9 +154,21 @@ export function ExecutionFlow({ scheduleId, onClose }: { scheduleId: string; onC
         <Card title="Formulario">
           <DynamicForm fields={protocol.formConfig} values={answers} onChange={setAnswers} />
           <Divider />
-          <Button type="primary" block size="large" onClick={() => setPhase("confirm")} disabled={!isFormValid(protocol.formConfig, answers)}>
+          <Button type="primary" block size="large" onClick={() => setPhase(consumptions.length ? "consumption" : "confirm")} disabled={!isFormValid(protocol.formConfig, answers)}>
             Continuar
           </Button>
+        </Card>
+      )}
+
+      {phase === "consumption" && (
+        <Card title="Consumo real de materiales">
+          <Typography.Paragraph type="secondary">Registra lo utilizado. El sistema comparará el consumo real contra la cantidad exacta o el rango permitido.</Typography.Paragraph>
+          <List dataSource={consumptions} renderItem={allocation => { const item = inventory.find(i => i.id === allocation.inventoryItemId); const deviation = isConsumptionDeviation(allocation); const rule = allocation.mode === "Exact" ? `Exacto: ${allocation.quantity}` : `Permitido: ${allocation.min ?? 0}–${allocation.max ?? "sin límite"}`; return <List.Item><div style={{ width: "100%" }}><Space style={{ width: "100%", justifyContent: "space-between" }}><div><b>{item?.name}</b><br /><Typography.Text type="secondary">{rule} {item?.unit}</Typography.Text></div><InputNumber min={0} value={allocation.actualQuantity} addonAfter={item?.unit} status={deviation ? "warning" : undefined} onChange={value => setConsumptions(consumptions.map(c => c.inventoryItemId === allocation.inventoryItemId ? { ...c, actualQuantity: Number(value) || 0 } : c))} /></Space>{deviation && <Alert type="warning" showIcon message="Fuera del estándar · se generará una desviación" style={{ marginTop: 8 }} />}</div></List.Item>; }} />
+          <Divider />
+          <Space direction="vertical" style={{ width: "100%" }}>
+            <Button type="primary" size="large" block onClick={() => setPhase("confirm")}>Continuar al cierre</Button>
+            <Button block onClick={() => setPhase("form")}>Volver al formulario</Button>
+          </Space>
         </Card>
       )}
 
@@ -128,11 +180,13 @@ export function ExecutionFlow({ scheduleId, onClose }: { scheduleId: string; onC
             <b>Duración:</b> {dayjs().diff(dayjs(startRef.current), "minute")} min<br />
             <b>Evidencias:</b> {evidences.length} / {evidences_cfg.length}<br />
             <b>Campos respondidos:</b> {Object.keys(answers).length}
+            <br /><b>Herramientas por liberar:</b> {assignedTools.length}
+            <br /><b>Consumos registrados:</b> {consumptions.length} {deviations.length ? `· ${deviations.length} con desviación` : "· dentro de estándar"}
           </Typography.Paragraph>
           {protocol.requiresValidation && <Alert type="info" message="Requiere validación de supervisor" style={{ marginBottom: 12 }} />}
           <Space style={{ width: "100%" }} direction="vertical">
             <Button type="primary" block size="large" onClick={submit}>Confirmar y enviar</Button>
-            <Button block onClick={() => setPhase("form")}>Volver a editar</Button>
+            <Button block onClick={() => setPhase(consumptions.length ? "consumption" : "form")}>Volver a editar</Button>
           </Space>
         </Card>
       )}
@@ -277,4 +331,12 @@ function isFormValid(fields: FormField[], values: Record<string, unknown>) {
     const v = values[f.id];
     return v !== undefined && v !== null && v !== "";
   });
+}
+
+function isConsumptionDeviation(allocation: MaterialAllocation) {
+  const actual = allocation.actualQuantity ?? 0;
+  if (allocation.mode === "Exact") return actual !== (allocation.quantity ?? 0);
+  if (allocation.min !== undefined && actual < allocation.min) return true;
+  if (allocation.max !== undefined && actual > allocation.max) return true;
+  return false;
 }
