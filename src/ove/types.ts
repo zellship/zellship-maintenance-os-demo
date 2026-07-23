@@ -2,17 +2,31 @@ export type Role = "admin" | "operator" | "supervisor";
 
 export type ProtocolStatus = "Draft" | "Active" | "Inactive" | "Archived";
 export type ScheduleStatus = "Pending" | "InProgress" | "Completed" | "Expired" | "Cancelled";
-export type ExecutionStatus = "InProgress" | "Completed" | "PendingValidation" | "Validated" | "Rejected";
+export type ExecutionStatus =
+  "InProgress" | "Completed" | "PendingValidation" | "Validated" | "Rejected";
 export type EvidenceType = "Photo" | "Video" | "Signature" | "GPS" | "QR" | "Timestamp" | "File";
 export type EvidenceStatus = "Pending" | "Valid" | "Invalid";
-export type IncidentType = "NotExecuted" | "LateExecution" | "InvalidEvidence" | "Rejected" | "Escalated";
+export type IncidentType =
+  "NotExecuted" | "LateExecution" | "InvalidEvidence" | "Rejected" | "Escalated";
 export type IncidentStatus = "Open" | "Review" | "Resolved" | "Closed";
 export type ResourceStatus = "Available" | "Reserved" | "InUse" | "Calibration" | "Unavailable";
 export type ConsumptionMode = "Exact" | "Range" | "Variable";
+export type ProtocolActivation = "Recurring" | "Triggered" | "OnDemand";
+export type NotificationChannel = "System" | "Push" | "WhatsApp" | "SMS";
 
 export interface FormField {
   id: string;
-  type: "text" | "textarea" | "number" | "yesno" | "select" | "multiselect" | "rating" | "comment" | "date" | "separator";
+  type:
+    | "text"
+    | "textarea"
+    | "number"
+    | "yesno"
+    | "select"
+    | "multiselect"
+    | "rating"
+    | "comment"
+    | "date"
+    | "separator";
   label: string;
   required?: boolean;
   options?: string[];
@@ -24,6 +38,9 @@ export interface EvidenceConfig {
   minCount?: number;
   radius?: number;
   qrCode?: string;
+  referenceData?: string;
+  aiValidation?: boolean;
+  humanRating?: boolean;
 }
 
 export interface Protocol {
@@ -40,9 +57,11 @@ export interface Protocol {
   formConfig: FormField[];
   supervisors: string[];
   operators: string[];
-  channels: ("System" | "WhatsApp" | "SMS")[];
+  channels: NotificationChannel[];
   preAlertMinutes: number;
   requiresValidation: boolean;
+  activationMode?: ProtocolActivation;
+  triggerEvent?: string;
   lastExecution?: string;
   assetIds?: string[];
   materials?: string[];
@@ -142,6 +161,11 @@ export interface EvidenceRecord {
   gps?: { lat: number; lng: number };
   timestamp: string;
   status: EvidenceStatus;
+  referenceData?: string;
+  aiScore?: number;
+  humanScore?: number;
+  aiFindings?: string[];
+  operatorComment?: string;
 }
 
 export interface Execution {
@@ -154,8 +178,14 @@ export interface Execution {
   status: ExecutionStatus;
   evidences: EvidenceRecord[];
   formAnswers: Record<string, unknown>;
-  approval?: { supervisor: string; decision: "Approved" | "Rejected"; comments: string; at: string };
+  approval?: {
+    supervisor: string;
+    decision: "Approved" | "Rejected";
+    comments: string;
+    at: string;
+  };
   score?: number;
+  humanScore?: number;
   toolIds?: string[];
   materialConsumptions?: MaterialAllocation[];
   resourceCheckInAt?: string;
@@ -188,10 +218,43 @@ export interface Incident {
 
 export interface Notification {
   id: string;
-  type: "PreviousAlert" | "Expiration" | "Incident" | "ValidationRequired" | "Escalation";
-  channel: "System" | "WhatsApp" | "SMS";
+  type:
+    | "PreviousAlert"
+    | "Expiration"
+    | "Incident"
+    | "ValidationRequired"
+    | "Escalation"
+    | "Assignment"
+    | "ExecutionStarted"
+    | "EvidenceAnalyzed"
+    | "Completed"
+    | "OnDemand"
+    | "FlowTriggered";
+  channel: NotificationChannel;
   actor: string;
+  recipientRole?: Role | "all";
+  recipient?: string;
+  source?: "Automatic" | "OnDemand";
+  event?: string;
   message: string;
   status: "Sent" | "Read";
   createdAt: string;
+}
+
+export interface OperationalFlowStep {
+  id: string;
+  name: string;
+  protocolId?: string;
+  mode: "Linear" | "Parallel";
+  status: "Waiting" | "Ready" | "Running" | "Completed";
+  trigger?: string;
+}
+
+export interface OperationalFlow {
+  id: string;
+  name: string;
+  description: string;
+  assetId: string;
+  status: "Ready" | "Running" | "Completed";
+  steps: OperationalFlowStep[];
 }

@@ -26,6 +26,11 @@ export function statusTag(s: string) {
 }
 
 export function priorityTag(p: string) {
-  const map: Record<string, string> = { Low: "blue", Medium: "gold", High: "orange", Critical: "red" };
+  const map: Record<string, string> = {
+    Low: "blue",
+    Medium: "gold",
+    High: "orange",
+    Critical: "red",
+  };
   return <Tag color={map[p] ?? "default"}>{p}</Tag>;
 }
