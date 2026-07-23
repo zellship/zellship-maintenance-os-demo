@@ -21,7 +21,7 @@ import { statusTag } from "../ui";
 
 export function WorkOrders() {
   const { schedules, protocols, executions, tools, inventory, setRole } = useStore();
-  const [selectedId, setSelectedId] = useState<string | null>("s1");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = schedules.find((s) => s.id === selectedId);
   const protocol = protocols.find((p) => p.id === selected?.protocolId);
   const execution = executions.find((e) => e.scheduleId === selectedId);
