@@ -14,6 +14,7 @@ import {
   Segmented,
   Space,
   Statistic,
+  Table,
   Tabs,
   Tag,
   Typography,
@@ -35,8 +36,9 @@ import {
   WhatsAppOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
-import { seedOperationalFlows } from "../seed";
+import { seedAssets, seedOperationalFlows } from "../seed";
 import { useStore } from "../store";
+import { statusTag } from "../ui";
 import type { Notification, ProtocolActivation, Schedule } from "../types";
 
 type FeedFilter = "all" | "automatic" | "ondemand" | "critical";
@@ -65,8 +67,16 @@ const modeInfo: Record<
   },
 };
 
-export function OperationsLive() {
-  const { protocols, notifications, setNotifications, schedules, setSchedules } = useStore();
+export function OperationsLive({ onNav }: { onNav: (key: string) => void }) {
+  const {
+    protocols,
+    notifications,
+    setNotifications,
+    schedules,
+    setSchedules,
+    incidents,
+    setIncidents,
+  } = useStore();
   const [flowStep, setFlowStep] = useState(2);
   const [feedFilter, setFeedFilter] = useState<FeedFilter>("all");
   const [selectedEventId, setSelectedEventId] = useState<string>();
@@ -189,11 +199,35 @@ export function OperationsLive() {
     );
   };
 
-  const automaticCount = notifications.filter((event) => event.source === "Automatic").length;
-  const criticalCount = notifications.filter((event) =>
-    ["Incident", "Escalation", "FlowTriggered"].includes(event.type),
+  const today = dayjs().format("YYYY-MM-DD");
+  const todaysSchedules = schedules.filter((schedule) => schedule.date === today);
+  const completedToday = todaysSchedules.filter(
+    (schedule) => schedule.status === "Completed",
   ).length;
-  const activeAssets = new Set(schedules.map((schedule) => schedule.assetId).filter(Boolean)).size;
+  const pendingToday = todaysSchedules.filter(
+    (schedule) => schedule.status === "Pending" || schedule.status === "InProgress",
+  ).length;
+  const compliance = todaysSchedules.length
+    ? Math.round((completedToday / todaysSchedules.length) * 100)
+    : 0;
+  const openIncidents = incidents.filter(
+    (incident) => incident.status !== "Closed" && incident.status !== "Resolved",
+  );
+  const averageAvailability = Math.round(
+    seedAssets.reduce((sum, asset) => sum + asset.availability, 0) / seedAssets.length,
+  );
+  const orderRows = todaysSchedules.map((schedule) => {
+    const protocol = protocols.find((item) => item.id === schedule.protocolId);
+    return {
+      key: schedule.id,
+      workOrder: schedule.workOrder,
+      protocol: protocol?.name ?? "Protocolo",
+      asset: schedule.assetId,
+      hour: schedule.hour,
+      operator: schedule.operator,
+      status: schedule.status,
+    };
+  });
 
   return (
     <div className="operations-live-page">
@@ -201,25 +235,21 @@ export function OperationsLive() {
         <div>
           <Space>
             <span className="live-dot" />
-            <Typography.Text strong>OPERACIÓN EN VIVO</Typography.Text>
+            <Typography.Text strong>CENTRO DE CONTROL · EN VIVO</Typography.Text>
           </Space>
           <Typography.Title level={2} style={{ margin: "3px 0 0" }}>
-            Newsfeed operacional
+            Operación, alertas y decisiones
           </Typography.Title>
           <Typography.Text type="secondary">
-            Cada asignación, evidencia, alerta, decisión y trigger aparece en una sola narrativa.
+            Una vista para entender el estado, atender excepciones y seguir cada evento.
           </Typography.Text>
         </div>
         <Space wrap>
           <Tag color="purple" icon={<ApiOutlined />}>
             Foundational Engines activos
           </Tag>
-          <Button
-            type="primary"
-            icon={<ThunderboltOutlined />}
-            onClick={() => addScheduleFromMode("Triggered")}
-          >
-            Generar actividad
+          <Button type="primary" icon={<BranchesOutlined />} onClick={() => onNav("flows")}>
+            Diseñar flujos
           </Button>
         </Space>
       </Space>
@@ -228,18 +258,10 @@ export function OperationsLive() {
         <Col xs={12} md={6}>
           <Card size="small">
             <Statistic
-              title="Eventos visibles"
-              value={notifications.length}
-              prefix={<BellOutlined />}
-            />
-          </Card>
-        </Col>
-        <Col xs={12} md={6}>
-          <Card size="small">
-            <Statistic
-              title="Automáticos"
-              value={automaticCount}
-              prefix={<ThunderboltOutlined />}
+              title="Cumplimiento de hoy"
+              value={compliance}
+              suffix="%"
+              prefix={<CheckCircleOutlined />}
               valueStyle={{ color: "#7B35C1" }}
             />
           </Card>
@@ -247,8 +269,17 @@ export function OperationsLive() {
         <Col xs={12} md={6}>
           <Card size="small">
             <Statistic
-              title="Críticos / escalados"
-              value={criticalCount}
+              title="Pendientes hoy"
+              value={pendingToday}
+              prefix={<ClockCircleOutlined />}
+            />
+          </Card>
+        </Col>
+        <Col xs={12} md={6}>
+          <Card size="small">
+            <Statistic
+              title="Incidencias activas"
+              value={openIncidents.length}
               prefix={<ExclamationCircleOutlined />}
               valueStyle={{ color: "#cf1322" }}
             />
@@ -257,8 +288,9 @@ export function OperationsLive() {
         <Col xs={12} md={6}>
           <Card size="small">
             <Statistic
-              title="Activos en contexto"
-              value={activeAssets}
+              title="Disponibilidad de activos"
+              value={averageAvailability}
+              suffix="%"
               prefix={<DeploymentUnitOutlined />}
             />
           </Card>
@@ -386,35 +418,46 @@ export function OperationsLive() {
               )}
             </Card>
 
-            <Card title="Ahora en la operación">
+            <Card
+              title="Alertas que requieren atención"
+              extra={
+                <Button type="link" size="small" onClick={() => onNav("incidents")}>
+                  Ver todas
+                </Button>
+              }
+            >
               <List
                 size="small"
-                dataSource={[
-                  {
-                    icon: <ExclamationCircleOutlined />,
-                    color: "red",
-                    title: "MTR-07",
-                    detail: "Vibración crítica · supervisor notificado",
-                  },
-                  {
-                    icon: <ToolOutlinedFallback />,
-                    color: "purple",
-                    title: "AC-01",
-                    detail: "Flujo de recuperación · 40%",
-                  },
-                  {
-                    icon: <CheckCircleOutlined />,
-                    color: "green",
-                    title: "HP-02",
-                    detail: "Inspección validada · 96%",
-                  },
-                ]}
-                renderItem={(item) => (
-                  <List.Item>
+                dataSource={openIncidents.slice(0, 3)}
+                locale={{ emptyText: "Sin alertas críticas pendientes" }}
+                renderItem={(incident) => (
+                  <List.Item
+                    actions={[
+                      <Button
+                        key="resolve"
+                        size="small"
+                        onClick={() => {
+                          setIncidents(
+                            incidents.map((item) =>
+                              item.id === incident.id ? { ...item, status: "Resolved" } : item,
+                            ),
+                          );
+                          message.success("Incidencia resuelta y registrada en bitácora");
+                        }}
+                      >
+                        Resolver
+                      </Button>,
+                    ]}
+                  >
                     <List.Item.Meta
-                      avatar={<Avatar style={{ background: item.color }} icon={item.icon} />}
-                      title={item.title}
-                      description={item.detail}
+                      avatar={
+                        <Avatar
+                          style={{ background: "#fff1f0", color: "#cf1322" }}
+                          icon={<ExclamationCircleOutlined />}
+                        />
+                      }
+                      title={<Tag color="red">{incident.type}</Tag>}
+                      description={incident.description}
                     />
                   </List.Item>
                 )}
@@ -450,8 +493,37 @@ export function OperationsLive() {
         <Tabs
           items={[
             {
+              key: "orders",
+              label: `Órdenes de hoy · ${orderRows.length}`,
+              children: (
+                <Table
+                  size="middle"
+                  pagination={false}
+                  dataSource={orderRows}
+                  locale={{ emptyText: "No hay órdenes programadas para hoy" }}
+                  columns={[
+                    { title: "Orden", dataIndex: "workOrder", width: 130 },
+                    { title: "Protocolo", dataIndex: "protocol" },
+                    { title: "Activo", dataIndex: "asset", width: 90 },
+                    { title: "Hora", dataIndex: "hour", width: 90 },
+                    { title: "Responsable", dataIndex: "operator" },
+                    { title: "Estado", dataIndex: "status", render: statusTag },
+                    {
+                      title: "Acción",
+                      width: 100,
+                      render: () => (
+                        <Button size="small" onClick={() => onNav("orders")}>
+                          Ver orden
+                        </Button>
+                      ),
+                    },
+                  ]}
+                />
+              ),
+            },
+            {
               key: "activation",
-              label: "Protocolos y triggers",
+              label: "Triggers y activación",
               children: (
                 <Row gutter={[12, 12]}>
                   {modes.map((mode) => {
@@ -495,7 +567,7 @@ export function OperationsLive() {
             },
             {
               key: "flows",
-              label: "Flujos operativos",
+              label: "Flujos activos",
               children: (
                 <>
                   <Space style={{ width: "100%", justifyContent: "space-between" }} wrap>
@@ -509,10 +581,10 @@ export function OperationsLive() {
                     </div>
                     <Button
                       type="primary"
-                      onClick={advanceFlow}
-                      disabled={flowStep >= seedOperationalFlows[0].steps.length}
+                      icon={<BranchesOutlined />}
+                      onClick={() => onNav("flows")}
                     >
-                      Detonar siguiente etapa
+                      Abrir módulo de flujos
                     </Button>
                   </Space>
                   <Progress
@@ -554,9 +626,14 @@ export function OperationsLive() {
                     message="Regla entre flujos"
                     description="Una condición crítica puede detonar otro flujo, crear compromisos y notificar responsables automáticamente."
                     action={
-                      <Button size="small" onClick={triggerRelatedFlow}>
-                        Emular
-                      </Button>
+                      <Space>
+                        <Button size="small" onClick={advanceFlow}>
+                          Avanzar etapa
+                        </Button>
+                        <Button size="small" onClick={triggerRelatedFlow}>
+                          Detonar flujo
+                        </Button>
+                      </Space>
                     }
                   />
                 </>
@@ -601,8 +678,4 @@ function channelIcon(channel: Notification["channel"]) {
   if (channel === "WhatsApp") return <WhatsAppOutlined />;
   if (channel === "Push") return <BellOutlined />;
   return <ApiOutlined />;
-}
-
-function ToolOutlinedFallback() {
-  return <ClockCircleOutlined />;
 }
