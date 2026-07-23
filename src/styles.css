@@ -547,6 +547,87 @@
   background: linear-gradient(180deg, #fff, #fcfbfd);
 }
 
+.maintenance-sider {
+  min-height: calc(100vh - 64px);
+  box-shadow: 5px 0 20px rgba(35, 24, 49, 0.025);
+}
+
+.maintenance-sider .ant-menu-submenu-title,
+.maintenance-sider .ant-menu-item {
+  margin-inline: 8px;
+  width: calc(100% - 16px);
+}
+
+.maintenance-sider .ant-menu-sub.ant-menu-inline {
+  background: #faf9fc;
+}
+
+.maintenance-sider .ant-layout-sider-trigger {
+  color: #6f2caf;
+  border-top: 1px solid #eee8f2;
+  background: #fff;
+}
+
+.maintenance-sider.ant-layout-sider-collapsed .ant-menu-submenu-title,
+.maintenance-sider.ant-layout-sider-collapsed .ant-menu-item {
+  margin-inline: 6px;
+  width: calc(100% - 12px);
+  padding-inline: calc(50% - 12px);
+}
+
+.page-heading-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.flow-library {
+  max-height: 650px;
+  overflow-y: auto;
+}
+
+.flow-library .ant-list-item {
+  margin-bottom: 7px;
+  padding: 12px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease;
+}
+
+.flow-library .ant-list-item:hover,
+.flow-library .ant-list-item.selected {
+  border-color: #d3adf7;
+  background: #faf7ff;
+}
+
+.flow-studio-card {
+  overflow: hidden;
+  border-color: rgba(123, 53, 193, 0.16);
+  box-shadow: 0 12px 38px rgba(42, 28, 57, 0.06);
+}
+
+.flow-studio-card > .ant-card-head {
+  background:
+    radial-gradient(circle at 95% 0, rgba(123, 53, 193, 0.1), transparent 36%),
+    linear-gradient(135deg, #fff, #fbf9ff);
+}
+
+.flow-builder-board {
+  grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
+}
+
+.flow-builder-board .flow-node {
+  min-height: 138px;
+}
+
+.operational-flows-page .ant-statistic-title {
+  white-space: nowrap;
+}
+
 .asset-row-selected > td {
   background: #faf7ff !important;
 }
@@ -999,6 +1080,23 @@
 
   .operations-feed-item .ant-list-item-action {
     display: none;
+  }
+
+  .page-heading-row {
+    flex-direction: column;
+  }
+
+  .page-heading-row > .ant-btn {
+    width: 100%;
+  }
+
+  .flow-studio-card > .ant-card-head {
+    align-items: flex-start;
+  }
+
+  .flow-studio-card > .ant-card-head .ant-card-extra {
+    margin-inline-start: 0;
+    padding-top: 0;
   }
 
   .asset-context-bar {
