@@ -13,6 +13,13 @@ export interface AssetInsight {
   source: string;
 }
 
+export interface AssetKeyFact {
+  label: string;
+  value: string;
+  detail: string;
+  tone: "success" | "warning" | "critical" | "info";
+}
+
 export interface AssetProfileDefinition {
   assetId: string;
   externalKey: string;
@@ -29,7 +36,7 @@ export interface AssetProfileDefinition {
   controlSystem: string;
   dataSources: string[];
   tags: string[];
-  keyFacts: string[];
+  keyFacts: AssetKeyFact[];
   relationships: AssetRelationship[];
   insights: AssetInsight[];
 }
@@ -52,10 +59,30 @@ export const assetProfiles: Record<string, AssetProfileDefinition> = {
     dataSources: ["Maintenance OS", "SAP EAM", "SCADA", "IoT Gateway"],
     tags: ["Activo crítico", "Aire comprimido", "VSD", "Monitoreado IoT"],
     keyFacts: [
-      "Responsable del 68% del aire comprimido de Línea 2; una indisponibilidad impacta tres celdas productivas.",
-      "El último mantenimiento obtuvo 91% y dejó seguimiento de tensión de bandas para la próxima ventana.",
-      "Consumo energético 4.7% por encima de la línea base durante los últimos siete días.",
-      "Torquímetro, kit LOTO y filtro AF-20 están ligados al protocolo preventivo vigente.",
+      {
+        label: "Impacto operativo",
+        value: "68% de Línea 2",
+        detail: "Abastece tres celdas productivas; una indisponibilidad afecta su continuidad.",
+        tone: "warning",
+      },
+      {
+        label: "Último mantenimiento",
+        value: "91% aprobado",
+        detail: "Quedó seguimiento de tensión de bandas para la siguiente ventana.",
+        tone: "success",
+      },
+      {
+        label: "Eficiencia energética",
+        value: "+4.7% vs. base",
+        detail: "Desviación observada durante los últimos siete días de operación.",
+        tone: "warning",
+      },
+      {
+        label: "Preparación del servicio",
+        value: "4 recursos listos",
+        detail: "Torquímetro, kit LOTO, filtro AF-20 y protocolo preventivo ligados.",
+        tone: "info",
+      },
     ],
     relationships: [
       { type: "Person", name: "Ana Torres", relation: "Técnico habilitado", status: "Asignada" },
@@ -138,10 +165,30 @@ export const assetProfiles: Record<string, AssetProfileDefinition> = {
     dataSources: ["Maintenance OS", "SAP EAM", "Historiador PI"],
     tags: ["Bomba de proceso", "Alta criticidad", "Vibración"],
     keyFacts: [
-      "Opera en régimen continuo y abastece el circuito primario de Línea 1.",
-      "Última vibración global: 2.8 mm/s, dentro del estándar configurado.",
-      "Sello mecánico sin fuga y acoplamiento validado en la última inspección.",
-      "El técnico principal y el analizador de vibración están disponibles.",
+      {
+        label: "Régimen operativo",
+        value: "Operación continua",
+        detail: "Abastece el circuito primario de proceso de Línea 1.",
+        tone: "info",
+      },
+      {
+        label: "Vibración global",
+        value: "2.8 mm/s",
+        detail: "Lectura dentro del estándar de condición configurado.",
+        tone: "success",
+      },
+      {
+        label: "Condición mecánica",
+        value: "Sin fugas",
+        detail: "Sello y acoplamiento validados en la inspección más reciente.",
+        tone: "success",
+      },
+      {
+        label: "Preparación del servicio",
+        value: "Equipo disponible",
+        detail: "Técnico principal y analizador de vibración listos para asignación.",
+        tone: "info",
+      },
     ],
     relationships: [
       { type: "Person", name: "Jorge Ruiz", relation: "Técnico principal", status: "Disponible" },
@@ -200,10 +247,30 @@ export const assetProfiles: Record<string, AssetProfileDefinition> = {
     dataSources: ["Maintenance OS", "SAP EAM", "Sensor IIoT", "SCADA"],
     tags: ["Crítico", "Alerta activa", "Predictivo", "IIoT"],
     keyFacts: [
-      "Vibración de 5.9 mm/s supera el límite configurado de 4.5 mm/s.",
-      "Existe una ejecución pendiente de validación y una incidencia escalada.",
-      "La cámara termográfica y el analizador de vibración están requeridos.",
-      "Un paro no planeado afecta directamente la capacidad de Empaque Línea 3.",
+      {
+        label: "Vibración global",
+        value: "5.9 mm/s",
+        detail: "Supera el límite de condición configurado en 4.5 mm/s.",
+        tone: "critical",
+      },
+      {
+        label: "Atención pendiente",
+        value: "1 validación",
+        detail: "La ejecución está ligada a una incidencia ya escalada.",
+        tone: "warning",
+      },
+      {
+        label: "Recursos requeridos",
+        value: "2 equipos",
+        detail: "Cámara termográfica y analizador de vibración necesarios.",
+        tone: "info",
+      },
+      {
+        label: "Impacto operativo",
+        value: "Riesgo alto",
+        detail: "Un paro no planeado reduce la capacidad de Empaque Línea 3.",
+        tone: "critical",
+      },
     ],
     relationships: [
       {
@@ -275,10 +342,30 @@ export const assetProfiles: Record<string, AssetProfileDefinition> = {
     dataSources: ["Maintenance OS", "SAP EAM", "PLC Ensamble"],
     tags: ["Transportador", "Lubricación", "Saltillo"],
     keyFacts: [
-      "Transportador de ensamble con condición general estable.",
-      "Última lubricación completada en 19 minutos y dentro del rango de consumo.",
-      "La pistola de engrase calibrada está disponible en el pañol MRO-02.",
-      "No presenta incidencias abiertas ni restricciones de operación.",
+      {
+        label: "Condición general",
+        value: "Estable",
+        detail: "El transportador mantiene sus parámetros normales de ensamble.",
+        tone: "success",
+      },
+      {
+        label: "Último servicio",
+        value: "19 minutos",
+        detail: "Lubricación completada dentro del rango de tiempo y consumo.",
+        tone: "success",
+      },
+      {
+        label: "Preparación del servicio",
+        value: "Kit disponible",
+        detail: "Pistola calibrada ubicada y disponible en el pañol MRO-02.",
+        tone: "info",
+      },
+      {
+        label: "Restricciones",
+        value: "0 abiertas",
+        detail: "No existen incidencias ni bloqueos activos para su operación.",
+        tone: "success",
+      },
     ],
     relationships: [
       { type: "Person", name: "Diego Luna", relation: "Técnico responsable", status: "Disponible" },

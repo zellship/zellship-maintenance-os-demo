@@ -3,7 +3,6 @@ import type { ReactNode } from "react";
 import {
   Alert,
   Avatar,
-  Badge,
   Button,
   Card,
   Col,
@@ -309,7 +308,7 @@ export function Assets() {
 
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
         <Col xs={24} xl={16}>
-          <Card title="Lista de activos">
+          <Card title="Lista de activos" className="asset-list-card">
             <Space wrap style={{ marginBottom: 12 }}>
               <Input.Search
                 value={query}
@@ -332,9 +331,12 @@ export function Assets() {
               />
             </Space>
             <Table
+              className="asset-list-table"
               rowKey="id"
               dataSource={filteredAssets}
               pagination={false}
+              tableLayout="fixed"
+              scroll={{ x: 950 }}
               onRow={(row) => ({
                 onClick: () => setSelectedId(row.id),
                 style: { cursor: "pointer" },
@@ -343,22 +345,25 @@ export function Assets() {
               columns={[
                 {
                   title: "Activo",
+                  width: 280,
                   render: (_, item) => (
-                    <Space>
+                    <div className="asset-table-identity">
                       <Avatar
                         shape="square"
+                        size={42}
                         style={{ background: item.status === "Risk" ? "#cf1322" : "#7B35C1" }}
                         icon={<SettingOutlined />}
                       />
-                      <span>
+                      <div>
                         <b>{item.id}</b>
-                        <br />
-                        <Typography.Text type="secondary">{item.name}</Typography.Text>
-                      </span>
-                    </Space>
+                        <Typography.Text type="secondary" title={item.name}>
+                          {item.name}
+                        </Typography.Text>
+                      </div>
+                    </div>
                   ),
                 },
-                { title: "Familia", dataIndex: "family", width: 130 },
+                { title: "Familia", dataIndex: "family", width: 150, ellipsis: true },
                 { title: "Criticidad", dataIndex: "criticality", width: 110, render: priorityTag },
                 {
                   title: "Salud",
@@ -375,7 +380,7 @@ export function Assets() {
                 {
                   title: "Estado",
                   dataIndex: "status",
-                  width: 120,
+                  width: 155,
                   render: assetStatusTag,
                 },
                 {
@@ -521,42 +526,47 @@ function AssetProfile({
       </div>
 
       <Card className="asset-profile-hero">
-        <Space
-          style={{ width: "100%", justifyContent: "space-between", alignItems: "flex-start" }}
-          wrap
-        >
-          <Space align="start" size={16}>
-            <Badge status={asset.status === "Risk" ? "error" : "success"} offset={[-2, 58]}>
-              <Avatar
-                shape="square"
-                size={72}
-                style={{
-                  background:
-                    asset.status === "Risk"
-                      ? "linear-gradient(135deg,#cf1322,#7a0c14)"
-                      : "linear-gradient(135deg,#7B35C1,#3f1767)",
-                }}
-                icon={<SettingOutlined />}
-              />
-            </Badge>
-            <div>
-              <Space wrap>
-                <Typography.Title level={2} style={{ margin: 0 }}>
-                  {asset.name}
-                </Typography.Title>
+        <div className="asset-hero-header">
+          <div className="asset-hero-identity">
+            <Avatar
+              shape="square"
+              size={68}
+              style={{
+                background:
+                  asset.status === "Risk"
+                    ? "linear-gradient(135deg,#cf1322,#7a0c14)"
+                    : "linear-gradient(135deg,#7B35C1,#3f1767)",
+              }}
+              icon={<SettingOutlined />}
+            />
+            <div className="asset-hero-copy">
+              <Space wrap size={[8, 6]}>
+                <Typography.Title level={2}>{asset.name}</Typography.Title>
                 {assetStatusTag(asset.status)}
                 {priorityTag(asset.criticality)}
               </Space>
-              <Typography.Text type="secondary">
+              <Typography.Text className="asset-hero-model" type="secondary">
                 {profile.manufacturer} · {profile.model} · Serie {profile.serial}
               </Typography.Text>
-              <Space wrap style={{ marginTop: 9 }}>
+              <Space wrap size={[6, 6]} className="asset-hero-tags">
                 {profile.tags.map((tag) => (
                   <Tag key={tag}>{tag}</Tag>
                 ))}
               </Space>
             </div>
-          </Space>
+          </div>
+          <div className="asset-hero-sync">
+            <Space>
+              <span className="live-dot" />
+              <Typography.Text strong>Perfil sincronizado</Typography.Text>
+            </Space>
+            <Typography.Text type="secondary">
+              {profile.dataSources.length} fuentes · confianza {profile.dataConfidence}%
+            </Typography.Text>
+          </div>
+        </div>
+
+        <div className="asset-hero-actions">
           <Space wrap>
             <Button icon={<PlusOutlined />} onClick={onCapture}>
               Capturar observación
@@ -568,20 +578,39 @@ function AssetProfile({
               Historial completo
             </Button>
           </Space>
-        </Space>
+        </div>
 
         <div className="asset-profile-stats">
           <ProfileStat
+            icon={<DashboardOutlined />}
             value={`${asset.health}%`}
             label="Salud del activo"
+            helper={asset.health >= 80 ? "Condición saludable" : "Requiere atención"}
             tone={asset.health < 70 ? "red" : "purple"}
           />
-          <ProfileStat value={`${asset.availability}%`} label="Disponibilidad" />
-          <ProfileStat value={asset.runtimeHours.toLocaleString()} label="Horas de operación" />
-          <ProfileStat value={String(relatedSchedules.length)} label="Órdenes conectadas" />
           <ProfileStat
+            icon={<SafetyCertificateOutlined />}
+            value={`${asset.availability}%`}
+            label="Disponibilidad"
+            helper="Últimos 30 días"
+          />
+          <ProfileStat
+            icon={<FieldTimeOutlined />}
+            value={asset.runtimeHours.toLocaleString()}
+            label="Horas de operación"
+            helper="Lectura acumulada"
+          />
+          <ProfileStat
+            icon={<ToolOutlined />}
+            value={String(relatedSchedules.length)}
+            label="Órdenes conectadas"
+            helper="Historial y pendientes"
+          />
+          <ProfileStat
+            icon={<BellOutlined />}
             value={String(relatedIncidents.filter((item) => item.status !== "Closed").length)}
             label="Incidencias activas"
+            helper="Requieren seguimiento"
             tone="red"
           />
         </div>
@@ -594,12 +623,18 @@ function AssetProfile({
               title={<SectionTitle icon={<ThunderboltOutlined />} text="Información clave" />}
               extra={<Typography.Text type="secondary">Actualizado en tiempo real</Typography.Text>}
             >
-              <Row gutter={[10, 10]}>
-                {profile.keyFacts.map((fact, index) => (
-                  <Col xs={24} md={12} key={fact}>
-                    <div className={`asset-key-fact ${index < 2 ? "hot" : ""}`}>
-                      <span>{index < 2 ? "!" : index + 1}</span>
-                      <Typography.Text>{fact}</Typography.Text>
+              <Row gutter={[12, 12]}>
+                {profile.keyFacts.map((fact) => (
+                  <Col xs={24} md={12} xxl={6} key={fact.label}>
+                    <div className="asset-key-fact" data-tone={fact.tone}>
+                      <div className="asset-key-fact-icon">{keyFactIcon(fact.tone)}</div>
+                      <div className="asset-key-fact-content">
+                        <Typography.Text className="asset-key-fact-label">
+                          {fact.label}
+                        </Typography.Text>
+                        <strong>{fact.value}</strong>
+                        <Typography.Text type="secondary">{fact.detail}</Typography.Text>
+                      </div>
                     </div>
                   </Col>
                 ))}
@@ -883,20 +918,35 @@ function ContextItem({
 }
 
 function ProfileStat({
+  icon,
   value,
   label,
+  helper,
   tone,
 }: {
+  icon: ReactNode;
   value: string;
   label: string;
+  helper: string;
   tone?: "purple" | "red";
 }) {
   return (
-    <div>
-      <b className={tone}>{value}</b>
-      <span>{label}</span>
+    <div className="asset-profile-stat">
+      <span className={`asset-profile-stat-icon ${tone ?? ""}`}>{icon}</span>
+      <div>
+        <span>{label}</span>
+        <b className={tone}>{value}</b>
+        <small>{helper}</small>
+      </div>
     </div>
   );
+}
+
+function keyFactIcon(tone: "success" | "warning" | "critical" | "info") {
+  if (tone === "success") return <SafetyCertificateOutlined />;
+  if (tone === "warning") return <ExclamationCircleOutlined />;
+  if (tone === "critical") return <BellOutlined />;
+  return <DeploymentUnitOutlined />;
 }
 
 function SectionTitle({ icon, text }: { icon: ReactNode; text: string }) {
