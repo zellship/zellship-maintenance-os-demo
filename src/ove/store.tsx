@@ -1,6 +1,27 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import type { Role, Protocol, Schedule, Execution, Incident, Notification, Person, MaintenanceTool, InventoryItem, ResourceReservation } from "./types";
-import { seedProtocols, seedSchedules, seedExecutions, seedIncidents, seedNotifications, seedPeople, seedTools, seedInventory, seedReservations } from "./seed";
+import type {
+  Role,
+  Protocol,
+  Schedule,
+  Execution,
+  Incident,
+  Notification,
+  Person,
+  MaintenanceTool,
+  InventoryItem,
+  ResourceReservation,
+} from "./types";
+import {
+  seedProtocols,
+  seedSchedules,
+  seedExecutions,
+  seedIncidents,
+  seedNotifications,
+  seedPeople,
+  seedTools,
+  seedInventory,
+  seedReservations,
+} from "./seed";
 
 interface State {
   role: Role;
@@ -30,7 +51,7 @@ interface Store extends State {
 }
 
 const StoreCtx = createContext<Store | null>(null);
-const KEY = "zellship-maintenance-os-v3";
+const KEY = "zellship-maintenance-os-v4";
 
 const initial: State = {
   role: "admin",
@@ -51,28 +72,37 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     try {
       const raw = localStorage.getItem(KEY);
       if (raw) return { ...initial, ...JSON.parse(raw) };
-    } catch {}
+    } catch {
+      // Ignore invalid or unavailable device-local demo state.
+    }
     return initial;
   });
 
   useEffect(() => {
-    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {}
+    try {
+      localStorage.setItem(KEY, JSON.stringify(state));
+    } catch {
+      // The simulator remains usable when browser storage is unavailable.
+    }
   }, [state]);
 
-  const store = useMemo<Store>(() => ({
-    ...state,
-    setRole: (role) => setState((s) => ({ ...s, role })),
-    setProtocols: (protocols) => setState((s) => ({ ...s, protocols })),
-    setSchedules: (schedules) => setState((s) => ({ ...s, schedules })),
-    setExecutions: (executions) => setState((s) => ({ ...s, executions })),
-    setIncidents: (incidents) => setState((s) => ({ ...s, incidents })),
-    setNotifications: (notifications) => setState((s) => ({ ...s, notifications })),
-    setPeople: (people) => setState((s) => ({ ...s, people })),
-    setTools: (tools) => setState((s) => ({ ...s, tools })),
-    setInventory: (inventory) => setState((s) => ({ ...s, inventory })),
-    setReservations: (reservations) => setState((s) => ({ ...s, reservations })),
-    reset: () => setState(initial),
-  }), [state]);
+  const store = useMemo<Store>(
+    () => ({
+      ...state,
+      setRole: (role) => setState((s) => ({ ...s, role })),
+      setProtocols: (protocols) => setState((s) => ({ ...s, protocols })),
+      setSchedules: (schedules) => setState((s) => ({ ...s, schedules })),
+      setExecutions: (executions) => setState((s) => ({ ...s, executions })),
+      setIncidents: (incidents) => setState((s) => ({ ...s, incidents })),
+      setNotifications: (notifications) => setState((s) => ({ ...s, notifications })),
+      setPeople: (people) => setState((s) => ({ ...s, people })),
+      setTools: (tools) => setState((s) => ({ ...s, tools })),
+      setInventory: (inventory) => setState((s) => ({ ...s, inventory })),
+      setReservations: (reservations) => setState((s) => ({ ...s, reservations })),
+      reset: () => setState(initial),
+    }),
+    [state],
+  );
 
   return <StoreCtx.Provider value={store}>{children}</StoreCtx.Provider>;
 }

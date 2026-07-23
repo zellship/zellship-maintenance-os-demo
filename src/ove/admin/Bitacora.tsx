@@ -11,15 +11,22 @@ export function Bitacora() {
       color: e.status === "Validated" ? "green" : e.status === "Rejected" ? "red" : "blue",
       children: (
         <div>
-          <b>{protocols.find(p => p.id === e.protocolId)?.name}</b> · {e.operator}<br />
-          <Typography.Text type="secondary">{dayjs(e.startAt).format("DD MMM HH:mm")} · {e.status}</Typography.Text>
+          <b>{protocols.find((p) => p.id === e.protocolId)?.name}</b> · {e.operator}
+          <br />
+          <Typography.Text type="secondary">
+            {dayjs(e.startAt).format("DD MMM HH:mm")} · {e.status}
+          </Typography.Text>
         </div>
       ),
     }));
   return (
     <div>
-      <Typography.Title level={3} style={{ marginTop: 0 }}>Bitácora</Typography.Title>
-      <Card><Timeline items={items} /></Card>
+      <Typography.Title level={3} style={{ marginTop: 0 }}>
+        Bitácora
+      </Typography.Title>
+      <Card>
+        <Timeline items={items} />
+      </Card>
     </div>
   );
 }

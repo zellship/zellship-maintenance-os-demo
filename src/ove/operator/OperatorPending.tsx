@@ -8,7 +8,9 @@ const OPERATOR = "Ana Torres";
 export function OperatorPending({ onStart }: { onStart: (id: string) => void }) {
   const { schedules, protocols } = useStore();
   const today = dayjs().format("YYYY-MM-DD");
-  const mine = schedules.filter(s => s.operator === OPERATOR && s.date === today && s.status !== "Completed");
+  const mine = schedules.filter(
+    (s) => s.operator === OPERATOR && s.date === today && s.status !== "Completed",
+  );
 
   const semaphore = (hour: string, tol: number) => {
     const target = dayjs(`${today} ${hour}`);
@@ -23,17 +25,23 @@ export function OperatorPending({ onStart }: { onStart: (id: string) => void }) 
       <Typography.Title level={4}>Mis pendientes</Typography.Title>
       {mine.length === 0 && <Empty description="Sin pendientes" />}
       {mine.map((s) => {
-        const p = protocols.find(x => x.id === s.protocolId);
+        const p = protocols.find((x) => x.id === s.protocolId);
         const sem = semaphore(s.hour, s.tolerance);
         return (
           <Card key={s.id} style={{ marginBottom: 10 }}>
             <Space style={{ justifyContent: "space-between", width: "100%" }}>
               <div>
                 <Tag color={sem.color}>● {sem.label}</Tag>
-                <Typography.Title level={5} style={{ margin: "8px 0 2px" }}>{p?.name}</Typography.Title>
-                <Typography.Text type="secondary">{seedAssets.find(a => a.id === s.assetId)?.name} · {s.hour}</Typography.Text>
+                <Typography.Title level={5} style={{ margin: "8px 0 2px" }}>
+                  {p?.name}
+                </Typography.Title>
+                <Typography.Text type="secondary">
+                  {seedAssets.find((a) => a.id === s.assetId)?.name} · {s.hour}
+                </Typography.Text>
               </div>
-              <Button type="primary" onClick={() => onStart(s.id)}>Iniciar</Button>
+              <Button type="primary" onClick={() => onStart(s.id)}>
+                Iniciar
+              </Button>
             </Space>
           </Card>
         );

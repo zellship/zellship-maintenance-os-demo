@@ -1,6 +1,20 @@
 import { useState } from "react";
 import { Layout, Menu } from "antd";
-import { DashboardOutlined, FileProtectOutlined, PlusCircleOutlined, AlertOutlined, HistoryOutlined, BarChartOutlined, CalendarOutlined, ToolOutlined, DeploymentUnitOutlined, TeamOutlined } from "@ant-design/icons";
+import {
+  DashboardOutlined,
+  FileProtectOutlined,
+  PlusCircleOutlined,
+  AlertOutlined,
+  HistoryOutlined,
+  BarChartOutlined,
+  CalendarOutlined,
+  ToolOutlined,
+  DeploymentUnitOutlined,
+  TeamOutlined,
+  BellOutlined,
+  BranchesOutlined,
+  SafetyCertificateOutlined,
+} from "@ant-design/icons";
 import { AdminDashboard } from "./AdminDashboard";
 import { ProtocolCatalog } from "./ProtocolCatalog";
 import { ProtocolWizard } from "./ProtocolWizard";
@@ -11,8 +25,24 @@ import { Planning } from "./Planning";
 import { WorkOrders } from "./WorkOrders";
 import { Assets } from "./Assets";
 import { Resources } from "./Resources";
+import { MaintenanceResults } from "./MaintenanceResults";
+import { NotificationCenter } from "../shared/NotificationCenter";
+import { OperationsLive } from "./OperationsLive";
 
-type Key = "dashboard" | "catalog" | "new" | "planning" | "orders" | "assets" | "resources" | "incidents" | "bitacora" | "reportes";
+type Key =
+  | "dashboard"
+  | "live"
+  | "catalog"
+  | "new"
+  | "planning"
+  | "orders"
+  | "results"
+  | "assets"
+  | "resources"
+  | "notifications"
+  | "incidents"
+  | "bitacora"
+  | "reportes";
 
 export function AdminApp() {
   const [key, setKey] = useState<Key>("dashboard");
@@ -32,26 +62,34 @@ export function AdminApp() {
           style={{ borderRight: 0, paddingTop: 12 }}
           items={[
             { key: "dashboard", icon: <DashboardOutlined />, label: "Dashboard" },
+            { key: "live", icon: <BranchesOutlined />, label: "Centro en vivo" },
             { key: "catalog", icon: <FileProtectOutlined />, label: "Protocolos" },
             { key: "new", icon: <PlusCircleOutlined />, label: "Nuevo Protocolo" },
             { key: "planning", icon: <CalendarOutlined />, label: "Programación" },
             { key: "orders", icon: <ToolOutlined />, label: "Órdenes de trabajo" },
+            { key: "results", icon: <SafetyCertificateOutlined />, label: "Resultados" },
             { key: "assets", icon: <DeploymentUnitOutlined />, label: "Activos" },
             { key: "resources", icon: <TeamOutlined />, label: "Recursos" },
+            { key: "notifications", icon: <BellOutlined />, label: "Notificaciones" },
             { key: "incidents", icon: <AlertOutlined />, label: "Incidencias" },
             { key: "bitacora", icon: <HistoryOutlined />, label: "Bitácora" },
             { key: "reportes", icon: <BarChartOutlined />, label: "Reportes" },
           ]}
         />
       </Layout.Sider>
-      <Layout.Content style={{ padding: 24, background: "#f5f6fa", minHeight: "calc(100vh - 64px)" }}>
+      <Layout.Content
+        style={{ padding: 24, background: "#f5f6fa", minHeight: "calc(100vh - 64px)" }}
+      >
         {key === "dashboard" && <AdminDashboard onNav={(k) => setKey(k as Key)} />}
+        {key === "live" && <OperationsLive />}
         {key === "catalog" && <ProtocolCatalog onNew={() => setKey("new")} />}
         {key === "new" && <ProtocolWizard onDone={() => setKey("catalog")} />}
         {key === "planning" && <Planning />}
         {key === "orders" && <WorkOrders />}
+        {key === "results" && <MaintenanceResults />}
         {key === "assets" && <Assets />}
         {key === "resources" && <Resources />}
+        {key === "notifications" && <NotificationCenter role="admin" showAll />}
         {key === "incidents" && <IncidentsList />}
         {key === "bitacora" && <Bitacora />}
         {key === "reportes" && <Reportes />}
