@@ -1,6 +1,8 @@
 import { useState } from "react";
+import type { ReactNode } from "react";
 import {
   Alert,
+  Avatar,
   Card,
   Steps,
   Form,
@@ -10,6 +12,7 @@ import {
   Button,
   Space,
   Radio,
+  Progress,
   InputNumber,
   Switch,
   Checkbox,
@@ -22,7 +25,18 @@ import {
   message,
   TimePicker,
 } from "antd";
-import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
+import {
+  BellOutlined,
+  CheckCircleOutlined,
+  ClockCircleOutlined,
+  DatabaseOutlined,
+  DeleteOutlined,
+  DeploymentUnitOutlined,
+  PlusOutlined,
+  SafetyCertificateOutlined,
+  TeamOutlined,
+  ToolOutlined,
+} from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useStore } from "../store";
 import { branches, categories, operators, supervisors, seedAssets, seedSkills } from "../seed";
@@ -143,12 +157,13 @@ export function ProtocolWizard({ onDone }: { onDone: () => void }) {
   };
 
   return (
-    <div>
+    <div className="protocol-wizard-page">
       <Typography.Title level={3} style={{ marginTop: 0 }}>
         Nuevo Protocolo
       </Typography.Title>
-      <Card>
+      <Card className="protocol-wizard-card">
         <Steps
+          className="protocol-wizard-steps"
           current={step}
           onChange={setStep}
           items={[
@@ -620,217 +635,459 @@ function Step5({ data, update }: StepProps) {
         m.inventoryItemId === id ? { ...m, ...patch } : m,
       ),
     });
+  const readinessChecks = [
+    Boolean(data.assetIds?.length),
+    Boolean(data.requiredSkillIds?.length),
+    Boolean(data.requiredToolIds?.length),
+    Boolean(data.operators?.length),
+    Boolean(data.supervisors?.length),
+    Boolean(data.channels?.length),
+  ];
+  const readiness = Math.round(
+    (readinessChecks.filter(Boolean).length / readinessChecks.length) * 100,
+  );
+
   return (
-    <Form layout="vertical">
-      <Row gutter={16}>
-        <Col xs={24} md={12}>
-          <Form.Item label="Activos aplicables">
-            <Select
-              mode="multiple"
-              value={data.assetIds}
-              onChange={(v) => update({ assetIds: v })}
-              options={seedAssets.map((a) => ({ label: `${a.id} · ${a.name}`, value: a.id }))}
-            />
-          </Form.Item>
-        </Col>
-        <Col xs={24} md={12}>
-          <Form.Item label="Duración estimada">
-            <InputNumber
-              min={5}
-              max={480}
-              addonAfter="min"
-              value={data.estimatedMinutes}
-              onChange={(v) => update({ estimatedMinutes: Number(v) || 45 })}
-              style={{ width: "100%" }}
-            />
-          </Form.Item>
-        </Col>
-        <Col xs={24} md={12}>
-          <Form.Item label="Skills y certificaciones requeridas">
-            <Select
-              mode="multiple"
-              value={data.requiredSkillIds}
-              onChange={(v) => update({ requiredSkillIds: v })}
-              options={seedSkills.map((s) => ({ label: s.name, value: s.id }))}
-            />
-          </Form.Item>
-        </Col>
-        <Col xs={24} md={12}>
-          <Form.Item label="Equipos y herramientas requeridas">
-            <Select
-              mode="multiple"
-              value={data.requiredToolIds}
-              onChange={(v) => update({ requiredToolIds: v })}
-              options={tools.map((t) => ({ label: `${t.name} · ${t.serial}`, value: t.id }))}
-            />
-          </Form.Item>
-        </Col>
-        <Col xs={24}>
-          <Form.Item label="Consumibles y materiales">
-            <Select
-              mode="multiple"
-              value={materialIds}
-              onChange={setMaterials}
-              options={inventory.map((i) => ({
-                label: `${i.sku} · ${i.name} · ${i.onHand - i.reserved - i.quarantine} ${i.unit} disponibles`,
-                value: i.id,
-              }))}
-            />
-          </Form.Item>
-        </Col>
-        <Col xs={24}>
-          {(data.materialRequirements || []).map((requirement: MaterialRequirement) => {
-            const item = inventory.find((i) => i.id === requirement.inventoryItemId);
-            return (
-              <Card size="small" key={requirement.inventoryItemId} style={{ marginBottom: 10 }}>
-                <Row gutter={12} align="middle">
-                  <Col xs={24} md={8}>
-                    <b>{item?.name}</b>
-                    <br />
-                    <Typography.Text type="secondary">
-                      {item?.sku} · {item?.unit}
-                    </Typography.Text>
-                  </Col>
-                  <Col xs={12} md={6}>
+    <Form layout="vertical" className="protocol-context-step">
+      <Row gutter={[20, 20]} align="top">
+        <Col xs={24} xl={17}>
+          <Space direction="vertical" size={16} style={{ width: "100%" }}>
+            <Card
+              className="protocol-config-section"
+              title={
+                <WizardSectionTitle
+                  icon={<DeploymentUnitOutlined />}
+                  title="Contexto operacional"
+                  description="Define sobre qué activos aplica y cuánto tiempo requiere."
+                />
+              }
+              extra={<Tag color="purple">Alcance</Tag>}
+            >
+              <Row gutter={[16, 4]}>
+                <Col xs={24} lg={16}>
+                  <Form.Item label="Activos aplicables">
                     <Select
-                      value={requirement.mode}
-                      style={{ width: "100%" }}
-                      onChange={(mode) => updateMaterial(requirement.inventoryItemId, { mode })}
-                      options={["Exact", "Range", "Variable"].map((value) => ({
-                        value,
-                        label:
-                          value === "Exact"
-                            ? "Consumo exacto"
-                            : value === "Range"
-                              ? "Rango permitido"
-                              : "Variable capturado",
+                      mode="multiple"
+                      value={data.assetIds}
+                      onChange={(value) => update({ assetIds: value })}
+                      placeholder="Seleccionar activos"
+                      options={seedAssets.map((asset) => ({
+                        label: `${asset.id} · ${asset.name}`,
+                        value: asset.id,
                       }))}
                     />
-                  </Col>
-                  <Col xs={12} md={10}>
-                    {requirement.mode === "Exact" ? (
-                      <InputNumber
-                        min={0}
-                        value={requirement.quantity}
-                        addonAfter={item?.unit}
-                        style={{ width: "100%" }}
-                        onChange={(quantity) =>
-                          updateMaterial(requirement.inventoryItemId, {
-                            quantity: Number(quantity) || 0,
-                          })
-                        }
-                      />
-                    ) : (
-                      <Space.Compact style={{ width: "100%" }}>
-                        <InputNumber
-                          min={0}
-                          placeholder="Mín."
-                          value={requirement.min}
-                          onChange={(min) =>
-                            updateMaterial(requirement.inventoryItemId, { min: Number(min) || 0 })
+                  </Form.Item>
+                </Col>
+                <Col xs={24} lg={8}>
+                  <Form.Item label="Duración estimada">
+                    <InputNumber
+                      min={5}
+                      max={480}
+                      addonAfter="min"
+                      value={data.estimatedMinutes}
+                      onChange={(value) => update({ estimatedMinutes: Number(value) || 45 })}
+                      style={{ width: "100%" }}
+                    />
+                  </Form.Item>
+                </Col>
+              </Row>
+            </Card>
+
+            <Card
+              className="protocol-config-section"
+              title={
+                <WizardSectionTitle
+                  icon={<SafetyCertificateOutlined />}
+                  title="Capacidades y equipos"
+                  description="Determina elegibilidad técnica y disponibilidad de herramientas."
+                />
+              }
+              extra={
+                <Tag color="green" icon={<CheckCircleOutlined />}>
+                  Validación automática
+                </Tag>
+              }
+            >
+              <Row gutter={[16, 4]}>
+                <Col xs={24} lg={12}>
+                  <Form.Item label="Skills y certificaciones requeridas">
+                    <Select
+                      mode="multiple"
+                      value={data.requiredSkillIds}
+                      onChange={(value) => update({ requiredSkillIds: value })}
+                      placeholder="Agregar skills habilitantes"
+                      options={seedSkills.map((skill) => ({
+                        label: skill.name,
+                        value: skill.id,
+                      }))}
+                    />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} lg={12}>
+                  <Form.Item label="Equipos y herramientas requeridas">
+                    <Select
+                      mode="multiple"
+                      value={data.requiredToolIds}
+                      onChange={(value) => update({ requiredToolIds: value })}
+                      placeholder="Agregar equipos requeridos"
+                      options={tools.map((tool) => ({
+                        label: `${tool.name} · ${tool.serial}`,
+                        value: tool.id,
+                      }))}
+                    />
+                  </Form.Item>
+                </Col>
+              </Row>
+              <Alert
+                type="info"
+                showIcon
+                message="El sistema bloqueará asignaciones cuando el técnico no tenga los skills o el equipo esté reservado."
+              />
+            </Card>
+
+            <Card
+              className="protocol-config-section"
+              title={
+                <WizardSectionTitle
+                  icon={<DatabaseOutlined />}
+                  title="Consumibles y materiales"
+                  description="Configura disponibilidad y política de consumo por material."
+                />
+              }
+              extra={<Tag>{materialIds.length} seleccionados</Tag>}
+            >
+              <Form.Item label="Materiales requeridos">
+                <Select
+                  mode="multiple"
+                  value={materialIds}
+                  onChange={setMaterials}
+                  placeholder="Buscar por nombre o SKU"
+                  options={inventory.map((item) => ({
+                    label: `${item.sku} · ${item.name} · ${item.onHand - item.reserved - item.quarantine} ${item.unit} disponibles`,
+                    value: item.id,
+                  }))}
+                />
+              </Form.Item>
+
+              {!!materialIds.length && (
+                <div className="material-requirements-table">
+                  <div className="material-requirements-head">
+                    <span>Material</span>
+                    <span>Política de consumo</span>
+                    <span>Cantidad</span>
+                    <span>Disponible</span>
+                    <span />
+                  </div>
+                  {(data.materialRequirements || []).map((requirement: MaterialRequirement) => {
+                    const item = inventory.find(
+                      (inventoryItem) => inventoryItem.id === requirement.inventoryItemId,
+                    );
+                    const available = item ? item.onHand - item.reserved - item.quarantine : 0;
+                    return (
+                      <div className="material-requirement-row" key={requirement.inventoryItemId}>
+                        <div className="material-cell-name">
+                          <Avatar size={34} icon={<DatabaseOutlined />} />
+                          <div>
+                            <b>{item?.name}</b>
+                            <Typography.Text type="secondary">
+                              {item?.sku} · {item?.unit}
+                            </Typography.Text>
+                          </div>
+                        </div>
+                        <Select
+                          value={requirement.mode}
+                          onChange={(mode) => updateMaterial(requirement.inventoryItemId, { mode })}
+                          options={["Exact", "Range", "Variable"].map((value) => ({
+                            value,
+                            label:
+                              value === "Exact"
+                                ? "Consumo exacto"
+                                : value === "Range"
+                                  ? "Rango permitido"
+                                  : "Captura variable",
+                          }))}
+                        />
+                        <div>
+                          {requirement.mode === "Exact" ? (
+                            <InputNumber
+                              min={0}
+                              value={requirement.quantity}
+                              addonAfter={item?.unit}
+                              style={{ width: "100%" }}
+                              onChange={(quantity) =>
+                                updateMaterial(requirement.inventoryItemId, {
+                                  quantity: Number(quantity) || 0,
+                                })
+                              }
+                            />
+                          ) : (
+                            <Space.Compact style={{ width: "100%" }}>
+                              <InputNumber
+                                min={0}
+                                placeholder="Mín."
+                                value={requirement.min}
+                                onChange={(min) =>
+                                  updateMaterial(requirement.inventoryItemId, {
+                                    min: Number(min) || 0,
+                                  })
+                                }
+                              />
+                              <InputNumber
+                                min={0}
+                                placeholder="Máx."
+                                value={requirement.max}
+                                onChange={(max) =>
+                                  updateMaterial(requirement.inventoryItemId, {
+                                    max: Number(max) || 0,
+                                  })
+                                }
+                              />
+                            </Space.Compact>
+                          )}
+                        </div>
+                        <Tag color={available > (item?.reorderPoint ?? 0) ? "green" : "orange"}>
+                          {available} {item?.unit}
+                        </Tag>
+                        <Button
+                          type="text"
+                          danger
+                          aria-label={`Retirar ${item?.name}`}
+                          icon={<DeleteOutlined />}
+                          onClick={() =>
+                            setMaterials(
+                              materialIds.filter(
+                                (materialId) => materialId !== requirement.inventoryItemId,
+                              ),
+                            )
                           }
                         />
-                        <InputNumber
-                          min={0}
-                          placeholder="Máx."
-                          value={requirement.max}
-                          onChange={(max) =>
-                            updateMaterial(requirement.inventoryItemId, { max: Number(max) || 0 })
-                          }
-                          addonAfter={item?.unit}
-                        />
-                      </Space.Compact>
-                    )}
-                  </Col>
-                </Row>
-              </Card>
-            );
-          })}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </Card>
+
+            <Card
+              className="protocol-config-section"
+              title={
+                <WizardSectionTitle
+                  icon={<TeamOutlined />}
+                  title="Responsables, seguridad y alertas"
+                  description="Define quién ejecuta, quién valida y cómo se notifican excepciones."
+                />
+              }
+            >
+              <Row gutter={[16, 4]}>
+                <Col xs={24} lg={12}>
+                  <Form.Item label="Responsables (operadores)">
+                    <Select
+                      mode="multiple"
+                      value={data.operators}
+                      onChange={(value) => update({ operators: value })}
+                      options={operators.map((operator) => ({
+                        label: operator,
+                        value: operator,
+                      }))}
+                    />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} lg={12}>
+                  <Form.Item label="Supervisores">
+                    <Select
+                      mode="multiple"
+                      value={data.supervisors}
+                      onChange={(value) => update({ supervisors: value })}
+                      options={supervisors.map((supervisor) => ({
+                        label: supervisor,
+                        value: supervisor,
+                      }))}
+                    />
+                  </Form.Item>
+                </Col>
+                <Col xs={24}>
+                  <Form.Item label="Condiciones de seguridad">
+                    <Select
+                      mode="tags"
+                      value={data.safetyInstructions}
+                      onChange={(value) => update({ safetyInstructions: value })}
+                      placeholder="Ej. Aplicar bloqueo LOTO"
+                    />
+                  </Form.Item>
+                </Col>
+              </Row>
+
+              <div className="protocol-alert-policy">
+                <div>
+                  <Typography.Text strong>Canales transaccionales</Typography.Text>
+                  <Typography.Text type="secondary">
+                    Se usarán para asignaciones, recordatorios y escalaciones.
+                  </Typography.Text>
+                  <Checkbox.Group
+                    className="protocol-channel-grid"
+                    value={data.channels}
+                    onChange={(value) => update({ channels: value })}
+                  >
+                    {["System", "Push", "WhatsApp", "SMS"].map((channel) => (
+                      <Checkbox value={channel} key={channel}>
+                        <BellOutlined /> {channel}
+                      </Checkbox>
+                    ))}
+                  </Checkbox.Group>
+                </div>
+                <div className="protocol-policy-controls">
+                  <div>
+                    <Typography.Text strong>Alerta previa</Typography.Text>
+                    <InputNumber
+                      min={0}
+                      max={120}
+                      addonAfter="min"
+                      value={data.preAlertMinutes}
+                      onChange={(value) => update({ preAlertMinutes: Number(value) || 0 })}
+                    />
+                  </div>
+                  <div className="protocol-validation-switch">
+                    <Switch
+                      checked={data.requiresValidation}
+                      onChange={(value) => update({ requiresValidation: value })}
+                    />
+                    <div>
+                      <Typography.Text strong>Validación de supervisor</Typography.Text>
+                      <Typography.Text type="secondary">
+                        Requerida antes de liberar el resultado.
+                      </Typography.Text>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </Space>
         </Col>
-        <Col xs={24} md={12}>
-          <Form.Item label="Condiciones de seguridad">
-            <Select
-              mode="tags"
-              value={data.safetyInstructions}
-              onChange={(v) => update({ safetyInstructions: v })}
-              placeholder="Ej. Aplicar bloqueo LOTO"
-            />
-          </Form.Item>
-        </Col>
-        <Col xs={24} md={12}>
-          <Form.Item label="Responsables (operadores)">
-            <Select
-              mode="multiple"
-              value={data.operators}
-              onChange={(v) => update({ operators: v })}
-              options={operators.map((c) => ({ label: c, value: c }))}
-            />
-          </Form.Item>
-        </Col>
-        <Col xs={24} md={12}>
-          <Form.Item label="Supervisores">
-            <Select
-              mode="multiple"
-              value={data.supervisors}
-              onChange={(v) => update({ supervisors: v })}
-              options={supervisors.map((c) => ({ label: c, value: c }))}
-            />
-          </Form.Item>
-        </Col>
-        <Col xs={24} md={12}>
-          <Form.Item label="Canales de alerta">
-            <Checkbox.Group
-              value={data.channels}
-              onChange={(v) => update({ channels: v })}
-              options={["System", "Push", "WhatsApp", "SMS"]}
-            />
-          </Form.Item>
-        </Col>
-        <Col xs={24} md={12}>
-          <Form.Item label="Alerta previa (minutos)">
-            <InputNumber
-              min={0}
-              max={120}
-              value={data.preAlertMinutes}
-              onChange={(v) => update({ preAlertMinutes: Number(v) || 0 })}
-            />
-          </Form.Item>
-        </Col>
-        <Col xs={24}>
-          <Form.Item>
-            <Space>
-              <Switch
-                checked={data.requiresValidation}
-                onChange={(v) => update({ requiresValidation: v })}
-              />{" "}
-              Requiere validación de supervisor
-            </Space>
-          </Form.Item>
+
+        <Col xs={24} xl={7}>
+          <div className="protocol-summary-sticky">
+            <Card className="protocol-summary-card">
+              <Space style={{ width: "100%", justifyContent: "space-between" }}>
+                <div>
+                  <Typography.Text type="secondary">PREPARACIÓN</Typography.Text>
+                  <Typography.Title level={4} style={{ margin: "2px 0 0" }}>
+                    Listo para publicar
+                  </Typography.Title>
+                </div>
+                <Progress type="circle" size={58} percent={readiness} strokeColor="#7B35C1" />
+              </Space>
+
+              <Typography.Paragraph type="secondary" style={{ marginTop: 12 }}>
+                Revisa el alcance, recursos y política de ejecución antes de publicar.
+              </Typography.Paragraph>
+
+              <div className="protocol-summary-metrics">
+                <SummaryMetric
+                  icon={<DeploymentUnitOutlined />}
+                  value={String(data.assetIds?.length ?? 0)}
+                  label="Activos"
+                />
+                <SummaryMetric
+                  icon={<ClockCircleOutlined />}
+                  value={`${data.estimatedMinutes ?? 45}m`}
+                  label="Duración"
+                />
+                <SummaryMetric
+                  icon={<ToolOutlined />}
+                  value={String(
+                    (data.requiredSkillIds?.length ?? 0) + (data.requiredToolIds?.length ?? 0),
+                  )}
+                  label="Recursos"
+                />
+              </div>
+
+              <Divider />
+              <SummaryRow label="Protocolo" value={data.name || "Sin nombre"} />
+              <SummaryRow
+                label="Activación"
+                value={`${data.activationMode ?? "Recurring"} · ${data.recurrence ?? "Monthly"}`}
+              />
+              <SummaryRow label="Trigger" value={data.triggerEvent || "Asignación desde módulo"} />
+              <SummaryRow
+                label="Evidencias"
+                value={
+                  (data.evidenceConfig || [])
+                    .map((evidence: EvidenceConfig) => evidence.type)
+                    .join(", ") || "Sin configurar"
+                }
+              />
+              <SummaryRow
+                label="Formulario"
+                value={`${data.formConfig?.length ?? 0} campos dinámicos`}
+              />
+              <SummaryRow
+                label="Materiales"
+                value={`${data.materialRequirements?.length ?? 0} configurados`}
+              />
+              <SummaryRow
+                label="Responsables"
+                value={data.operators?.join(", ") || "Sin asignar"}
+              />
+              <SummaryRow
+                label="Supervisión"
+                value={data.supervisors?.join(", ") || "Sin asignar"}
+              />
+
+              <Alert
+                type={readiness === 100 ? "success" : "warning"}
+                showIcon
+                style={{ marginTop: 14 }}
+                message={
+                  readiness === 100
+                    ? "Configuración operativamente completa"
+                    : "Hay campos recomendados pendientes"
+                }
+              />
+            </Card>
+          </div>
         </Col>
       </Row>
-      <Divider>Resumen</Divider>
-      <Typography.Paragraph>
-        <b>{data.name || "—"}</b> · {data.category} · {data.activationMode} · {data.recurrence}
-        <br />
-        Trigger: {data.triggerEvent || "Asignación desde módulo"}
-        <br />
-        Horarios: {(data.schedule || []).map((s: ProtocolSchedule) => s.hour).join(", ") || "—"}
-        <br />
-        Evidencias:{" "}
-        {(data.evidenceConfig || []).map((e: EvidenceConfig) => e.type).join(", ") || "—"}
-        <br />
-        Campos formulario: {(data.formConfig || []).length}
-        <br />
-        Activos: {(data.assetIds || []).join(", ") || "—"} · Duración estimada:{" "}
-        {data.estimatedMinutes || 45} min
-        <br />
-        Recursos: {(data.requiredSkillIds || []).length} skills ·{" "}
-        {(data.requiredToolIds || []).length} herramientas ·{" "}
-        {(data.materialRequirements || []).length} materiales
-        <br />
-        Operadores: {(data.operators || []).join(", ") || "—"} · Supervisores:{" "}
-        {(data.supervisors || []).join(", ") || "—"}
-      </Typography.Paragraph>
     </Form>
+  );
+}
+
+function WizardSectionTitle({
+  icon,
+  title,
+  description,
+}: {
+  icon: ReactNode;
+  title: string;
+  description: string;
+}) {
+  return (
+    <Space align="start">
+      <span className="protocol-section-icon">{icon}</span>
+      <div>
+        <Typography.Text strong>{title}</Typography.Text>
+        <Typography.Text type="secondary" className="protocol-section-description">
+          {description}
+        </Typography.Text>
+      </div>
+    </Space>
+  );
+}
+
+function SummaryMetric({ icon, value, label }: { icon: ReactNode; value: string; label: string }) {
+  return (
+    <div>
+      <span>{icon}</span>
+      <b>{value}</b>
+      <small>{label}</small>
+    </div>
+  );
+}
+
+function SummaryRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="protocol-summary-row">
+      <span>{label}</span>
+      <b>{value}</b>
+    </div>
   );
 }
