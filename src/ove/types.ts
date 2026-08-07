@@ -12,7 +12,7 @@ export type IncidentStatus = "Open" | "Review" | "Resolved" | "Closed";
 export type ResourceStatus = "Available" | "Reserved" | "InUse" | "Calibration" | "Unavailable";
 export type ConsumptionMode = "Exact" | "Range" | "Variable";
 export type ProtocolActivation = "Recurring" | "Triggered" | "OnDemand";
-export type NotificationChannel = "System" | "Push" | "WhatsApp" | "SMS";
+export type NotificationChannel = "System" | "Push" | "WhatsApp" | "Email" | "SMS";
 
 export interface FormField {
   id: string;
@@ -151,6 +151,7 @@ export interface Schedule {
   toolIds?: string[];
   materialAllocations?: MaterialAllocation[];
   eligibilityValidated?: boolean;
+  notes?: string;
 }
 
 export interface EvidenceRecord {

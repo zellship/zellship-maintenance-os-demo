@@ -13,7 +13,7 @@ import {
   Row,
   Select,
   Space,
-  Statistic,
+  Tabs,
   Tag,
   Typography,
   message,
@@ -47,12 +47,35 @@ type CreateFlowValues = {
   executionMode: "Linear" | "Parallel";
 };
 
+type FlowFilter = "All" | OperationalFlow["status"];
+
+const flowStatusLabel: Record<OperationalFlow["status"], string> = {
+  Ready: "Plantilla",
+  Running: "En ejecución",
+  Completed: "Completado",
+};
+
+const stepStatusLabel: Record<OperationalFlowStep["status"], string> = {
+  Waiting: "En espera",
+  Ready: "Lista para iniciar",
+  Running: "En curso",
+  Completed: "Completada",
+};
+
+const flowRules = [
+  "Validar skills y disponibilidad antes de asignar.",
+  "Reservar herramientas y materiales por protocolo.",
+  "Esperar todas las ramas paralelas antes de liberar.",
+  "Actualizar OEE y Asset Profile al completar.",
+];
+
 export function OperationalFlows() {
   const { protocols, notifications, setNotifications } = useStore();
   const [flows, setFlows] = useState<OperationalFlow[]>(seedOperationalFlows);
   const [selectedId, setSelectedId] = useState(seedOperationalFlows[0].id);
   const [createOpen, setCreateOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [flowFilter, setFlowFilter] = useState<FlowFilter>("All");
   const [protocolToAdd, setProtocolToAdd] = useState<string>();
   const [form] = Form.useForm<CreateFlowValues>();
 
@@ -60,16 +83,25 @@ export function OperationalFlows() {
     () =>
       flows.filter(
         (flow) =>
-          !query ||
-          flow.name.toLowerCase().includes(query.toLowerCase()) ||
-          flow.assetId.toLowerCase().includes(query.toLowerCase()),
+          (flowFilter === "All" || flow.status === flowFilter) &&
+          (!query ||
+            flow.name.toLowerCase().includes(query.toLowerCase()) ||
+            flow.assetId.toLowerCase().includes(query.toLowerCase())),
       ),
-    [flows, query],
+    [flowFilter, flows, query],
   );
   const selected = flows.find((flow) => flow.id === selectedId) ?? flows[0];
   const protocolSteps = selected.steps.filter((step) => step.protocolId);
   const completedSteps = selected.steps.filter((step) => step.status === "Completed").length;
   const progress = Math.round((completedSteps / selected.steps.length) * 100);
+  const currentStepIndex = selected.steps.findIndex((step) => step.status !== "Completed");
+  const currentStep = currentStepIndex >= 0 ? selected.steps[currentStepIndex] : undefined;
+  const selectedAsset = seedAssets.find((asset) => asset.id === selected.assetId);
+  const uniqueProtocolCount = new Set(
+    flows
+      .flatMap((flow) => flow.steps.map((step) => step.protocolId))
+      .filter((protocolId): protocolId is string => Boolean(protocolId)),
+  ).size;
 
   const updateSelectedSteps = (
     updater: (steps: OperationalFlowStep[]) => OperationalFlowStep[],
@@ -236,7 +268,7 @@ export function OperationalFlows() {
         <div>
           <Space>
             <Avatar icon={<BranchesOutlined />} style={{ background: "#7B35C1" }} />
-            <Typography.Text strong>DISEÑO Y ORQUESTACIÓN</Typography.Text>
+            <Typography.Text strong>CONFIGURACIÓN Y ORQUESTACIÓN</Typography.Text>
           </Space>
           <Typography.Title level={2} style={{ margin: "4px 0 0" }}>
             Flujos operativos
@@ -250,124 +282,205 @@ export function OperationalFlows() {
         </Button>
       </Space>
 
-      <Row gutter={[12, 12]} style={{ marginTop: 16 }}>
-        <Col xs={12} md={6}>
-          <Card size="small">
-            <Statistic
-              title="Flujos configurados"
-              value={flows.length}
-              prefix={<BranchesOutlined />}
-            />
-          </Card>
-        </Col>
-        <Col xs={12} md={6}>
-          <Card size="small">
-            <Statistic
-              title="En ejecución"
-              value={flows.filter((flow) => flow.status === "Running").length}
-              prefix={<PlayCircleOutlined />}
-              valueStyle={{ color: "#7B35C1" }}
-            />
-          </Card>
-        </Col>
-        <Col xs={12} md={6}>
-          <Card size="small">
-            <Statistic
-              title="Protocolos agrupados"
-              value={
-                new Set(flows.flatMap((flow) => flow.steps.map((step) => step.protocolId))).size - 1
-              }
-              prefix={<ToolOutlined />}
-            />
-          </Card>
-        </Col>
-        <Col xs={12} md={6}>
-          <Card size="small">
-            <Statistic
-              title="Activos en contexto"
-              value={new Set(flows.map((flow) => flow.assetId)).size}
-              prefix={<DeploymentUnitOutlined />}
-            />
-          </Card>
-        </Col>
-      </Row>
+      <div className="flow-summary-strip" aria-label="Resumen de flujos">
+        <div className="flow-summary-item primary">
+          <span className="flow-summary-icon">
+            <PlayCircleOutlined />
+          </span>
+          <div>
+            <Typography.Text type="secondary">En ejecución</Typography.Text>
+            <strong>{flows.filter((flow) => flow.status === "Running").length}</strong>
+          </div>
+        </div>
+        <div className="flow-summary-item">
+          <span className="flow-summary-icon">
+            <BranchesOutlined />
+          </span>
+          <div>
+            <Typography.Text type="secondary">Flujos configurados</Typography.Text>
+            <strong>{flows.length}</strong>
+          </div>
+        </div>
+        <div className="flow-summary-item">
+          <span className="flow-summary-icon">
+            <ToolOutlined />
+          </span>
+          <div>
+            <Typography.Text type="secondary">Protocolos vinculados</Typography.Text>
+            <strong>{uniqueProtocolCount}</strong>
+          </div>
+        </div>
+        <div className="flow-summary-item">
+          <span className="flow-summary-icon">
+            <DeploymentUnitOutlined />
+          </span>
+          <div>
+            <Typography.Text type="secondary">Activos relacionados</Typography.Text>
+            <strong>{new Set(flows.map((flow) => flow.assetId)).size}</strong>
+          </div>
+        </div>
+      </div>
 
-      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+      <Row gutter={[16, 16]} className="flow-workspace-row">
         <Col xs={24} xl={7}>
-          <Card title="Biblioteca de flujos">
+          <Card
+            className="flow-library-card"
+            title={
+              <div className="flow-library-title">
+                <span>Biblioteca</span>
+                <Tag>{filteredFlows.length}</Tag>
+              </div>
+            }
+          >
             <Input.Search
               placeholder="Buscar flujo o activo"
               allowClear
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              style={{ marginBottom: 12 }}
+            />
+            <Select
+              className="flow-library-filter"
+              value={flowFilter}
+              onChange={(value) => setFlowFilter(value as FlowFilter)}
+              aria-label="Filtrar biblioteca por estado"
+              options={[
+                { label: "Todos los estados", value: "All" },
+                { label: "En ejecución", value: "Running" },
+                { label: "Plantillas", value: "Ready" },
+              ]}
             />
             <List
               className="flow-library"
               dataSource={filteredFlows}
-              renderItem={(flow) => (
-                <List.Item
-                  className={flow.id === selected.id ? "selected" : ""}
-                  onClick={() => setSelectedId(flow.id)}
-                >
-                  <List.Item.Meta
-                    avatar={
-                      <Avatar
-                        icon={
-                          flow.status === "Running" ? <PlayCircleOutlined /> : <BranchesOutlined />
-                        }
-                        style={{ background: flow.status === "Running" ? "#7B35C1" : "#8c8c8c" }}
-                      />
-                    }
-                    title={flow.name}
-                    description={
-                      <Space wrap>
-                        <Tag>{flow.assetId}</Tag>
-                        <span>
-                          {flow.steps.filter((step) => step.protocolId).length} protocolos
-                        </span>
+              locale={{ emptyText: "No hay flujos con estos criterios" }}
+              renderItem={(flow) => {
+                const itemCompleted = flow.steps.filter(
+                  (step) => step.status === "Completed",
+                ).length;
+                const itemProgress = Math.round((itemCompleted / flow.steps.length) * 100);
+                return (
+                  <List.Item
+                    className={flow.id === selected.id ? "selected" : ""}
+                    onClick={() => setSelectedId(flow.id)}
+                    aria-current={flow.id === selected.id ? "true" : undefined}
+                  >
+                    <div className="flow-library-item-content">
+                      <div className="flow-library-item-heading">
+                        <Avatar
+                          size={34}
+                          icon={
+                            flow.status === "Running" ? (
+                              <PlayCircleOutlined />
+                            ) : (
+                              <BranchesOutlined />
+                            )
+                          }
+                          style={{
+                            background: flow.status === "Running" ? "#7B35C1" : "#8c8c8c",
+                          }}
+                        />
+                        <div>
+                          <Typography.Text strong>{flow.name}</Typography.Text>
+                          <Typography.Text type="secondary">
+                            {flow.assetId} · {flow.steps.filter((step) => step.protocolId).length}{" "}
+                            {flow.steps.filter((step) => step.protocolId).length === 1
+                              ? "protocolo"
+                              : "protocolos"}
+                          </Typography.Text>
+                        </div>
+                      </div>
+                      <div className="flow-library-item-progress">
+                        <Progress
+                          percent={itemProgress}
+                          size="small"
+                          showInfo={false}
+                          strokeColor={flow.status === "Completed" ? "#52c41a" : "#7B35C1"}
+                        />
                         <Tag color={flow.status === "Running" ? "purple" : "default"}>
-                          {flow.status === "Running" ? "En ejecución" : "Plantilla"}
+                          {flowStatusLabel[flow.status]}
                         </Tag>
-                      </Space>
-                    }
-                  />
-                </List.Item>
-              )}
+                      </div>
+                    </div>
+                  </List.Item>
+                );
+              }}
             />
           </Card>
         </Col>
 
         <Col xs={24} xl={17}>
-          <Card
-            className="flow-studio-card"
-            title={
+          <Card className="flow-studio-card">
+            <div className="flow-detail-header">
               <div>
-                <Typography.Title level={4} style={{ margin: 0 }}>
-                  {selected.name}
-                </Typography.Title>
+                <Space wrap size={6}>
+                  <Tag color="purple">{selected.assetId}</Tag>
+                  <Tag color={selected.status === "Completed" ? "green" : "default"}>
+                    {flowStatusLabel[selected.status]}
+                  </Tag>
+                  <Tag icon={<ThunderboltOutlined />}>
+                    Inicio: {selected.steps[0]?.trigger ?? "manual"}
+                  </Tag>
+                </Space>
+                <Typography.Title level={3}>{selected.name}</Typography.Title>
                 <Typography.Text type="secondary">{selected.description}</Typography.Text>
               </div>
-            }
-            extra={
-              <Space>
-                <Button icon={<CopyOutlined />} onClick={duplicateFlow}>
-                  Duplicar
-                </Button>
-                <Button type="primary" icon={<PlayCircleOutlined />} onClick={simulateNext}>
-                  Emular siguiente etapa
-                </Button>
-              </Space>
-            }
-          >
-            <Space wrap>
-              <Tag color="purple">{selected.assetId}</Tag>
-              <Tag>{selected.status}</Tag>
-              <Tag icon={<ThunderboltOutlined />}>
-                {selected.steps[0]?.trigger ?? "Inicio manual"}
-              </Tag>
-            </Space>
-            <Progress percent={progress} strokeColor="#7B35C1" style={{ marginTop: 12 }} />
+              <Button icon={<CopyOutlined />} onClick={duplicateFlow}>
+                Duplicar
+              </Button>
+            </div>
+
+            <div className="flow-progress-block">
+              <div className="flow-progress-label">
+                <Typography.Text strong>Avance general</Typography.Text>
+                <Typography.Text type="secondary">
+                  {completedSteps} de {selected.steps.length} etapas completadas
+                </Typography.Text>
+              </div>
+              <Progress percent={progress} strokeColor="#7B35C1" />
+            </div>
+
+            <div className={`flow-current-step ${currentStep ? "" : "completed"}`}>
+              <div className="flow-current-step-main">
+                <Avatar
+                  size={42}
+                  icon={currentStep ? <PlayCircleOutlined /> : <CheckCircleOutlined />}
+                  style={{ background: currentStep ? "#7B35C1" : "#52c41a" }}
+                />
+                <div>
+                  <Typography.Text type="secondary">
+                    {currentStep ? `ETAPA ACTUAL · ${currentStepIndex + 1}` : "FLUJO COMPLETADO"}
+                  </Typography.Text>
+                  <Typography.Title level={4}>
+                    {currentStep?.name ?? "Activo liberado y OEE actualizado"}
+                  </Typography.Title>
+                  <Typography.Text type="secondary">
+                    {currentStep
+                      ? `${stepStatusLabel[currentStep.status]} · Se activa con: ${currentStep.trigger ?? "etapa anterior completada"}`
+                      : "Todas las dependencias fueron satisfechas."}
+                  </Typography.Text>
+                </div>
+              </div>
+              <Button
+                type="primary"
+                size="large"
+                icon={currentStep ? <CheckCircleOutlined /> : undefined}
+                disabled={!currentStep}
+                onClick={simulateNext}
+              >
+                {currentStep ? "Completar etapa actual" : "Flujo completado"}
+              </Button>
+            </div>
+
+            <div className="flow-section-heading">
+              <div>
+                <Typography.Title level={5}>Secuencia operacional</Typography.Title>
+                <Typography.Text type="secondary">
+                  Las etapas paralelas pueden avanzar al mismo tiempo.
+                </Typography.Text>
+              </div>
+              <Tag>{selected.steps.length} etapas</Tag>
+            </div>
+
             <div className="flow-board flow-builder-board">
               {selected.steps.map((step, index) => {
                 const protocol = protocols.find((item) => item.id === step.protocolId);
@@ -375,13 +488,14 @@ export function OperationalFlows() {
                   <div
                     className={`flow-node ${step.mode === "Parallel" ? "parallel" : ""} ${step.status === "Completed" ? "complete" : step.status === "Running" || step.status === "Ready" ? "active" : ""}`}
                     key={step.id}
+                    aria-current={index === currentStepIndex ? "step" : undefined}
                   >
                     <div className="flow-index">
                       {step.status === "Completed" ? <CheckCircleOutlined /> : index + 1}
                     </div>
-                    <div>
-                      <b>{step.name}</b>
-                      <div>
+                    <div className="flow-node-content">
+                      <Typography.Text strong>{step.name}</Typography.Text>
+                      <div className="flow-node-tags">
                         <Tag color={step.protocolId ? "purple" : "default"}>
                           {step.protocolId ? "Protocolo" : "Control"}
                         </Tag>
@@ -389,122 +503,185 @@ export function OperationalFlows() {
                           {step.mode === "Parallel" ? "Paralelo" : "Lineal"}
                         </Tag>
                       </div>
-                      <Typography.Text type="secondary" style={{ fontSize: 11 }}>
+                      <Typography.Text type="secondary" className="flow-node-trigger">
                         {protocol?.category ?? step.trigger}
                       </Typography.Text>
+                      <span className="flow-node-status">{stepStatusLabel[step.status]}</span>
                     </div>
                   </div>
                 );
               })}
             </div>
 
-            <Row gutter={[16, 16]} style={{ marginTop: 12 }}>
-              <Col xs={24} lg={15}>
-                <Card
-                  size="small"
-                  title="Protocolos y dependencias"
-                  extra={<Tag>{protocolSteps.length} vinculados</Tag>}
-                >
-                  <List
-                    dataSource={protocolSteps}
-                    locale={{ emptyText: "Agrega al menos un protocolo" }}
-                    renderItem={(step) => (
-                      <List.Item
-                        actions={[
-                          <Button
-                            key="up"
-                            type="text"
-                            aria-label="Subir protocolo"
-                            icon={<ArrowUpOutlined />}
-                            onClick={() => moveProtocol(step.id, -1)}
-                          />,
-                          <Button
-                            key="down"
-                            type="text"
-                            aria-label="Bajar protocolo"
-                            icon={<ArrowDownOutlined />}
-                            onClick={() => moveProtocol(step.id, 1)}
-                          />,
-                          <Button
-                            key="mode"
+            <Tabs
+              className="flow-detail-tabs"
+              items={[
+                {
+                  key: "overview",
+                  label: "Resumen operativo",
+                  children: (
+                    <Row gutter={[16, 16]}>
+                      <Col xs={24} lg={14}>
+                        <Card
+                          size="small"
+                          title="Protocolos vinculados"
+                          extra={<Tag>{protocolSteps.length}</Tag>}
+                        >
+                          <List
                             size="small"
-                            icon={
-                              step.mode === "Parallel" ? (
-                                <BranchesOutlined />
-                              ) : (
-                                <PauseCircleOutlined />
-                              )
-                            }
-                            onClick={() => toggleMode(step.id)}
-                          >
-                            {step.mode === "Parallel" ? "Paralelo" : "Lineal"}
-                          </Button>,
+                            dataSource={protocolSteps}
+                            locale={{ emptyText: "Sin protocolos vinculados" }}
+                            renderItem={(step) => (
+                              <List.Item
+                                extra={
+                                  <Tag color={step.status === "Completed" ? "green" : "purple"}>
+                                    {stepStatusLabel[step.status]}
+                                  </Tag>
+                                }
+                              >
+                                <List.Item.Meta
+                                  avatar={<Avatar icon={<ToolOutlined />} />}
+                                  title={step.name}
+                                  description={`Se activa con: ${step.trigger}`}
+                                />
+                              </List.Item>
+                            )}
+                          />
+                        </Card>
+                      </Col>
+                      <Col xs={24} lg={10}>
+                        <Card size="small" title="Contexto del flujo">
+                          <div className="flow-context-grid">
+                            <span>Activo</span>
+                            <strong>{selectedAsset?.name ?? selected.assetId}</strong>
+                            <span>Modo</span>
+                            <strong>
+                              {selected.steps.some((step) => step.mode === "Parallel")
+                                ? "Mixto · lineal y paralelo"
+                                : "Lineal"}
+                            </strong>
+                            <span>Reglas activas</span>
+                            <strong>{flowRules.length}</strong>
+                          </div>
+                        </Card>
+                      </Col>
+                    </Row>
+                  ),
+                },
+                {
+                  key: "configuration",
+                  label: "Configurar flujo",
+                  children: (
+                    <Row gutter={[16, 16]}>
+                      <Col xs={24} lg={15}>
+                        <Card
+                          size="small"
+                          title="Protocolos y dependencias"
+                          extra={<Tag>{protocolSteps.length} vinculados</Tag>}
+                        >
+                          <List
+                            dataSource={protocolSteps}
+                            locale={{ emptyText: "Agrega al menos un protocolo" }}
+                            renderItem={(step) => (
+                              <List.Item
+                                actions={[
+                                  <Button
+                                    key="up"
+                                    type="text"
+                                    aria-label="Subir protocolo"
+                                    icon={<ArrowUpOutlined />}
+                                    onClick={() => moveProtocol(step.id, -1)}
+                                  />,
+                                  <Button
+                                    key="down"
+                                    type="text"
+                                    aria-label="Bajar protocolo"
+                                    icon={<ArrowDownOutlined />}
+                                    onClick={() => moveProtocol(step.id, 1)}
+                                  />,
+                                  <Button
+                                    key="mode"
+                                    size="small"
+                                    icon={
+                                      step.mode === "Parallel" ? (
+                                        <BranchesOutlined />
+                                      ) : (
+                                        <PauseCircleOutlined />
+                                      )
+                                    }
+                                    onClick={() => toggleMode(step.id)}
+                                  >
+                                    {step.mode === "Parallel" ? "Paralelo" : "Lineal"}
+                                  </Button>,
+                                  <Button
+                                    key="remove"
+                                    type="text"
+                                    danger
+                                    aria-label="Retirar protocolo"
+                                    icon={<DeleteOutlined />}
+                                    onClick={() => removeProtocol(step.id)}
+                                  />,
+                                ]}
+                              >
+                                <List.Item.Meta
+                                  avatar={<Avatar icon={<ToolOutlined />} />}
+                                  title={step.name}
+                                  description={`Se activa con: ${step.trigger}`}
+                                />
+                              </List.Item>
+                            )}
+                          />
+                          <Space.Compact className="flow-add-protocol">
+                            <Select
+                              value={protocolToAdd}
+                              onChange={setProtocolToAdd}
+                              placeholder="Agregar protocolo al flujo"
+                              options={protocols
+                                .filter(
+                                  (protocol) =>
+                                    !protocolSteps.some((step) => step.protocolId === protocol.id),
+                                )
+                                .map((protocol) => ({
+                                  value: protocol.id,
+                                  label: protocol.name,
+                                }))}
+                            />
+                            <Button type="primary" icon={<PlusOutlined />} onClick={addProtocol}>
+                              Agregar
+                            </Button>
+                          </Space.Compact>
+                        </Card>
+                      </Col>
+                      <Col xs={24} lg={9}>
+                        <Card size="small" title="Reglas del flujo">
+                          <List
+                            size="small"
+                            dataSource={flowRules}
+                            renderItem={(rule) => (
+                              <List.Item>
+                                <Space align="start">
+                                  <CheckCircleOutlined style={{ color: "#52c41a", marginTop: 4 }} />
+                                  <span>{rule}</span>
+                                </Space>
+                              </List.Item>
+                            )}
+                          />
                           <Button
-                            key="remove"
-                            type="text"
-                            danger
-                            aria-label="Retirar protocolo"
-                            icon={<DeleteOutlined />}
-                            onClick={() => removeProtocol(step.id)}
-                          />,
-                        ]}
-                      >
-                        <List.Item.Meta
-                          avatar={<Avatar icon={<ToolOutlined />} />}
-                          title={step.name}
-                          description={`Se detona con: ${step.trigger}`}
-                        />
-                      </List.Item>
-                    )}
-                  />
-                  <Space.Compact style={{ width: "100%", marginTop: 10 }}>
-                    <Select
-                      value={protocolToAdd}
-                      onChange={setProtocolToAdd}
-                      placeholder="Agregar protocolo al flujo"
-                      style={{ flex: 1 }}
-                      options={protocols
-                        .filter(
-                          (protocol) =>
-                            !protocolSteps.some((step) => step.protocolId === protocol.id),
-                        )
-                        .map((protocol) => ({ value: protocol.id, label: protocol.name }))}
-                    />
-                    <Button type="primary" icon={<PlusOutlined />} onClick={addProtocol}>
-                      Agregar
-                    </Button>
-                  </Space.Compact>
-                </Card>
-              </Col>
-              <Col xs={24} lg={9}>
-                <Card size="small" title="Reglas del flujo">
-                  <List
-                    size="small"
-                    dataSource={[
-                      "Validar skills y disponibilidad antes de asignar.",
-                      "Reservar herramientas y materiales por protocolo.",
-                      "Esperar todas las ramas paralelas antes de liberar.",
-                      "Actualizar OEE y Asset Profile al completar.",
-                    ]}
-                    renderItem={(rule) => (
-                      <List.Item>
-                        <Space align="start">
-                          <CheckCircleOutlined style={{ color: "#52c41a", marginTop: 4 }} />
-                          <span>{rule}</span>
-                        </Space>
-                      </List.Item>
-                    )}
-                  />
-                  <Button
-                    block
-                    icon={<SaveOutlined />}
-                    onClick={() => message.success("Configuración y versión del flujo guardadas")}
-                  >
-                    Guardar configuración
-                  </Button>
-                </Card>
-              </Col>
-            </Row>
+                            block
+                            icon={<SaveOutlined />}
+                            onClick={() =>
+                              message.success("Configuración y versión del flujo guardadas")
+                            }
+                          >
+                            Guardar configuración
+                          </Button>
+                        </Card>
+                      </Col>
+                    </Row>
+                  ),
+                },
+              ]}
+            />
           </Card>
         </Col>
       </Row>

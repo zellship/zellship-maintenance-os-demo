@@ -1,4 +1,5 @@
-import { Card, Col, Row, Statistic, Typography, Progress, Table } from "antd";
+import { Card, Col, Row, Statistic, Typography, Progress } from "antd";
+import { SmartTable } from "../shared/SmartTable";
 import { useStore } from "../store";
 
 export function Reportes() {
@@ -67,7 +68,21 @@ export function Reportes() {
         </Col>
         <Col xs={24}>
           <Card title="Cumplimiento por protocolo">
-            <Table
+            <SmartTable
+              searchPlaceholder="Buscar protocolo"
+              searchFields={["name"]}
+              filterFields={[
+                {
+                  key: "activity",
+                  label: "Actividad",
+                  accessor: (row) => (row.total > 0 ? "Con ejecuciones" : "Sin ejecuciones"),
+                },
+                {
+                  key: "compliance",
+                  label: "Nivel de cumplimiento",
+                  accessor: (row) => (row.rate >= 90 ? "Alto" : row.rate >= 70 ? "Medio" : "Bajo"),
+                },
+              ]}
               dataSource={byProtocol}
               pagination={false}
               columns={[

@@ -49,8 +49,14 @@ type Key =
 
 export function AdminApp() {
   const [key, setKey] = useState<Key>("dashboard");
+  const [requestedOrderId, setRequestedOrderId] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState(false);
   const [mobile, setMobile] = useState(false);
+
+  const navigate = (nextKey: Key, orderId: string | null = null) => {
+    setRequestedOrderId(orderId);
+    setKey(nextKey);
+  };
 
   return (
     <Layout>
@@ -72,7 +78,7 @@ export function AdminApp() {
         <Menu
           mode="inline"
           selectedKeys={[key]}
-          onClick={(e) => setKey(e.key as Key)}
+          onClick={(e) => navigate(e.key as Key)}
           style={{ borderRight: 0, paddingTop: 12 }}
           items={[
             {
@@ -81,18 +87,9 @@ export function AdminApp() {
               label: "Centro de control",
             },
             {
-              key: "design",
-              icon: <BranchesOutlined />,
-              label: "Diseño y orquestación",
-              children: [
-                { key: "catalog", icon: <FileProtectOutlined />, label: "Protocolos" },
-                { key: "flows", icon: <BranchesOutlined />, label: "Flujos operativos" },
-              ],
-            },
-            {
               key: "execution",
               icon: <AppstoreOutlined />,
-              label: "Planeación y ejecución",
+              label: "Operaciones",
               children: [
                 { key: "planning", icon: <CalendarOutlined />, label: "Programación" },
                 { key: "orders", icon: <ToolOutlined />, label: "Órdenes de trabajo" },
@@ -106,7 +103,7 @@ export function AdminApp() {
             {
               key: "entities",
               icon: <ApartmentOutlined />,
-              label: "Activos y recursos",
+              label: "Recursos",
               children: [
                 { key: "assets", icon: <DeploymentUnitOutlined />, label: "Activos" },
                 { key: "resources", icon: <TeamOutlined />, label: "Recursos" },
@@ -115,7 +112,7 @@ export function AdminApp() {
             {
               key: "governance",
               icon: <SafetyCertificateOutlined />,
-              label: "Control y cumplimiento",
+              label: "Control",
               children: [
                 { key: "incidents", icon: <AlertOutlined />, label: "Incidencias" },
                 {
@@ -127,9 +124,18 @@ export function AdminApp() {
               ],
             },
             {
+              key: "design",
+              icon: <BranchesOutlined />,
+              label: "Configuraciones",
+              children: [
+                { key: "catalog", icon: <FileProtectOutlined />, label: "Protocolos" },
+                { key: "flows", icon: <BranchesOutlined />, label: "Flujos operativos" },
+              ],
+            },
+            {
               key: "analytics",
               icon: <BarChartOutlined />,
-              label: "Analítica",
+              label: "Análisis",
               children: [{ key: "reportes", icon: <BarChartOutlined />, label: "Reportes" }],
             },
           ]}
@@ -138,12 +144,17 @@ export function AdminApp() {
       <Layout.Content
         style={{ padding: 24, background: "#f5f6fa", minHeight: "calc(100vh - 64px)" }}
       >
-        {key === "dashboard" && <OperationsLive onNav={(k) => setKey(k as Key)} />}
+        {key === "dashboard" && (
+          <OperationsLive
+            onNav={(nextKey) => navigate(nextKey as Key)}
+            onOpenOrder={(orderId) => navigate("orders", orderId)}
+          />
+        )}
         {key === "catalog" && <ProtocolCatalog onNew={() => setKey("new")} />}
         {key === "flows" && <OperationalFlows />}
         {key === "new" && <ProtocolWizard onDone={() => setKey("catalog")} />}
-        {key === "planning" && <Planning />}
-        {key === "orders" && <WorkOrders />}
+        {key === "planning" && <Planning onOpenOrder={(orderId) => navigate("orders", orderId)} />}
+        {key === "orders" && <WorkOrders initialSelectedId={requestedOrderId} />}
         {key === "results" && <MaintenanceResults />}
         {key === "assets" && <Assets />}
         {key === "resources" && <Resources />}

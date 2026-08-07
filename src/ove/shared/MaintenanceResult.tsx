@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Alert,
   Button,
@@ -19,6 +20,7 @@ import {
   AimOutlined,
   CheckCircleOutlined,
   ClockCircleOutlined,
+  PrinterOutlined,
   SafetyCertificateOutlined,
   SendOutlined,
   ThunderboltOutlined,
@@ -26,6 +28,8 @@ import {
 import dayjs from "dayjs";
 import type { Execution, Protocol, Schedule } from "../types";
 import { maintenanceCapturedUrl, maintenanceReferenceUrl } from "./maintenanceAssets";
+import { PrintReportFooter, PrintReportHeader } from "./PrintReport";
+import { SendReportModal, type ReportDeliverySelection } from "./SendReportModal";
 
 export function MaintenanceResult({
   execution,
@@ -36,8 +40,9 @@ export function MaintenanceResult({
   execution: Execution;
   protocol: Protocol;
   schedule?: Schedule;
-  onSend?: () => void;
+  onSend?: (selection: ReportDeliverySelection) => void;
 }) {
+  const [sendModalOpen, setSendModalOpen] = useState(false);
   const photo = execution.evidences.find((e) => e.type === "Photo");
   const aiScore = photo?.aiScore ?? 86;
   const humanScore = photo?.humanScore ?? execution.humanScore ?? 4;
@@ -46,9 +51,31 @@ export function MaintenanceResult({
     "Desgaste leve en borde de banda",
     "Alineación requiere seguimiento",
   ];
+  const validated = execution.status === "Validated";
+  const resultStatusLabel = validated ? "Mantenimiento validado" : "Mantenimiento completado";
+  const operatorFirstName = execution.operator.split(" ")[0];
+  const startedAt = dayjs(execution.startAt);
+  const completedAt = dayjs(execution.endAt ?? execution.startAt);
+  const eventTime = (moment: dayjs.Dayjs) => moment.format("HH:mm");
+
+  const printReport = () => {
+    const previousTitle = document.title;
+    document.title = `Reporte ${schedule?.workOrder ?? "OT-2407-013"}`;
+    window.print();
+    document.title = previousTitle;
+  };
 
   return (
     <div className="maintenance-result">
+      <PrintReportHeader
+        documentTitle="Reporte de mantenimiento"
+        subject={protocol.name}
+        metadata={[
+          { label: "Orden", value: schedule?.workOrder ?? "OT-2407-013" },
+          { label: "Activo", value: schedule?.assetId ?? "AC-01" },
+          { label: "Estado", value: validated ? "Validado" : "Completado" },
+        ]}
+      />
       <Card className="result-hero">
         <Space
           style={{
@@ -61,7 +88,7 @@ export function MaintenanceResult({
           <div>
             <Space wrap>
               <Tag color="green" icon={<CheckCircleOutlined />}>
-                Mantenimiento validado
+                {resultStatusLabel}
               </Tag>
               <Tag color="purple">{schedule?.workOrder ?? "OT-2407-013"}</Tag>
               <Tag>{schedule?.assetId ?? "AC-01"}</Tag>
@@ -73,11 +100,16 @@ export function MaintenanceResult({
               {protocol.name} · evidencia, decisión y efecto operacional en una sola vista
             </Typography.Text>
           </div>
-          {onSend && (
-            <Button type="primary" icon={<SendOutlined />} onClick={onSend}>
-              Enviar resultado
+          <Space className="result-print-actions" wrap>
+            <Button icon={<PrinterOutlined />} onClick={printReport}>
+              Imprimir reporte
             </Button>
-          )}
+            {onSend && (
+              <Button type="primary" icon={<SendOutlined />} onClick={() => setSendModalOpen(true)}>
+                Enviar resultado
+              </Button>
+            )}
+          </Space>
         </Space>
 
         <Row gutter={[12, 12]} style={{ marginTop: 20 }}>
@@ -138,7 +170,7 @@ export function MaintenanceResult({
                 </div>
                 <Image
                   src={maintenanceReferenceUrl}
-                  alt="Imagen patrón de bandas del compresor AC-01"
+                  alt={`Imagen patrón del activo ${schedule?.assetId ?? "en mantenimiento"}`}
                   className="evidence-result-image"
                 />
                 <Typography.Paragraph type="secondary" style={{ margin: "8px 0 0" }}>
@@ -147,11 +179,11 @@ export function MaintenanceResult({
               </Col>
               <Col xs={24} md={12}>
                 <div className="evidence-image-label captured">
-                  <span>2</span> Evidencia capturada por Ana
+                  <span>2</span> Evidencia capturada por {operatorFirstName}
                 </div>
                 <Image
                   src={maintenanceCapturedUrl}
-                  alt="Evidencia capturada del compresor AC-01"
+                  alt={`Evidencia capturada del activo ${schedule?.assetId ?? "en mantenimiento"}`}
                   className="evidence-result-image"
                 />
                 <Typography.Paragraph type="secondary" style={{ margin: "8px 0 0" }}>
@@ -202,7 +234,7 @@ export function MaintenanceResult({
                   color: "green",
                   children: (
                     <>
-                      <b>06:47 · Ubicación verificada</b>
+                      <b>{eventTime(startedAt)} · Ubicación verificada</b>
                       <br />
                       <Typography.Text type="secondary">
                         GPS dentro de radio permitido · 34 m
@@ -214,7 +246,7 @@ export function MaintenanceResult({
                   color: "green",
                   children: (
                     <>
-                      <b>06:50 · Recursos confirmados</b>
+                      <b>{eventTime(startedAt.add(3, "minute"))} · Recursos confirmados</b>
                       <br />
                       <Typography.Text type="secondary">
                         Skills, LOTO, torquímetro e inventario
@@ -226,10 +258,10 @@ export function MaintenanceResult({
                   color: "green",
                   children: (
                     <>
-                      <b>07:08 · Evidencia capturada</b>
+                      <b>{eventTime(completedAt.subtract(20, "minute"))} · Evidencia capturada</b>
                       <br />
                       <Typography.Text type="secondary">
-                        Referencia visible · flash · imagen original
+                        Toma móvil · ángulo oblicuo · imagen original
                       </Typography.Text>
                     </>
                   ),
@@ -238,7 +270,7 @@ export function MaintenanceResult({
                   color: "purple",
                   children: (
                     <>
-                      <b>07:09 · Análisis automático</b>
+                      <b>{eventTime(completedAt.subtract(19, "minute"))} · Análisis automático</b>
                       <br />
                       <Typography.Text type="secondary">
                         AI Vision 86% · 2 observaciones
@@ -250,7 +282,7 @@ export function MaintenanceResult({
                   color: "green",
                   children: (
                     <>
-                      <b>07:26 · Formulario y firma</b>
+                      <b>{eventTime(completedAt.subtract(2, "minute"))} · Formulario y firma</b>
                       <br />
                       <Typography.Text type="secondary">5 inputs · firma vinculada</Typography.Text>
                     </>
@@ -260,10 +292,13 @@ export function MaintenanceResult({
                   color: "green",
                   children: (
                     <>
-                      <b>07:28 · Supervisor aprobó</b>
+                      <b>
+                        {eventTime(completedAt)} ·{" "}
+                        {validated ? "Supervisor aprobó" : "Ejecución completada"}
+                      </b>
                       <br />
                       <Typography.Text type="secondary">
-                        Resultado 91% · activo liberado
+                        Resultado {execution.score ?? 91}% · activo liberado
                       </Typography.Text>
                     </>
                   ),
@@ -303,7 +338,7 @@ export function MaintenanceResult({
               description="La ejecución cumple el estándar. La observación de tensión no bloquea la liberación; el sistema generó una inspección de seguimiento para la próxima ventana."
             />
             <Space wrap style={{ marginTop: 12 }}>
-              <Tag color="green">Activo AC-01 actualizado</Tag>
+              <Tag color="green">Activo {schedule?.assetId ?? "actualizado"} actualizado</Tag>
               <Tag color="blue">Historial técnico registrado</Tag>
               <Tag color="purple">OEE recalculado</Tag>
               <Tag color="orange">Seguimiento generado</Tag>
@@ -311,6 +346,15 @@ export function MaintenanceResult({
           </Col>
         </Row>
       </Card>
+      <PrintReportFooter />
+      {onSend && (
+        <SendReportModal
+          open={sendModalOpen}
+          reportName={`Reporte de mantenimiento · ${schedule?.workOrder ?? "OT-2407-013"}`}
+          onCancel={() => setSendModalOpen(false)}
+          onSend={onSend}
+        />
+      )}
     </div>
   );
 }

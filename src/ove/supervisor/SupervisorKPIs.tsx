@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Card, Col, Row, Statistic, Typography, Select, Space, Progress, Table, Tag } from "antd";
+import { Card, Col, Row, Statistic, Typography, Select, Space, Progress, Tag } from "antd";
+import { SmartTable } from "../shared/SmartTable";
 import { useStore } from "../store";
 import { branches, operators } from "../seed";
 import dayjs from "dayjs";
@@ -143,7 +144,17 @@ export function SupervisorKPIs() {
 
         <Col xs={24} md={14}>
           <Card title="Cumplimiento por técnico">
-            <Table
+            <SmartTable
+              searchPlaceholder="Buscar técnico"
+              searchFields={["operator"]}
+              filterFields={[
+                {
+                  key: "compliance",
+                  label: "Nivel de cumplimiento",
+                  accessor: (row) =>
+                    row.compliance >= 90 ? "Alto" : row.compliance >= 70 ? "Medio" : "Bajo",
+                },
+              ]}
               size="small"
               pagination={false}
               dataSource={byOperator}
@@ -163,7 +174,16 @@ export function SupervisorKPIs() {
         </Col>
         <Col xs={24} md={10}>
           <Card title="Protocolos con desviaciones">
-            <Table
+            <SmartTable
+              searchPlaceholder="Buscar protocolo"
+              searchFields={["name"]}
+              filterFields={[
+                {
+                  key: "incidents",
+                  label: "Incidencias",
+                  accessor: (row) => (row.count > 0 ? "Con incidencias" : "Sin incidencias"),
+                },
+              ]}
               size="small"
               pagination={false}
               dataSource={topIncidents}

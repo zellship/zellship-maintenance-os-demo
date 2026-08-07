@@ -73,14 +73,24 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Zellship Maintenance OS · Industrial Operations" },
-      { name: "description", content: "Sistema demostrativo de mantenimiento industrial: protocolos, órdenes, operación móvil, evidencias, validación y OEE." },
+      {
+        name: "description",
+        content:
+          "Sistema demostrativo de mantenimiento industrial: protocolos, órdenes, operación móvil, evidencias, validación y OEE.",
+      },
       { name: "author", content: "Zellship" },
       { property: "og:title", content: "Zellship Maintenance OS" },
-      { property: "og:description", content: "Del protocolo al desempeño del activo en un solo sistema." },
+      {
+        property: "og:description",
+        content: "Del protocolo al desempeño del activo en un solo sistema.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:title", content: "Zellship Maintenance OS" },
-      { name: "twitter:description", content: "Del protocolo al desempeño del activo en un solo sistema." },
+      {
+        name: "twitter:description",
+        content: "Del protocolo al desempeño del activo en un solo sistema.",
+      },
       { property: "og:image", content: "/og.png" },
       { name: "twitter:image", content: "/og.png" },
     ],

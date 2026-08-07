@@ -14,13 +14,13 @@ import {
   Select,
   Space,
   Statistic,
-  Table,
   Tabs,
   Tag,
   Timeline,
   Typography,
   message,
 } from "antd";
+import { SmartTable } from "../shared/SmartTable";
 import {
   ApartmentOutlined,
   ArrowLeftOutlined,
@@ -262,7 +262,21 @@ export function Resources() {
               key: "people",
               label: "Personal y skills",
               children: (
-                <Table
+                <SmartTable
+                  searchPlaceholder="Buscar técnico, planta o skill"
+                  searchFields={[
+                    "name",
+                    "plant",
+                    (technician) =>
+                      technician.skillIds
+                        .map((id) => seedSkills.find((skill) => skill.id === id)?.name)
+                        .join(" "),
+                  ]}
+                  filterFields={[
+                    { key: "status", label: "Estado", accessor: "status" },
+                    { key: "plant", label: "Planta", accessor: "plant" },
+                    { key: "shift", label: "Turno", accessor: "shift" },
+                  ]}
                   rowKey="id"
                   dataSource={technicians}
                   pagination={false}
@@ -308,6 +322,9 @@ export function Resources() {
                     {
                       title: "Perfil",
                       width: 110,
+                      sorter: (a, b) =>
+                        (technicianProfiles[a.id]?.profileCompleteness ?? 80) -
+                        (technicianProfiles[b.id]?.profileCompleteness ?? 80),
                       render: (_, technician) => (
                         <Progress
                           type="circle"
@@ -353,7 +370,13 @@ export function Resources() {
               key: "tools",
               label: "Equipos y herramientas",
               children: (
-                <Table
+                <SmartTable
+                  searchPlaceholder="Buscar equipo, serie o ubicación"
+                  searchFields={["name", "serial", "location"]}
+                  filterFields={[
+                    { key: "status", label: "Estado", accessor: "status" },
+                    { key: "location", label: "Ubicación", accessor: "location" },
+                  ]}
                   rowKey="id"
                   dataSource={tools}
                   pagination={false}
@@ -388,7 +411,20 @@ export function Resources() {
               key: "inventory",
               label: "Materiales e inventario",
               children: (
-                <Table
+                <SmartTable
+                  searchPlaceholder="Buscar material, SKU o almacén"
+                  searchFields={["name", "sku", "warehouse"]}
+                  filterFields={[
+                    { key: "warehouse", label: "Almacén", accessor: "warehouse" },
+                    {
+                      key: "stock",
+                      label: "Disponibilidad",
+                      accessor: (item) =>
+                        item.onHand - item.reserved - item.quarantine <= item.reorderPoint
+                          ? "Reponer"
+                          : "Disponible",
+                    },
+                  ]}
                   rowKey="id"
                   dataSource={inventory}
                   pagination={false}
@@ -421,6 +457,11 @@ export function Resources() {
                     {
                       title: "Disponible real",
                       width: 150,
+                      sorter: (a, b) =>
+                        a.onHand -
+                        a.reserved -
+                        a.quarantine -
+                        (b.onHand - b.reserved - b.quarantine),
                       render: (_, item) => {
                         const available = item.onHand - item.reserved - item.quarantine;
                         const percent = Math.min(
@@ -445,6 +486,13 @@ export function Resources() {
                     {
                       title: "Estado",
                       width: 130,
+                      sorter: (a, b) => {
+                        const availableA = a.onHand - a.reserved - a.quarantine;
+                        const availableB = b.onHand - b.reserved - b.quarantine;
+                        return (
+                          Number(availableA > a.reorderPoint) - Number(availableB > b.reorderPoint)
+                        );
+                      },
                       render: (_, item) =>
                         item.onHand - item.reserved - item.quarantine <= item.reorderPoint ? (
                           <Tag color="orange">Reabastecer</Tag>

@@ -1,8 +1,6 @@
 import { useState } from "react";
 import {
   Card,
-  Col,
-  Row,
   Typography,
   List,
   Button,
@@ -12,16 +10,31 @@ import {
   Input,
   message,
   Empty,
-  Divider,
   Progress,
   Alert,
   Image,
   Rate,
+  Statistic,
+  Avatar,
 } from "antd";
-import { CheckOutlined, CloseOutlined, AlertOutlined } from "@ant-design/icons";
+import {
+  AlertOutlined,
+  AuditOutlined,
+  CameraOutlined,
+  CheckOutlined,
+  CloseOutlined,
+  ClockCircleOutlined,
+  EnvironmentOutlined,
+  PrinterOutlined,
+  SafetyCertificateOutlined,
+  SendOutlined,
+  UserOutlined,
+} from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useStore } from "../store";
 import { maintenanceCapturedUrl, maintenanceReferenceUrl } from "../shared/maintenanceAssets";
+import { PrintReportFooter, PrintReportHeader } from "../shared/PrintReport";
+import { SendReportModal, type ReportDeliverySelection } from "../shared/SendReportModal";
 import type { Notification } from "../types";
 
 export function SupervisorValidations() {
@@ -29,6 +42,7 @@ export function SupervisorValidations() {
     executions,
     setExecutions,
     protocols,
+    schedules,
     incidents,
     setIncidents,
     notifications,
@@ -37,9 +51,51 @@ export function SupervisorValidations() {
   const pending = executions.filter((e) => e.status === "PendingValidation");
   const [selectedId, setSelectedId] = useState<string | null>(pending[0]?.id ?? null);
   const [comments, setComments] = useState("");
+  const [sendModalOpen, setSendModalOpen] = useState(false);
 
   const exec = executions.find((e) => e.id === selectedId) || pending[0];
   const proto = exec ? protocols.find((p) => p.id === exec.protocolId) : null;
+  const schedule = exec ? schedules.find((item) => item.id === exec.scheduleId) : null;
+  const averagePendingScore = pending.length
+    ? Math.round(pending.reduce((sum, item) => sum + Number(item.score ?? 94), 0) / pending.length)
+    : 0;
+  const openIncidents = incidents.filter(
+    (incident) => incident.status !== "Closed" && incident.status !== "Resolved",
+  );
+  const photoEvidence = exec?.evidences.find((evidence) => evidence.type === "Photo");
+  const gpsEvidence = exec?.evidences.find((evidence) => evidence.type === "GPS");
+
+  const printReport = () => {
+    if (!exec) return;
+    const previousTitle = document.title;
+    document.title = `Reporte de inspección ${proto?.name ?? exec.id}`;
+    window.print();
+    document.title = previousTitle;
+  };
+
+  const sendReport = ({ contact, channels }: ReportDeliverySelection) => {
+    if (!exec) return;
+    const sentAt = Date.now();
+    const notices: Notification[] = channels.map((channel, index) => ({
+      id: `n-report-${sentAt}-${index}`,
+      type: "Completed",
+      channel,
+      actor: "Roberto Salas",
+      recipientRole: contact.role,
+      recipient: contact.name,
+      source: "OnDemand",
+      event: "Reporte de inspección enviado",
+      message: `${proto?.name ?? "Mantenimiento"}: reporte de ${exec.operator} enviado con calificación de ${exec.score ?? 94}%.`,
+      status: "Sent",
+      createdAt: dayjs().toISOString(),
+    }));
+    setNotifications([...notices, ...notifications]);
+    message.success(
+      `Reporte enviado a ${contact.name} por ${channels
+        .map((channel) => (channel === "Email" ? "correo" : "WhatsApp"))
+        .join(" y ")}`,
+    );
+  };
 
   const decide = (decision: "Approved" | "Rejected") => {
     if (!exec) return;
@@ -98,207 +154,291 @@ export function SupervisorValidations() {
   };
 
   return (
-    <div>
-      <Typography.Title level={3} style={{ marginTop: 0 }}>
-        Validaciones
-      </Typography.Title>
-      <Row gutter={16}>
-        <Col xs={24} md={8}>
-          <Card title={`Pendientes (${pending.length})`}>
-            {pending.length === 0 ? (
-              <Empty />
-            ) : (
-              <List
-                dataSource={pending}
-                renderItem={(e) => {
-                  const p = protocols.find((x) => x.id === e.protocolId);
-                  return (
-                    <List.Item
-                      style={{
-                        cursor: "pointer",
-                        background: e.id === selectedId ? "#f5f0ff" : undefined,
-                        padding: 12,
-                        borderRadius: 8,
-                      }}
-                      onClick={() => setSelectedId(e.id)}
-                    >
-                      <List.Item.Meta
-                        title={p?.name}
-                        description={
-                          <>
-                            {e.operator} · {dayjs(e.startAt).format("HH:mm")}
-                          </>
-                        }
-                      />
-                    </List.Item>
-                  );
-                }}
-              />
-            )}
-          </Card>
-        </Col>
+    <div className="supervisor-control">
+      <div className="supervisor-control-header">
+        <div>
+          <Space size={8} className="supervisor-eyebrow">
+            <span className="live-dot" />
+            SUPERVISIÓN · CONTROL DE CALIDAD
+          </Space>
+          <Typography.Title level={2}>Revisión y decisiones</Typography.Title>
+          <Typography.Text type="secondary">
+            Prioriza excepciones, contrasta evidencias y libera el mantenimiento con trazabilidad.
+          </Typography.Text>
+        </div>
+        <Tag icon={<ClockCircleOutlined />} color="purple">
+          Objetivo de revisión · 15 min
+        </Tag>
+      </div>
+
+      <div className="supervisor-summary-grid">
+        <Card size="small" className="supervisor-summary-card pending">
+          <Avatar icon={<AuditOutlined />} />
+          <Statistic title="Pendientes de decisión" value={pending.length} />
+          <Typography.Text type="secondary">Cola activa de supervisión</Typography.Text>
+        </Card>
+        <Card size="small" className="supervisor-summary-card quality">
+          <Avatar icon={<SafetyCertificateOutlined />} />
+          <Statistic title="Calidad promedio" value={averagePendingScore} suffix="%" />
+          <Typography.Text type="secondary">Calificación automática</Typography.Text>
+        </Card>
+        <Card size="small" className="supervisor-summary-card risk">
+          <Avatar icon={<AlertOutlined />} />
+          <Statistic title="Incidencias abiertas" value={openIncidents.length} />
+          <Typography.Text type="secondary">Requieren seguimiento</Typography.Text>
+        </Card>
+      </div>
+
+      <div className="supervisor-validation-grid">
+        <Card
+          className="supervisor-queue-card"
+          title="Cola de validación"
+          extra={
+            <Tag color={pending.length ? "orange" : "green"}>
+              {pending.length} {pending.length === 1 ? "pendiente" : "pendientes"}
+            </Tag>
+          }
+        >
+          {pending.length === 0 ? (
+            <Empty description="Sin revisiones pendientes" />
+          ) : (
+            <List
+              dataSource={pending}
+              renderItem={(item) => {
+                const protocol = protocols.find((candidate) => candidate.id === item.protocolId);
+                const itemSchedule = schedules.find(
+                  (candidate) => candidate.id === item.scheduleId,
+                );
+                return (
+                  <List.Item
+                    className={`supervisor-queue-item ${item.id === exec?.id ? "selected" : ""}`}
+                    onClick={() => setSelectedId(item.id)}
+                  >
+                    <div className="supervisor-queue-time">
+                      <strong>{dayjs(item.startAt).format("HH:mm")}</strong>
+                      <span>Hoy</span>
+                    </div>
+                    <div className="supervisor-queue-copy">
+                      <Typography.Text strong>{protocol?.name}</Typography.Text>
+                      <Typography.Text type="secondary">
+                        {itemSchedule?.workOrder ?? item.id} ·{" "}
+                        {itemSchedule?.assetId ?? "Sin activo"}
+                      </Typography.Text>
+                      <Space size={6} wrap>
+                        <Tag icon={<UserOutlined />}>{item.operator}</Tag>
+                        <Tag color="orange">Por validar</Tag>
+                      </Space>
+                    </div>
+                  </List.Item>
+                );
+              }}
+            />
+          )}
+        </Card>
 
         {exec && proto ? (
-          <Col xs={24} md={16}>
-            <Card title={proto.name} extra={<Tag color="orange">Pendiente validación</Tag>}>
-              <Alert
-                type={Number(exec.score) >= 90 ? "success" : "warning"}
-                showIcon
-                message={`Calificación automática: ${exec.score ?? 94}%`}
-                description="Calculada con cumplimiento del formulario, evidencia, ubicación, ventana de ejecución y reglas del estándar."
-                style={{ marginBottom: 16 }}
-              />
-              <Progress percent={exec.score ?? 94} strokeColor="#7B35C1" />
-              <Row gutter={16}>
-                <Col xs={24} md={12}>
-                  <Typography.Title level={5}>Evidencias</Typography.Title>
-                  <Space wrap>
-                    {exec.evidences.map((ev) => (
-                      <Card key={ev.id} size="small" style={{ width: 140 }}>
-                        <Tag color="purple">{ev.type}</Tag>
-                        {ev.type === "Photo" && (
-                          <Image
-                            preview={false}
-                            src={maintenanceCapturedUrl}
-                            alt="Evidencia del activo"
-                            style={{
-                              height: 80,
-                              objectFit: "cover",
-                              borderRadius: 6,
-                              marginTop: 6,
-                            }}
-                          />
-                        )}
-                        {ev.type === "GPS" && (
-                          <div
-                            style={{
-                              height: 80,
-                              background: "linear-gradient(135deg, #e6f7ff, #bae7ff)",
-                              borderRadius: 6,
-                              marginTop: 6,
-                              padding: 4,
-                              fontSize: 11,
-                            }}
-                          >
-                            📍 {ev.data}
-                          </div>
-                        )}
-                        {ev.type === "Signature" && (
-                          <div
-                            style={{
-                              height: 80,
-                              background: "#fafafa",
-                              borderRadius: 6,
-                              marginTop: 6,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                            }}
-                          >
-                            ✍️
-                          </div>
-                        )}
-                        {ev.type === "QR" && (
-                          <div
-                            style={{
-                              height: 80,
-                              background: "#fafafa",
-                              borderRadius: 6,
-                              marginTop: 6,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                            }}
-                          >
-                            📱
-                          </div>
-                        )}
-                      </Card>
-                    ))}
-                    {exec.evidences.length === 0 && (
-                      <Typography.Text type="secondary">Sin evidencias</Typography.Text>
-                    )}
-                  </Space>
-                  {exec.evidences.some((e) => e.type === "Photo") && (
-                    <Card size="small" style={{ marginTop: 12, background: "#faf7ff" }}>
-                      <Row gutter={8}>
-                        <Col span={12}>
-                          <Image
-                            preview={false}
-                            src={maintenanceReferenceUrl}
-                            alt="Patrón visual"
-                          />
-                          <Typography.Text type="secondary">Patrón</Typography.Text>
-                        </Col>
-                        <Col span={12}>
-                          <Image
-                            preview={false}
-                            src={maintenanceCapturedUrl}
-                            alt="Captura del operador"
-                          />
-                          <Typography.Text type="secondary">Captura</Typography.Text>
-                        </Col>
-                      </Row>
-                      <Divider style={{ margin: "10px 0" }} />
-                      <Space style={{ width: "100%", justifyContent: "space-between" }}>
-                        <span>
-                          IA:{" "}
-                          <b>{exec.evidences.find((e) => e.type === "Photo")?.aiScore ?? 86}%</b>
-                        </span>
-                        <span>
-                          Operador:{" "}
-                          <Rate
-                            disabled
-                            value={exec.evidences.find((e) => e.type === "Photo")?.humanScore ?? 4}
-                            style={{ fontSize: 13 }}
-                          />
-                        </span>
-                      </Space>
-                    </Card>
-                  )}
-                </Col>
-                <Col xs={24} md={12}>
-                  <Typography.Title level={5}>Formulario</Typography.Title>
-                  <Descriptions column={1} bordered size="small">
-                    {proto.formConfig
-                      .filter((f) => f.type !== "separator")
-                      .map((f) => (
-                        <Descriptions.Item key={f.id} label={f.label}>
-                          {String(exec.formAnswers[f.id] ?? "—")}
-                        </Descriptions.Item>
-                      ))}
-                  </Descriptions>
-                </Col>
-              </Row>
-
-              <Divider />
-              <Input.TextArea
-                placeholder="Comentarios (obligatorio si rechazas)"
-                rows={2}
-                value={comments}
-                onChange={(e) => setComments(e.target.value)}
-              />
-              <Space style={{ marginTop: 12, width: "100%", justifyContent: "flex-end" }}>
-                <Button icon={<AlertOutlined />} danger onClick={() => decide("Rejected")}>
-                  Generar incidencia
+          <Card
+            className="supervisor-validation-report supervisor-review-card"
+            title={
+              <div>
+                <Typography.Text strong>Expediente de validación</Typography.Text>
+                <Typography.Text type="secondary" className="supervisor-card-subtitle">
+                  {schedule?.workOrder ?? exec.id} · {schedule?.assetId ?? "Sin activo"}
+                </Typography.Text>
+              </div>
+            }
+            extra={
+              <Space className="validation-report-actions" wrap>
+                <Button icon={<PrinterOutlined />} onClick={printReport}>
+                  Imprimir
                 </Button>
-                <Button icon={<CloseOutlined />} onClick={() => decide("Rejected")}>
-                  Rechazar
-                </Button>
-                <Button type="primary" icon={<CheckOutlined />} onClick={() => decide("Approved")}>
-                  Aprobar
+                <Button
+                  type="primary"
+                  icon={<SendOutlined />}
+                  onClick={() => setSendModalOpen(true)}
+                >
+                  Enviar reporte
                 </Button>
               </Space>
-            </Card>
-          </Col>
+            }
+          >
+            <PrintReportHeader
+              documentTitle="Reporte de inspección"
+              subject={proto.name}
+              metadata={[
+                { label: "Orden", value: schedule?.workOrder ?? exec.id },
+                { label: "Activo", value: schedule?.assetId ?? "Sin activo" },
+                { label: "Inspector", value: "Roberto Salas" },
+                { label: "Estado", value: "Pendiente de validación" },
+              ]}
+            />
+
+            <div className="supervisor-report-hero">
+              <div>
+                <Space size={8} wrap>
+                  <Tag color="orange">Pendiente de validación</Tag>
+                  <Tag>{dayjs(exec.startAt).format("DD/MM/YYYY · HH:mm")}</Tag>
+                </Space>
+                <Typography.Title level={3}>{proto.name}</Typography.Title>
+                <Space size={[8, 8]} wrap>
+                  <Tag icon={<UserOutlined />}>{exec.operator}</Tag>
+                  <Tag icon={<EnvironmentOutlined />}>{schedule?.plant ?? "Planta"}</Tag>
+                  <Tag icon={<CameraOutlined />}>{exec.evidences.length} evidencias</Tag>
+                </Space>
+              </div>
+              <div className="supervisor-score">
+                <Progress
+                  type="circle"
+                  size={94}
+                  percent={exec.score ?? 94}
+                  strokeColor="#7B35C1"
+                  trailColor="#eee9f4"
+                />
+                <Typography.Text type="secondary">Calificación automática</Typography.Text>
+              </div>
+            </div>
+
+            <Alert
+              className="supervisor-score-alert"
+              type={Number(exec.score) >= 90 ? "success" : "warning"}
+              showIcon
+              message="Resultado listo para decisión"
+              description="La calificación combina formulario, evidencia, ubicación, ventana de ejecución y reglas del estándar."
+            />
+
+            <div className="supervisor-review-grid">
+              <section className="supervisor-review-panel evidence">
+                <div className="supervisor-panel-heading">
+                  <div>
+                    <Typography.Text strong>1. Evidencia</Typography.Text>
+                    <Typography.Text type="secondary">Contraste contra el estándar</Typography.Text>
+                  </div>
+                  <Tag color="purple">IA {photoEvidence?.aiScore ?? 86}%</Tag>
+                </div>
+
+                <div className="supervisor-evidence-facts">
+                  <div>
+                    <Avatar icon={<EnvironmentOutlined />} />
+                    <span>
+                      <small>Ubicación</small>
+                      <strong>{gpsEvidence ? "GPS verificado" : "Sin GPS"}</strong>
+                    </span>
+                  </div>
+                  <div>
+                    <Avatar icon={<CameraOutlined />} />
+                    <span>
+                      <small>Captura</small>
+                      <strong>{photoEvidence ? "Foto original" : "Sin fotografía"}</strong>
+                    </span>
+                  </div>
+                </div>
+
+                {photoEvidence ? (
+                  <div className="supervisor-photo-comparison">
+                    <figure>
+                      <Image preview={false} src={maintenanceReferenceUrl} alt="Patrón visual" />
+                      <figcaption>Patrón</figcaption>
+                    </figure>
+                    <figure>
+                      <Image
+                        preview={false}
+                        src={maintenanceCapturedUrl}
+                        alt="Captura del operador"
+                      />
+                      <figcaption>Captura</figcaption>
+                    </figure>
+                  </div>
+                ) : (
+                  <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Sin evidencia visual" />
+                )}
+
+                <div className="supervisor-ai-rating">
+                  <span>
+                    Coincidencia IA <b>{photoEvidence?.aiScore ?? 86}%</b>
+                  </span>
+                  <Rate disabled value={photoEvidence?.humanScore ?? 4} />
+                </div>
+              </section>
+
+              <section className="supervisor-review-panel form">
+                <div className="supervisor-panel-heading">
+                  <div>
+                    <Typography.Text strong>2. Formulario</Typography.Text>
+                    <Typography.Text type="secondary">Lecturas y respuestas</Typography.Text>
+                  </div>
+                  <Tag color="green">Completo</Tag>
+                </div>
+                <Descriptions column={1} bordered size="small">
+                  {proto.formConfig
+                    .filter((field) => field.type !== "separator")
+                    .map((field) => (
+                      <Descriptions.Item key={field.id} label={field.label}>
+                        {String(exec.formAnswers[field.id] ?? "—")}
+                      </Descriptions.Item>
+                    ))}
+                </Descriptions>
+              </section>
+
+              <section className="supervisor-review-panel decision">
+                <div className="supervisor-panel-heading">
+                  <div>
+                    <Typography.Text strong>3. Decisión</Typography.Text>
+                    <Typography.Text type="secondary">Liberación del mantenimiento</Typography.Text>
+                  </div>
+                  <Tag color="orange">Pendiente</Tag>
+                </div>
+
+                <div className="supervisor-decision-checks">
+                  <div>
+                    <CheckOutlined /> Evidencias completas
+                  </div>
+                  <div>
+                    <CheckOutlined /> Ubicación verificada
+                  </div>
+                  <div>
+                    <CheckOutlined /> Formulario respondido
+                  </div>
+                </div>
+
+                <Input.TextArea
+                  className="validation-comments-input"
+                  placeholder="Agrega una observación. Es obligatoria para rechazar."
+                  rows={4}
+                  value={comments}
+                  onChange={(event) => setComments(event.target.value)}
+                />
+                <div className="validation-decision-actions supervisor-decision-actions">
+                  <Button icon={<AlertOutlined />} danger onClick={() => decide("Rejected")}>
+                    Generar incidencia
+                  </Button>
+                  <Button icon={<CloseOutlined />} onClick={() => decide("Rejected")}>
+                    Rechazar
+                  </Button>
+                  <Button
+                    type="primary"
+                    icon={<CheckOutlined />}
+                    onClick={() => decide("Approved")}
+                  >
+                    Aprobar y liberar
+                  </Button>
+                </div>
+              </section>
+            </div>
+
+            <PrintReportFooter />
+            <SendReportModal
+              open={sendModalOpen}
+              reportName={`Reporte de inspección · ${schedule?.workOrder ?? exec.id}`}
+              onCancel={() => setSendModalOpen(false)}
+              onSend={sendReport}
+            />
+          </Card>
         ) : (
-          <Col xs={24} md={16}>
-            <Card>
-              <Empty description="Selecciona una ejecución para validar" />
-            </Card>
-          </Col>
+          <Card className="supervisor-review-empty">
+            <Empty description="Selecciona una ejecución para validar" />
+          </Card>
         )}
-      </Row>
+      </div>
     </div>
   );
 }
