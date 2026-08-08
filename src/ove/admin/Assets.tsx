@@ -7,22 +7,25 @@ import {
   Card,
   Col,
   Descriptions,
+  DatePicker,
   Empty,
   Form,
   Input,
   List,
   Modal,
   Progress,
+  Radio,
   Row,
   Select,
   Space,
   Statistic,
-  Table,
   Tag,
+  TimePicker,
   Timeline,
   Typography,
   message,
 } from "antd";
+import { SmartTable } from "../shared/SmartTable";
 import type { FormInstance } from "antd";
 import {
   ApartmentOutlined,
@@ -43,14 +46,26 @@ import {
   ThunderboltOutlined,
   ToolOutlined,
 } from "@ant-design/icons";
-import dayjs from "dayjs";
+import dayjs, { type Dayjs } from "dayjs";
 import { seedAssets } from "../seed";
 import { useStore } from "../store";
 import { priorityTag, statusTag } from "../ui";
-import type { Asset, Notification, Schedule } from "../types";
-import { assetProfiles, type AssetRelationship } from "./assetProfiles";
+import type { Asset, Notification, Protocol, Schedule } from "../types";
+import {
+  assetProfiles,
+  type AssetProfileDefinition,
+  type AssetRelationship,
+} from "./assetProfiles";
 
 type Observation = { id: string; assetId: string; text: string; author: string; at: string };
+type MaintenanceScheduleValues = {
+  protocolId: string;
+  date: Dayjs;
+  time: Dayjs;
+  operator: string;
+  tolerance: number;
+  comments?: string;
+};
 
 export function Assets() {
   const {
@@ -64,12 +79,12 @@ export function Assets() {
   } = useStore();
   const [selectedId, setSelectedId] = useState("AC-01");
   const [view, setView] = useState<"list" | "profile">("list");
-  const [query, setQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>();
   const [observationOpen, setObservationOpen] = useState(false);
+  const [maintenanceOpen, setMaintenanceOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [observations, setObservations] = useState<Observation[]>([]);
   const [observationForm] = Form.useForm<{ observation: string }>();
+  const [maintenanceForm] = Form.useForm<MaintenanceScheduleValues>();
 
   const asset = seedAssets.find((item) => item.id === selectedId) ?? seedAssets[0];
   const profile = assetProfiles[asset.id];
@@ -85,18 +100,19 @@ export function Assets() {
         .find((protocol) => protocol.id === incident.protocolId)
         ?.assetIds?.includes(asset.id),
   );
-
-  const filteredAssets = useMemo(
-    () =>
-      seedAssets.filter(
-        (item) =>
-          (!query ||
-            `${item.id} ${item.name} ${item.family} ${item.plant}`
-              .toLowerCase()
-              .includes(query.toLowerCase())) &&
-          (!statusFilter || item.status === statusFilter),
-      ),
-    [query, statusFilter],
+  const directProtocols = protocols.filter((protocol) => protocol.assetIds?.includes(asset.id));
+  const relatedProtocols = protocols
+    .filter(
+      (protocol) =>
+        protocol.status === "Active" &&
+        !directProtocols.some((direct) => direct.id === protocol.id) &&
+        protocol.branches.includes(asset.plant),
+    )
+    .slice(0, 2);
+  const applicableProtocols = [...directProtocols, ...relatedProtocols];
+  const selectedMaintenanceProtocolId = Form.useWatch("protocolId", maintenanceForm);
+  const selectedMaintenanceProtocol = protocols.find(
+    (protocol) => protocol.id === selectedMaintenanceProtocolId,
   );
 
   const updates = useMemo(() => {
@@ -165,21 +181,40 @@ export function Assets() {
     message.success("Perfil actualizado y supervisor notificado");
   };
 
-  const scheduleMaintenance = () => {
-    const protocol = protocols.find((item) => item.assetIds?.includes(asset.id)) ?? protocols[0];
-    const start = dayjs().add(90, "minute");
+  const openMaintenanceScheduler = () => {
+    const protocol = applicableProtocols[0] ?? protocols[0];
+    let suggestedStart = dayjs()
+      .hour(asset.status === "Risk" ? 14 : 9)
+      .minute(0)
+      .second(0);
+    if (suggestedStart.isBefore(dayjs())) suggestedStart = suggestedStart.add(1, "day");
+    maintenanceForm.setFieldsValue({
+      protocolId: protocol.id,
+      date: suggestedStart,
+      time: suggestedStart,
+      operator: protocol.operators[0] ?? "Ana Torres",
+      tolerance: protocol.schedule[0]?.tolerance ?? 20,
+      comments: asset.status === "Risk" ? profile.insights[0]?.detail : undefined,
+    });
+    setMaintenanceOpen(true);
+  };
+
+  const scheduleMaintenance = (values: MaintenanceScheduleValues) => {
+    const protocol = protocols.find((item) => item.id === values.protocolId) ?? protocols[0];
+    const start = values.date.hour(values.time.hour()).minute(values.time.minute()).second(0);
     const schedule: Schedule = {
       id: `s-asset-${Date.now()}`,
       protocolId: protocol.id,
       date: start.format("YYYY-MM-DD"),
       hour: start.format("HH:mm"),
-      tolerance: protocol.schedule[0]?.tolerance ?? 20,
-      operator: protocol.operators[0] ?? "Ana Torres",
+      tolerance: values.tolerance,
+      operator: values.operator,
       status: "Pending",
       assetId: asset.id,
       plant: asset.plant,
-      workOrder: `OT-ASSET-${schedules.length + 1}`,
+      workOrder: `OT-ASSET-${String(schedules.length + 1).padStart(3, "0")}`,
       eligibilityValidated: true,
+      notes: values.comments?.trim(),
     };
     const notification: Notification = {
       id: `n-asset-plan-${Date.now()}`,
@@ -188,15 +223,17 @@ export function Assets() {
       actor: "Entity Profile Engine",
       recipientRole: "operator",
       recipient: schedule.operator,
-      source: "Automatic",
-      event: "Acción desde perfil",
-      message: `${schedule.workOrder}: ${protocol.name} asignado sobre ${asset.id} a las ${schedule.hour}.`,
+      source: "OnDemand",
+      event: "Mantenimiento programado desde Asset Profile",
+      message: `${schedule.workOrder}: ${protocol.name} asignado sobre ${asset.id} para el ${start.format("DD/MM/YYYY")} a las ${schedule.hour}.`,
       status: "Sent",
       createdAt: dayjs().toISOString(),
     };
     setSchedules([schedule, ...schedules]);
     setNotifications([notification, ...notifications]);
-    message.success("Orden creada desde el contexto del activo y notificación enviada");
+    maintenanceForm.resetFields();
+    setMaintenanceOpen(false);
+    message.success(`${schedule.workOrder} creada y asignada a ${schedule.operator}`);
   };
 
   if (view === "profile") {
@@ -210,7 +247,7 @@ export function Assets() {
         onBack={() => setView("list")}
         onCapture={() => setObservationOpen(true)}
         onHistory={() => setHistoryOpen(true)}
-        onSchedule={scheduleMaintenance}
+        onSchedule={openMaintenanceScheduler}
       >
         <ObservationModal
           open={observationOpen}
@@ -218,6 +255,28 @@ export function Assets() {
           form={observationForm}
           onCancel={() => setObservationOpen(false)}
           onFinish={captureObservation}
+        />
+        <MaintenanceScheduleModal
+          open={maintenanceOpen}
+          asset={asset}
+          profile={profile}
+          form={maintenanceForm}
+          protocols={applicableProtocols}
+          directProtocolIds={new Set(directProtocols.map((protocol) => protocol.id))}
+          selectedProtocol={selectedMaintenanceProtocol}
+          onProtocolChange={(protocolId) => {
+            const protocol = protocols.find((item) => item.id === protocolId);
+            if (!protocol) return;
+            maintenanceForm.setFieldsValue({
+              operator: protocol.operators[0] ?? "Ana Torres",
+              tolerance: protocol.schedule[0]?.tolerance ?? 20,
+            });
+          }}
+          onCancel={() => {
+            maintenanceForm.resetFields();
+            setMaintenanceOpen(false);
+          }}
+          onFinish={scheduleMaintenance}
         />
         <Modal
           title={`Historial completo · ${asset.id}`}
@@ -309,31 +368,17 @@ export function Assets() {
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
         <Col xs={24} xl={16}>
           <Card title="Lista de activos" className="asset-list-card">
-            <Space wrap style={{ marginBottom: 12 }}>
-              <Input.Search
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Buscar código, activo, familia o planta"
-                allowClear
-                style={{ width: 310 }}
-              />
-              <Select
-                value={statusFilter}
-                onChange={setStatusFilter}
-                allowClear
-                placeholder="Estado"
-                style={{ width: 170 }}
-                options={[
-                  { value: "Available", label: "Disponible" },
-                  { value: "Maintenance", label: "Mantenimiento" },
-                  { value: "Risk", label: "En riesgo" },
-                ]}
-              />
-            </Space>
-            <Table
+            <SmartTable
+              searchPlaceholder="Buscar código, activo, familia o planta"
+              searchFields={["id", "name", "family", "plant"]}
+              filterFields={[
+                { key: "status", label: "Estado", accessor: "status" },
+                { key: "criticality", label: "Criticidad", accessor: "criticality" },
+                { key: "plant", label: "Planta", accessor: "plant" },
+              ]}
               className="asset-list-table"
               rowKey="id"
-              dataSource={filteredAssets}
+              dataSource={seedAssets}
               pagination={false}
               tableLayout="fixed"
               scroll={{ x: 950 }}
@@ -346,6 +391,8 @@ export function Assets() {
                 {
                   title: "Activo",
                   width: 280,
+                  sorter: (a, b) =>
+                    `${a.id} ${a.name}`.localeCompare(`${b.id} ${b.name}`, "es", { numeric: true }),
                   render: (_, item) => (
                     <div className="asset-table-identity">
                       <Avatar
@@ -849,6 +896,198 @@ function AssetRelationshipMap({
   );
 }
 
+function MaintenanceScheduleModal({
+  open,
+  asset,
+  profile,
+  form,
+  protocols,
+  directProtocolIds,
+  selectedProtocol,
+  onProtocolChange,
+  onCancel,
+  onFinish,
+}: {
+  open: boolean;
+  asset: Asset;
+  profile: AssetProfileDefinition;
+  form: FormInstance<MaintenanceScheduleValues>;
+  protocols: Protocol[];
+  directProtocolIds: Set<string>;
+  selectedProtocol?: Protocol;
+  onProtocolChange: (protocolId: string) => void;
+  onCancel: () => void;
+  onFinish: (values: MaintenanceScheduleValues) => void;
+}) {
+  return (
+    <Modal
+      className="asset-schedule-modal"
+      title="Programar mantenimiento"
+      open={open}
+      width={820}
+      onCancel={onCancel}
+      onOk={() => form.submit()}
+      okText="Crear orden de trabajo"
+      cancelText="Cancelar"
+    >
+      <div className="asset-schedule-context">
+        <Avatar
+          shape="square"
+          icon={<SettingOutlined />}
+          style={{ background: asset.status === "Risk" ? "#cf1322" : "#7B35C1" }}
+        />
+        <div>
+          <Typography.Text strong>
+            {asset.id} · {asset.name}
+          </Typography.Text>
+          <Typography.Text type="secondary">
+            {asset.plant} · {asset.area} · Salud {asset.health}%
+          </Typography.Text>
+        </div>
+        {assetStatusTag(asset.status)}
+      </div>
+
+      <Alert
+        className="asset-schedule-recommendation"
+        type={asset.status === "Risk" ? "warning" : "info"}
+        showIcon
+        message={
+          profile.insights.find((insight) => insight.title.includes("Ventana"))?.title ??
+          "Programación contextual"
+        }
+        description={
+          profile.insights.find((insight) => insight.title.includes("Ventana"))?.detail ??
+          "Selecciona el protocolo y la ventana de ejecución más conveniente para el activo."
+        }
+      />
+
+      <Form form={form} layout="vertical" onFinish={onFinish}>
+        <Form.Item
+          name="protocolId"
+          label="Protocolos aplicables o relacionados"
+          rules={[{ required: true, message: "Selecciona un protocolo" }]}
+        >
+          {protocols.length ? (
+            <Radio.Group
+              className="asset-schedule-protocols"
+              onChange={(event) => onProtocolChange(event.target.value as string)}
+            >
+              {protocols.map((protocol) => (
+                <Radio value={protocol.id} key={protocol.id}>
+                  <div className="asset-schedule-protocol-copy">
+                    <Space size={6} wrap>
+                      <Typography.Text strong>{protocol.name}</Typography.Text>
+                      <Tag color={directProtocolIds.has(protocol.id) ? "purple" : "blue"}>
+                        {directProtocolIds.has(protocol.id) ? "Aplicable al activo" : "Relacionado"}
+                      </Tag>
+                      {priorityTag(protocol.priority)}
+                    </Space>
+                    <Typography.Text type="secondary">{protocol.description}</Typography.Text>
+                    <Space size={12} wrap>
+                      <small>{protocol.estimatedMinutes ?? 45} min estimados</small>
+                      <small>{protocol.evidenceConfig.length} evidencias configuradas</small>
+                      <small>{protocol.operators.length} responsables elegibles</small>
+                    </Space>
+                  </div>
+                </Radio>
+              ))}
+            </Radio.Group>
+          ) : (
+            <Empty description="No hay protocolos disponibles para este activo" />
+          )}
+        </Form.Item>
+
+        {selectedProtocol && (
+          <div className="asset-schedule-protocol-summary">
+            <span>
+              <small>Activación</small>
+              <strong>{activationLabel(selectedProtocol.activationMode)}</strong>
+            </span>
+            <span>
+              <small>Duración</small>
+              <strong>{selectedProtocol.estimatedMinutes ?? 45} min</strong>
+            </span>
+            <span>
+              <small>Herramientas</small>
+              <strong>{selectedProtocol.requiredToolIds?.length ?? 0}</strong>
+            </span>
+            <span>
+              <small>Materiales</small>
+              <strong>{selectedProtocol.materialRequirements?.length ?? 0}</strong>
+            </span>
+          </div>
+        )}
+
+        <Row gutter={12}>
+          <Col xs={24} md={12}>
+            <Form.Item
+              name="date"
+              label="Fecha de ejecución"
+              rules={[{ required: true, message: "Selecciona la fecha" }]}
+            >
+              <DatePicker
+                style={{ width: "100%" }}
+                format="DD/MM/YYYY"
+                disabledDate={(date) => date.isBefore(dayjs().startOf("day"))}
+              />
+            </Form.Item>
+          </Col>
+          <Col xs={24} md={12}>
+            <Form.Item
+              name="time"
+              label="Hora de inicio"
+              rules={[{ required: true, message: "Selecciona la hora" }]}
+            >
+              <TimePicker style={{ width: "100%" }} format="HH:mm" minuteStep={5} />
+            </Form.Item>
+          </Col>
+          <Col xs={24} md={12}>
+            <Form.Item
+              name="operator"
+              label="Responsable"
+              rules={[{ required: true, message: "Selecciona al responsable" }]}
+            >
+              <Select
+                placeholder="Responsable elegible"
+                options={(selectedProtocol?.operators ?? []).map((operator) => ({
+                  label: operator,
+                  value: operator,
+                }))}
+              />
+            </Form.Item>
+          </Col>
+          <Col xs={24} md={12}>
+            <Form.Item name="tolerance" label="Ventana de tolerancia" rules={[{ required: true }]}>
+              <Select
+                options={[10, 15, 20, 30, 45, 60].map((minutes) => ({
+                  label: `± ${minutes} minutos`,
+                  value: minutes,
+                }))}
+              />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Form.Item name="comments" label="Detalles, instrucciones o comentarios">
+          <Input.TextArea
+            rows={3}
+            maxLength={500}
+            showCount
+            placeholder="Ej. Validar vibración antes de desmontar, coordinar ventana con producción..."
+          />
+        </Form.Item>
+
+        <Alert
+          type="info"
+          showIcon
+          message="Se creará una orden pendiente vinculada a este Asset Profile."
+          description="El responsable recibirá una notificación por WhatsApp y la orden aparecerá en Programación, Órdenes de trabajo y Mantenimiento conectado."
+        />
+      </Form>
+    </Modal>
+  );
+}
+
 function ObservationModal({
   open,
   asset,
@@ -970,6 +1209,12 @@ function assetStatusLabel(status: Asset["status"]) {
   if (status === "Risk") return "En riesgo";
   if (status === "Maintenance") return "En mantenimiento";
   return "Disponible";
+}
+
+function activationLabel(mode: Protocol["activationMode"]) {
+  if (mode === "Recurring") return "Programación recurrente";
+  if (mode === "Triggered") return "Por condición o evento";
+  return "Bajo demanda";
 }
 
 function relationshipColor(type: AssetRelationship["type"]) {

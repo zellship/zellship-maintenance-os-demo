@@ -1,44 +1,15 @@
-import { useMemo, useState } from "react";
-import {
-  Card,
-  Table,
-  Button,
-  Space,
-  Input,
-  Select,
-  Dropdown,
-  Typography,
-  message,
-  Modal,
-  Timeline,
-  Tag,
-} from "antd";
+import { useState } from "react";
+import { Card, Button, Space, Dropdown, Typography, message, Modal, Timeline, Tag } from "antd";
+import { SmartTable } from "../shared/SmartTable";
 import { PlusOutlined, ImportOutlined, MoreOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useStore } from "../store";
-import { branches, categories } from "../seed";
 import { statusTag, priorityTag } from "../ui";
 import type { Protocol } from "../types";
 
 export function ProtocolCatalog({ onNew }: { onNew: () => void }) {
   const { protocols, setProtocols, executions } = useStore();
-  const [q, setQ] = useState("");
-  const [cat, setCat] = useState<string | undefined>();
-  const [branch, setBranch] = useState<string | undefined>();
-  const [status, setStatus] = useState<string | undefined>();
   const [history, setHistory] = useState<Protocol | null>(null);
-
-  const filtered = useMemo(
-    () =>
-      protocols.filter(
-        (p) =>
-          (!q || p.name.toLowerCase().includes(q.toLowerCase())) &&
-          (!cat || p.category === cat) &&
-          (!branch || p.branches.includes(branch)) &&
-          (!status || p.status === status),
-      ),
-    [protocols, q, cat, branch, status],
-  );
 
   const toggle = (p: Protocol, newStatus: Protocol["status"]) => {
     setProtocols(protocols.map((x) => (x.id === p.id ? { ...x, status: newStatus } : x)));
@@ -88,45 +59,17 @@ export function ProtocolCatalog({ onNew }: { onNew: () => void }) {
       </Space>
 
       <Card>
-        <Space wrap style={{ marginBottom: 12 }}>
-          <Input.Search
-            placeholder="Buscar nombre"
-            allowClear
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            style={{ width: 240 }}
-          />
-          <Select
-            placeholder="Categoría"
-            allowClear
-            value={cat}
-            onChange={setCat}
-            options={categories.map((c) => ({ label: c, value: c }))}
-            style={{ width: 160 }}
-          />
-          <Select
-            placeholder="Planta"
-            allowClear
-            value={branch}
-            onChange={setBranch}
-            options={branches.map((c) => ({ label: c, value: c }))}
-            style={{ width: 180 }}
-          />
-          <Select
-            placeholder="Estado"
-            allowClear
-            value={status}
-            onChange={setStatus}
-            options={["Draft", "Active", "Inactive", "Archived"].map((c) => ({
-              label: c,
-              value: c,
-            }))}
-            style={{ width: 140 }}
-          />
-        </Space>
-
-        <Table
-          dataSource={filtered}
+        <SmartTable
+          searchPlaceholder="Buscar protocolo, categoría, descripción o activo"
+          searchFields={["name", "description", "category", "assetIds"]}
+          filterFields={[
+            { key: "category", label: "Categoría", accessor: "category" },
+            { key: "branch", label: "Planta", accessor: "branches" },
+            { key: "status", label: "Estado", accessor: "status" },
+            { key: "priority", label: "Prioridad", accessor: "priority" },
+            { key: "activation", label: "Activación", accessor: "activationMode" },
+          ]}
+          dataSource={protocols}
           rowKey="id"
           columns={[
             {

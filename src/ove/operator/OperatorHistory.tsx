@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Button, Card, Modal, Progress, Typography, Table } from "antd";
+import { Button, Card, Modal, Progress, Typography } from "antd";
+import { SmartTable } from "../shared/SmartTable";
 import dayjs from "dayjs";
 import { useStore } from "../store";
 import { statusTag } from "../ui";
@@ -16,7 +17,21 @@ export function OperatorHistory() {
     <>
       <Typography.Title level={4}>Historial</Typography.Title>
       <Card>
-        <Table
+        <SmartTable
+          searchPlaceholder="Buscar protocolo o estado"
+          searchFields={[
+            "status",
+            (execution) => protocols.find((protocol) => protocol.id === execution.protocolId)?.name,
+          ]}
+          filterFields={[
+            { key: "status", label: "Estado", accessor: "status" },
+            {
+              key: "protocol",
+              label: "Protocolo",
+              accessor: (execution) =>
+                protocols.find((protocol) => protocol.id === execution.protocolId)?.name,
+            },
+          ]}
           size="small"
           dataSource={mine}
           rowKey="id"
@@ -24,6 +39,13 @@ export function OperatorHistory() {
           columns={[
             {
               title: "Protocolo",
+              sorter: (a, b) =>
+                (
+                  protocols.find((protocol) => protocol.id === a.protocolId)?.name ?? ""
+                ).localeCompare(
+                  protocols.find((protocol) => protocol.id === b.protocolId)?.name ?? "",
+                  "es",
+                ),
               render: (_, e) => protocols.find((p) => p.id === e.protocolId)?.name,
             },
             {
@@ -39,7 +61,12 @@ export function OperatorHistory() {
                 <Progress percent={value ?? 0} size="small" style={{ minWidth: 82 }} />
               ),
             },
-            { title: "Validado por", render: (_, e) => e.approval?.supervisor || "—" },
+            {
+              title: "Validado por",
+              sorter: (a, b) =>
+                (a.approval?.supervisor ?? "").localeCompare(b.approval?.supervisor ?? "", "es"),
+              render: (_, e) => e.approval?.supervisor || "—",
+            },
             {
               title: "",
               render: (_, e) => (

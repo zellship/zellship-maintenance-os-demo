@@ -16,12 +16,12 @@ import {
   Segmented,
   Space,
   Statistic,
-  Table,
   Tabs,
   Tag,
   Typography,
   message,
 } from "antd";
+import { SmartTable } from "../shared/SmartTable";
 import type { MenuProps } from "antd";
 import {
   ApiOutlined,
@@ -71,7 +71,13 @@ const modeInfo: Record<
   },
 };
 
-export function OperationsLive({ onNav }: { onNav: (key: string) => void }) {
+export function OperationsLive({
+  onNav,
+  onOpenOrder,
+}: {
+  onNav: (key: string) => void;
+  onOpenOrder: (orderId: string) => void;
+}) {
   const {
     protocols,
     notifications,
@@ -103,6 +109,11 @@ export function OperationsLive({ onNav }: { onNav: (key: string) => void }) {
     [feedFilter, notifications],
   );
   const selectedEvent = notifications.find((event) => event.id === selectedEventId) ?? feed[0];
+  const attentionEvents = notifications
+    .filter((event) => ["ValidationRequired", "Incident", "Escalation"].includes(event.type))
+    .slice()
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .slice(0, 2);
 
   const addScheduleFromMode = (mode: ProtocolActivation) => {
     const protocol = protocols.find((item) => item.activationMode === mode) ?? protocols[0];
@@ -210,15 +221,18 @@ export function OperationsLive({ onNav }: { onNav: (key: string) => void }) {
   };
 
   const today = dayjs().format("YYYY-MM-DD");
-  const todaysSchedules = schedules.filter((schedule) => schedule.date === today);
-  const completedToday = todaysSchedules.filter(
+  const programDate = schedules.some((schedule) => schedule.date === today)
+    ? today
+    : (schedules.map((schedule) => schedule.date).sort((a, b) => b.localeCompare(a))[0] ?? today);
+  const dailySchedules = schedules.filter((schedule) => schedule.date === programDate);
+  const completedInProgram = dailySchedules.filter(
     (schedule) => schedule.status === "Completed",
   ).length;
-  const pendingToday = todaysSchedules.filter(
+  const pendingInProgram = dailySchedules.filter(
     (schedule) => schedule.status === "Pending" || schedule.status === "InProgress",
   ).length;
-  const compliance = todaysSchedules.length
-    ? Math.round((completedToday / todaysSchedules.length) * 100)
+  const compliance = dailySchedules.length
+    ? Math.round((completedInProgram / dailySchedules.length) * 100)
     : 0;
   const openIncidents = incidents.filter(
     (incident) => incident.status !== "Closed" && incident.status !== "Resolved",
@@ -226,7 +240,7 @@ export function OperationsLive({ onNav }: { onNav: (key: string) => void }) {
   const averageAvailability = Math.round(
     seedAssets.reduce((sum, asset) => sum + asset.availability, 0) / seedAssets.length,
   );
-  const orderRows = todaysSchedules.map((schedule) => {
+  const orderRows = dailySchedules.map((schedule) => {
     const protocol = protocols.find((item) => item.id === schedule.protocolId);
     return {
       key: schedule.id,
@@ -307,62 +321,147 @@ export function OperationsLive({ onNav }: { onNav: (key: string) => void }) {
         </div>
       </div>
 
-      <Row gutter={[12, 12]} style={{ marginTop: 16 }}>
-        <Col xs={12} md={6}>
-          <Card size="small">
-            <Statistic
-              title="Cumplimiento de hoy"
-              value={compliance}
-              suffix="%"
-              prefix={<CheckCircleOutlined />}
-              valueStyle={{ color: "#7B35C1" }}
-            />
-          </Card>
-        </Col>
-        <Col xs={12} md={6}>
-          <Card size="small">
-            <Statistic
-              title="Pendientes hoy"
-              value={pendingToday}
-              prefix={<ClockCircleOutlined />}
-            />
-          </Card>
-        </Col>
-        <Col xs={12} md={6}>
-          <Card size="small">
-            <Statistic
-              title="Incidencias activas"
-              value={openIncidents.length}
-              prefix={<ExclamationCircleOutlined />}
-              valueStyle={{ color: "#cf1322" }}
-            />
-          </Card>
-        </Col>
-        <Col xs={12} md={6}>
-          <Card size="small">
-            <Statistic
-              title="Disponibilidad de activos"
-              value={averageAvailability}
-              suffix="%"
-              prefix={<DeploymentUnitOutlined />}
-            />
-          </Card>
-        </Col>
-      </Row>
+      <div className="operations-command-grid">
+        <Card
+          className="operations-health-card"
+          title="Estado operativo"
+          extra={<Typography.Text type="secondary">Últimos 7 días</Typography.Text>}
+        >
+          <div className="operations-health-layout">
+            <div className="operations-compliance-score">
+              <Progress
+                type="circle"
+                percent={compliance}
+                size={164}
+                strokeColor="#7B35C1"
+                trailColor="#eee9f4"
+                strokeWidth={8}
+                format={(percent) => (
+                  <span className="operations-compliance-value">
+                    <small>Cumplimiento</small>
+                    {percent}%
+                  </span>
+                )}
+              />
+              <svg
+                className="operations-health-trend"
+                viewBox="0 0 220 42"
+                role="img"
+                aria-label="Tendencia de cumplimiento de los últimos siete días"
+              >
+                <polyline
+                  points="2,30 35,20 69,32 103,18 137,21 171,15 218,18"
+                  fill="none"
+                  stroke="#7B35C1"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <circle cx="218" cy="18" r="4" fill="#7B35C1" />
+              </svg>
+              <Typography.Text type="secondary" className="operations-trend-caption">
+                Tendencia 7 días · <b>+4 pp</b>
+              </Typography.Text>
+            </div>
 
-      <Card
-        className="live-feed-card"
-        style={{ marginTop: 16 }}
-        title={
-          <Space>
-            <span className="live-dot" />
-            Actividad de la operación
-          </Space>
-        }
-        extra={<Tag>{feed.length} eventos</Tag>}
-      >
-        <div className="operations-feed-toolbar">
-          <div>
+            <div className="operations-health-metrics">
+              <div className="operations-health-metric availability">
+                <Avatar icon={<DeploymentUnitOutlined />} />
+                <Statistic title="Disponibilidad" value={averageAvailability} suffix="%" />
+              </div>
+              <div className="operations-health-metric pending">
+                <Avatar icon={<ClockCircleOutlined />} />
+                <Statistic title="Pendientes" value={pendingInProgram} />
+              </div>
+              <div className="operations-health-metric incidents">
+                <Avatar icon={<ExclamationCircleOutlined />} />
+                <Statistic title="Incidencias" value={openIncidents.length} />
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        <Card
+          className="operations-attention-card"
+          title={
+            <Space>
+              <BellOutlined />
+              Atención ahora
+              <Badge count={attentionEvents.length} />
+            </Space>
+          }
+          extra={
+            <Button type="link" size="small" onClick={() => onNav("incidents")}>
+              Ver todas
+            </Button>
+          }
+        >
+          <div className="operations-attention-list">
+            {attentionEvents.map((event) => {
+              const critical = ["Incident", "Escalation"].includes(event.type);
+              return (
+                <div
+                  className={`operations-attention-item ${critical ? "critical" : "validation"}`}
+                  key={event.id}
+                  onClick={() => inspectEvent(event)}
+                >
+                  <div className="operations-attention-item-header">
+                    <Space size={8}>
+                      <Avatar icon={critical ? <ExclamationCircleOutlined /> : <ApiOutlined />} />
+                      <Typography.Text strong>
+                        {dayjs(event.createdAt).format("HH:mm")}
+                      </Typography.Text>
+                      <Typography.Text type="secondary">{eventAge(event)}</Typography.Text>
+                    </Space>
+                    <Tag color={critical ? "red" : "blue"}>
+                      {critical ? "Incidencia crítica" : "Validación pendiente"}
+                    </Tag>
+                  </div>
+                  <Typography.Title level={5}>{event.message}</Typography.Title>
+                  <div className="operations-attention-meta">
+                    <div>
+                      <Typography.Text type="secondary">Impacto</Typography.Text>
+                      <span className="operations-impact-dots" aria-label="Impacto alto">
+                        <i />
+                        <i />
+                        <i />
+                        <i className="inactive" />
+                      </span>
+                      <Typography.Text>Alto</Typography.Text>
+                    </div>
+                    <div>
+                      <Typography.Text type="secondary">Responsable</Typography.Text>
+                      <Typography.Text>{event.actor}</Typography.Text>
+                    </div>
+                  </div>
+                  <Button
+                    type={critical ? "default" : "primary"}
+                    danger={critical}
+                    onClick={(clickEvent) => {
+                      clickEvent.stopPropagation();
+                      if (critical) setAlertsDrawerOpen(true);
+                      else inspectEvent(event);
+                    }}
+                  >
+                    {critical ? "Atender incidencia" : "Revisar validación"}
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+
+        <Card
+          className="live-feed-card operations-live-stream-card"
+          title={
+            <Space>
+              <span className="live-dot" />
+              Operación en vivo
+            </Space>
+          }
+          extra={<Typography.Text type="secondary">{feed.length} eventos</Typography.Text>}
+        >
+          <div className="operations-feed-toolbar operations-stream-toolbar">
             <Segmented
               value={feedFilter}
               onChange={(value) => setFeedFilter(value as FeedFilter)}
@@ -374,76 +473,82 @@ export function OperationsLive({ onNav }: { onNav: (key: string) => void }) {
               ]}
             />
           </div>
-          <Space size={6}>
-            <Badge status="processing" />
-            <Typography.Text type="secondary">Actualización en tiempo real</Typography.Text>
-          </Space>
-        </div>
-        <List
-          className="operations-newsfeed"
-          dataSource={feed}
-          locale={{ emptyText: "No hay eventos para este filtro" }}
-          renderItem={(event) => (
-            <List.Item
-              className={`operations-feed-item ${event.id === selectedEvent?.id ? "selected" : ""}`}
-              onClick={() => inspectEvent(event)}
-              actions={[
-                <Button key="view" type="text" size="small" icon={<EyeOutlined />}>
-                  Ver detalle
-                </Button>,
-              ]}
-            >
-              <List.Item.Meta
-                avatar={
-                  <div className="feed-time-rail">
-                    <span>{dayjs(event.createdAt).format("HH:mm")}</span>
-                    <i className={eventTone(event)} />
-                  </div>
-                }
-                title={
-                  <Space wrap>
-                    <b>{event.message}</b>
-                    {event.status === "Sent" && <Badge status="processing" />}
-                  </Space>
-                }
-                description={
-                  <Space wrap>
-                    <Tag color={channelColor(event.channel)} icon={channelIcon(event.channel)}>
-                      {event.channel}
-                    </Tag>
-                    <Tag>{event.source ?? "Automatic"}</Tag>
-                    <span>{event.actor}</span>
-                    <span>· {event.event ?? event.type}</span>
-                    <Tag color="geekblue">{eventAsset(event)}</Tag>
-                  </Space>
-                }
-              />
-            </List.Item>
-          )}
-        />
-      </Card>
+          <List
+            className="operations-newsfeed operations-newsfeed-compact"
+            dataSource={feed.slice(0, 6)}
+            locale={{ emptyText: "No hay eventos para este filtro" }}
+            renderItem={(event) => (
+              <List.Item
+                className={`operations-feed-item ${event.id === selectedEvent?.id ? "selected" : ""}`}
+                onClick={() => inspectEvent(event)}
+                actions={[
+                  <Button
+                    key="view"
+                    type="text"
+                    size="small"
+                    icon={<EyeOutlined />}
+                    aria-label="Ver detalle"
+                    title="Ver detalle"
+                  />,
+                ]}
+              >
+                <List.Item.Meta
+                  avatar={
+                    <div className="feed-time-rail">
+                      <span>{dayjs(event.createdAt).format("HH:mm")}</span>
+                      <i className={eventTone(event)} />
+                    </div>
+                  }
+                  title={<b>{event.message}</b>}
+                  description={
+                    <Space wrap size={6}>
+                      <Tag color={channelColor(event.channel)} icon={channelIcon(event.channel)}>
+                        {event.channel}
+                      </Tag>
+                      <span>{event.actor}</span>
+                      <Tag color="geekblue">{eventAsset(event)}</Tag>
+                    </Space>
+                  }
+                />
+              </List.Item>
+            )}
+          />
+          <Button type="link" block onClick={() => onNav("notifications")}>
+            Ver actividad completa
+          </Button>
+        </Card>
+      </div>
 
       <Card
         className="live-orders-card"
         style={{ marginTop: 16 }}
         title={
           <div>
-            <Typography.Text strong>Órdenes de hoy</Typography.Text>
+            <Typography.Text strong>Programa de mantenimiento del día</Typography.Text>
             <Typography.Text type="secondary" className="live-card-subtitle">
-              Seguimiento operativo y responsables asignados
+              Jornada operativa · {dayjs(programDate).format("DD/MM/YYYY")} · avance y responsables
             </Typography.Text>
           </div>
         }
         extra={
           <Space>
-            <Tag color={pendingToday ? "orange" : "green"}>{pendingToday} pendientes</Tag>
+            <Tag color={pendingInProgram ? "orange" : "green"}>
+              {pendingInProgram} {pendingInProgram === 1 ? "pendiente" : "pendientes"}
+            </Tag>
             <Button size="small" onClick={() => onNav("orders")}>
-              Abrir módulo
+              Ver programa completo
             </Button>
           </Space>
         }
       >
-        <Table
+        <SmartTable
+          searchPlaceholder="Buscar orden, protocolo, activo o responsable"
+          searchFields={["workOrder", "protocol", "asset", "operator"]}
+          filterFields={[
+            { key: "status", label: "Estado", accessor: "status" },
+            { key: "operator", label: "Responsable", accessor: "operator" },
+            { key: "asset", label: "Activo", accessor: "asset" },
+          ]}
           size="middle"
           pagination={false}
           dataSource={orderRows}
@@ -460,8 +565,8 @@ export function OperationsLive({ onNav }: { onNav: (key: string) => void }) {
               title: "Acción",
               width: 110,
               fixed: "right",
-              render: () => (
-                <Button size="small" onClick={() => onNav("orders")}>
+              render: (_, row) => (
+                <Button size="small" onClick={() => onOpenOrder(row.key)}>
                   Ver orden
                 </Button>
               ),
@@ -762,6 +867,14 @@ function eventTone(event: Notification) {
   if (event.type === "FlowTriggered") return "trigger";
   if (event.type === "Completed") return "success";
   return "info";
+}
+
+function eventAge(event: Notification) {
+  const minutes = Math.max(1, dayjs().diff(dayjs(event.createdAt), "minute"));
+  if (minutes < 60) return `Hace ${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `Hace ${hours} h`;
+  return `Hace ${Math.floor(hours / 24)} d`;
 }
 
 function eventToneColor(tone: string) {

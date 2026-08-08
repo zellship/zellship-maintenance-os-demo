@@ -5,6 +5,8 @@ import {
   CheckSquareOutlined,
   BarChartOutlined,
   BellOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
 } from "@ant-design/icons";
 import { SupervisorAlerts } from "./SupervisorAlerts";
 import { SupervisorValidations } from "./SupervisorValidations";
@@ -15,12 +17,24 @@ type SupervisorSection = "alerts" | "validations" | "notifications" | "kpis";
 
 export function SupervisorApp() {
   const [key, setKey] = useState<SupervisorSection>("validations");
+  const [collapsed, setCollapsed] = useState(false);
+  const [mobile, setMobile] = useState(false);
+
   return (
     <Layout>
       <Layout.Sider
+        className="maintenance-sider supervisor-sider"
         breakpoint="lg"
-        collapsedWidth={0}
-        width={220}
+        collapsed={collapsed}
+        collapsedWidth={mobile ? 0 : 72}
+        collapsible
+        onBreakpoint={(broken) => {
+          setMobile(broken);
+          if (broken) setCollapsed(true);
+        }}
+        onCollapse={setCollapsed}
+        trigger={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+        width={230}
         style={{ background: "#fff", borderRight: "1px solid #f0f0f0" }}
       >
         <Menu
@@ -36,9 +50,7 @@ export function SupervisorApp() {
           ]}
         />
       </Layout.Sider>
-      <Layout.Content
-        style={{ padding: 24, background: "#f5f6fa", minHeight: "calc(100vh - 64px)" }}
-      >
+      <Layout.Content className="supervisor-content">
         {key === "alerts" && <SupervisorAlerts />}
         {key === "validations" && <SupervisorValidations />}
         {key === "notifications" && <NotificationCenter role="supervisor" />}

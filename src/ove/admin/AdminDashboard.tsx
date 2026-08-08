@@ -3,7 +3,6 @@ import {
   Col,
   Row,
   Statistic,
-  Table,
   Tag,
   Typography,
   Space,
@@ -13,6 +12,7 @@ import {
   Progress,
   message,
 } from "antd";
+import { SmartTable } from "../shared/SmartTable";
 import {
   CheckCircleOutlined,
   ClockCircleOutlined,
@@ -122,7 +122,14 @@ export function AdminDashboard({ onNav }: { onNav: (k: string) => void }) {
               </Button>
             }
           >
-            <Table
+            <SmartTable
+              searchPlaceholder="Buscar orden, protocolo, activo o responsable"
+              searchFields={["workOrder", "protocol", "asset", "operator"]}
+              filterFields={[
+                { key: "status", label: "Estado", accessor: "status" },
+                { key: "operator", label: "Responsable", accessor: "operator" },
+                { key: "asset", label: "Activo", accessor: "asset" },
+              ]}
               size="middle"
               pagination={false}
               dataSource={rows}

@@ -1,4 +1,5 @@
-import { Card, Table, Typography, Button, Space, message } from "antd";
+import { Card, Typography, Button, Space, message } from "antd";
+import { SmartTable } from "../shared/SmartTable";
 import dayjs from "dayjs";
 import { useStore } from "../store";
 import { statusTag } from "../ui";
@@ -15,12 +16,35 @@ export function IncidentsList() {
         Incidencias
       </Typography.Title>
       <Card>
-        <Table
+        <SmartTable
+          searchPlaceholder="Buscar protocolo, tipo o descripción"
+          searchFields={[
+            "type",
+            "description",
+            (incident) => protocols.find((protocol) => protocol.id === incident.protocolId)?.name,
+          ]}
+          filterFields={[
+            { key: "status", label: "Estado", accessor: "status" },
+            { key: "type", label: "Tipo", accessor: "type" },
+            {
+              key: "protocol",
+              label: "Protocolo",
+              accessor: (incident) =>
+                protocols.find((protocol) => protocol.id === incident.protocolId)?.name,
+            },
+          ]}
           dataSource={incidents}
           rowKey="id"
           columns={[
             {
               title: "Protocolo",
+              sorter: (a, b) =>
+                (
+                  protocols.find((protocol) => protocol.id === a.protocolId)?.name ?? ""
+                ).localeCompare(
+                  protocols.find((protocol) => protocol.id === b.protocolId)?.name ?? "",
+                  "es",
+                ),
               render: (_, i) => protocols.find((p) => p.id === i.protocolId)?.name,
             },
             { title: "Tipo", dataIndex: "type" },

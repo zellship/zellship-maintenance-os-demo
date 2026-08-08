@@ -45,6 +45,7 @@ import type {
 } from "../types";
 import { seedAssets, seedSkills } from "../seed";
 import { maintenanceCapturedUrl, maintenanceReferenceUrl } from "../shared/maintenanceAssets";
+import { isConsumptionDeviation, isFormValid } from "../domain";
 
 export function ExecutionFlow({
   scheduleId,
@@ -1029,21 +1030,4 @@ function DynamicForm({
       </Form>
     </>
   );
-}
-
-function isFormValid(fields: FormField[], values: Record<string, unknown>) {
-  return fields
-    .filter((f) => f.required && f.type !== "separator")
-    .every((f) => {
-      const v = values[f.id];
-      return v !== undefined && v !== null && v !== "";
-    });
-}
-
-function isConsumptionDeviation(allocation: MaterialAllocation) {
-  const actual = allocation.actualQuantity ?? 0;
-  if (allocation.mode === "Exact") return actual !== (allocation.quantity ?? 0);
-  if (allocation.min !== undefined && actual < allocation.min) return true;
-  if (allocation.max !== undefined && actual > allocation.max) return true;
-  return false;
 }
