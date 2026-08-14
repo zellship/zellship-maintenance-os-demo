@@ -9,70 +9,15 @@ import {
   SettingOutlined,
   ShopOutlined,
 } from "@ant-design/icons";
-import type { Role } from "./types";
+import { activeDemo } from "../demo-config/active";
+import type { LoginProfile } from "../demo-config/types";
 
-export type LoginProfile = {
-  id: string;
-  name: string;
-  initials: string;
-  title: string;
-  context: string;
-  role: Role;
-  color: string;
-  colorEnd: string;
-};
+export type { LoginProfile } from "../demo-config/types";
 
-const PROFILES: LoginProfile[] = [
-  {
-    id: "USR-018",
-    name: "Ana Torres",
-    initials: "AT",
-    title: "Técnica de mantenimiento",
-    context: "Operación móvil · Planta Monterrey",
-    role: "operator",
-    color: "#3457F1",
-    colorEnd: "#4268F5",
-  },
-  {
-    id: "USR-024",
-    name: "Laura Díaz",
-    initials: "LD",
-    title: "Técnica especialista",
-    context: "Diagnóstico y ejecución · Línea 3",
-    role: "operator",
-    color: "#7046D7",
-    colorEnd: "#8458E6",
-  },
-  {
-    id: "USR-006",
-    name: "Roberto Salas",
-    initials: "RS",
-    title: "Supervisor de mantenimiento",
-    context: "Validación y liberación de activos",
-    role: "supervisor",
-    color: "#328653",
-    colorEnd: "#419D66",
-  },
-  {
-    id: "USR-001",
-    name: "Mónica Reyes",
-    initials: "MR",
-    title: "Coordinadora de mantenimiento",
-    context: "Planeación, recursos y control",
-    role: "admin",
-    color: "#B85F20",
-    colorEnd: "#D17631",
-  },
-];
-
-const TERMINALS = [
-  "Planta Monterrey · Terminal 02",
-  "Planta Saltillo · Terminal 01",
-  "Planta Querétaro · Terminal 03",
-];
-
-const DEMO_PIN = "1234";
-const LOGO_SRC = `${import.meta.env.BASE_URL}zellship-logo-white.svg`;
+const PROFILES = activeDemo.context.loginProfiles;
+const TERMINALS = activeDemo.context.terminals;
+const DEMO_PIN = activeDemo.context.demoPin;
+const LOGO_SRC = `${import.meta.env.BASE_URL}${activeDemo.branding.logoPath}`;
 
 export function LoginScreen({ onLogin }: { onLogin: (profile: LoginProfile) => void }) {
   const [selected, setSelected] = useState<LoginProfile | null>(null);
@@ -94,7 +39,7 @@ export function LoginScreen({ onLogin }: { onLogin: (profile: LoginProfile) => v
   const submit = () => {
     if (!selected || pin.length !== 4) return;
     if (pin !== DEMO_PIN) {
-      setError("PIN incorrecto. Usa el PIN de demostración 1234.");
+      setError(`PIN incorrecto. Usa el PIN de demostración ${DEMO_PIN}.`);
       setPin("");
       return;
     }
@@ -182,7 +127,7 @@ export function LoginScreen({ onLogin }: { onLogin: (profile: LoginProfile) => v
           </div>
 
           <Typography.Paragraph className="login-pin-hint">
-            PIN de demostración: 1234
+            PIN de demostración: {DEMO_PIN}
           </Typography.Paragraph>
           {error && (
             <Typography.Text className="login-pin-error" role="alert">
@@ -211,7 +156,7 @@ export function LoginScreen({ onLogin }: { onLogin: (profile: LoginProfile) => v
       <section className="login-profile-selector" aria-labelledby="login-heading">
         <div className="login-selector-mobile-header">
           <div className="login-brand-panel">
-            <img src={LOGO_SRC} alt="Zellship" />
+            <img src={LOGO_SRC} alt={activeDemo.branding.brandName} />
           </div>
 
           <Dropdown
@@ -282,8 +227,11 @@ function WelcomePanel({
   const [plantName, terminalName] = terminal.split(" · ");
 
   return (
-    <aside className="login-welcome-panel" aria-label="Bienvenida a Zellship Maintenance OS">
-      <img src={LOGO_SRC} alt="Zellship" />
+    <aside
+      className="login-welcome-panel"
+      aria-label={`Bienvenida a ${activeDemo.branding.productName}`}
+    >
+      <img src={LOGO_SRC} alt={activeDemo.branding.brandName} />
 
       <div className="login-welcome-copy">
         <Typography.Text>PANEL OPERATIVO</Typography.Text>

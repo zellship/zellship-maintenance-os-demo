@@ -31,6 +31,7 @@ import {
   UserOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
+import { demoNow } from "../../demo-config/clock";
 import { useStore } from "../store";
 import { maintenanceCapturedUrl, maintenanceReferenceUrl } from "../shared/maintenanceAssets";
 import { PrintReportFooter, PrintReportHeader } from "../shared/PrintReport";
@@ -87,7 +88,7 @@ export function SupervisorValidations() {
       event: "Reporte de inspección enviado",
       message: `${proto?.name ?? "Mantenimiento"}: reporte de ${exec.operator} enviado con calificación de ${exec.score ?? 94}%.`,
       status: "Sent",
-      createdAt: dayjs().toISOString(),
+      createdAt: demoNow().toISOString(),
     }));
     setNotifications([...notices, ...notifications]);
     message.success(
@@ -113,7 +114,7 @@ export function SupervisorValidations() {
                 supervisor: "Roberto Salas",
                 decision,
                 comments,
-                at: dayjs().toISOString(),
+                at: demoNow().toISOString(),
               },
               score: e.score ?? 94,
             }
@@ -129,7 +130,7 @@ export function SupervisorValidations() {
           type: "Rejected",
           status: "Open",
           description: comments || "Ejecución rechazada por supervisor.",
-          createdAt: dayjs().toISOString(),
+          createdAt: demoNow().toISOString(),
         },
         ...incidents,
       ]);
@@ -145,7 +146,7 @@ export function SupervisorValidations() {
       event: decision === "Approved" ? "Ejecución aprobada" : "Ejecución rechazada",
       message: `${proto?.name ?? "Mantenimiento"}: ${decision === "Approved" ? `aprobado con ${exec.score ?? 94}%` : "requiere corrección"}.`,
       status: "Sent",
-      createdAt: dayjs().toISOString(),
+      createdAt: demoNow().toISOString(),
     };
     setNotifications([notice, ...notifications]);
     setComments("");

@@ -8,6 +8,7 @@ import {
   WhatsAppOutlined,
 } from "@ant-design/icons";
 import type { Role } from "../types";
+import { activeDemo } from "../../demo-config/active";
 
 export type ReportDeliveryChannel = "Email" | "WhatsApp";
 
@@ -25,38 +26,7 @@ export interface ReportDeliverySelection {
   channels: ReportDeliveryChannel[];
 }
 
-const reportContacts: ReportContact[] = [
-  {
-    id: "maintenance-coordination",
-    name: "Coordinación de mantenimiento",
-    role: "admin",
-    roleLabel: "Administración",
-    email: "mantenimiento@demo-industrial.mx",
-    whatsapp: "+52 81 5550 0100",
-  },
-  {
-    id: "roberto-salas",
-    name: "Roberto Salas",
-    role: "supervisor",
-    roleLabel: "Supervisor",
-    email: "roberto.salas@demo-industrial.mx",
-  },
-  {
-    id: "monica-reyes",
-    name: "Mónica Reyes",
-    role: "supervisor",
-    roleLabel: "Supervisora",
-    whatsapp: "+52 81 5550 0162",
-  },
-  {
-    id: "ana-torres",
-    name: "Ana Torres",
-    role: "operator",
-    roleLabel: "Técnica de mantenimiento",
-    email: "ana.torres@demo-industrial.mx",
-    whatsapp: "+52 81 5550 0184",
-  },
-];
+const reportContacts: ReportContact[] = activeDemo.context.reportContacts;
 
 function availableChannels(contact: ReportContact): ReportDeliveryChannel[] {
   return [contact.email ? "Email" : null, contact.whatsapp ? "WhatsApp" : null].filter(

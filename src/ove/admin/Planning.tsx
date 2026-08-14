@@ -34,6 +34,7 @@ import {
   WarningOutlined,
 } from "@ant-design/icons";
 import dayjs, { type Dayjs } from "dayjs";
+import { demoNow } from "../../demo-config/clock";
 import { useStore } from "../store";
 import { seedAssets, seedSkills } from "../seed";
 import type { MaterialAllocation, Protocol, ResourceReservation, Schedule } from "../types";
@@ -74,7 +75,7 @@ export function Planning({ onOpenOrder }: { onOpenOrder: (scheduleId: string) =>
   } = useStore();
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<PlanningView>("week");
-  const [anchorDate, setAnchorDate] = useState(dayjs());
+  const [anchorDate, setAnchorDate] = useState(demoNow());
   const [plantFilter, setPlantFilter] = useState<string>("all");
   const [operatorFilter, setOperatorFilter] = useState<string>("all");
   const [form] = Form.useForm<FormValues>();
@@ -162,7 +163,7 @@ export function Planning({ onOpenOrder }: { onOpenOrder: (scheduleId: string) =>
       status: "Pending",
       assetId: values.assetId,
       plant: asset?.plant,
-      workOrder: `OT-${dayjs().format("MMDD")}-${String(schedules.length + 19).padStart(3, "0")}`,
+      workOrder: `OT-${demoNow().format("MMDD")}-${String(schedules.length + 19).padStart(3, "0")}`,
       toolIds: values.toolIds,
       materialAllocations: allocations,
       eligibilityValidated: true,
@@ -253,7 +254,7 @@ export function Planning({ onOpenOrder }: { onOpenOrder: (scheduleId: string) =>
         !schedules.some(
           (schedule) =>
             schedule.protocolId === protocol.id &&
-            dayjs(schedule.date).isAfter(dayjs().subtract(1, "day")) &&
+            dayjs(schedule.date).isAfter(demoNow().subtract(1, "day")) &&
             (schedule.status === "Pending" || schedule.status === "InProgress"),
         ),
     )
@@ -316,7 +317,7 @@ export function Planning({ onOpenOrder }: { onOpenOrder: (scheduleId: string) =>
               aria-label="Periodo anterior"
               onClick={() => movePeriod(-1)}
             />
-            <Button onClick={() => setAnchorDate(dayjs())}>Hoy</Button>
+            <Button onClick={() => setAnchorDate(demoNow())}>Hoy</Button>
             <Button
               icon={<RightOutlined />}
               aria-label="Periodo siguiente"
@@ -566,7 +567,7 @@ export function Planning({ onOpenOrder }: { onOpenOrder: (scheduleId: string) =>
           layout="vertical"
           onFinish={create}
           initialValues={{
-            date: dayjs().add(1, "day"),
+            date: demoNow().add(1, "day"),
             hour: dayjs("10:00", "HH:mm"),
             tolerance: 20,
             toolIds: [],

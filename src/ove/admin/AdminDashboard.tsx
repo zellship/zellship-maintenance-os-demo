@@ -22,13 +22,14 @@ import {
   BranchesOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
+import { demoNow } from "../../demo-config/clock";
 import { useStore } from "../store";
 import { statusTag } from "../ui";
 import { seedAssets } from "../seed";
 
 export function AdminDashboard({ onNav }: { onNav: (k: string) => void }) {
   const { schedules, protocols, incidents, setIncidents } = useStore();
-  const today = dayjs().format("YYYY-MM-DD");
+  const today = demoNow().format("YYYY-MM-DD");
   const todays = schedules.filter((s) => s.date === today);
   const completed = todays.filter((s) => s.status === "Completed").length;
   const pending = todays.filter((s) => s.status === "Pending" || s.status === "InProgress").length;
@@ -57,7 +58,7 @@ export function AdminDashboard({ onNav }: { onNav: (k: string) => void }) {
           </Typography.Title>
           <Typography.Text type="secondary">
             Del estándar a la evidencia y al desempeño del activo ·{" "}
-            {dayjs().format("dddd D MMMM YYYY")}
+            {demoNow().format("dddd D MMMM YYYY")}
           </Typography.Text>
         </div>
         <Button type="primary" icon={<BranchesOutlined />} onClick={() => onNav("live")}>

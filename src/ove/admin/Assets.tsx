@@ -47,10 +47,12 @@ import {
   ToolOutlined,
 } from "@ant-design/icons";
 import dayjs, { type Dayjs } from "dayjs";
+import { demoNow } from "../../demo-config/clock";
 import { seedAssets } from "../seed";
 import { useStore } from "../store";
 import { priorityTag, statusTag } from "../ui";
 import type { Asset, Notification, Protocol, Schedule } from "../types";
+import { activeDemo } from "../../demo-config/active";
 import {
   assetProfiles,
   type AssetProfileDefinition,
@@ -159,7 +161,7 @@ export function Assets() {
       assetId: asset.id,
       text: values.observation,
       author: "Coordinación de mantenimiento",
-      at: dayjs().toISOString(),
+      at: demoNow().toISOString(),
     };
     const notification: Notification = {
       id: `n-asset-${Date.now()}`,
@@ -183,16 +185,16 @@ export function Assets() {
 
   const openMaintenanceScheduler = () => {
     const protocol = applicableProtocols[0] ?? protocols[0];
-    let suggestedStart = dayjs()
+    let suggestedStart = demoNow()
       .hour(asset.status === "Risk" ? 14 : 9)
       .minute(0)
       .second(0);
-    if (suggestedStart.isBefore(dayjs())) suggestedStart = suggestedStart.add(1, "day");
+    if (suggestedStart.isBefore(demoNow())) suggestedStart = suggestedStart.add(1, "day");
     maintenanceForm.setFieldsValue({
       protocolId: protocol.id,
       date: suggestedStart,
       time: suggestedStart,
-      operator: protocol.operators[0] ?? "Ana Torres",
+      operator: protocol.operators[0] ?? activeDemo.context.primaryOperator,
       tolerance: protocol.schedule[0]?.tolerance ?? 20,
       comments: asset.status === "Risk" ? profile.insights[0]?.detail : undefined,
     });
@@ -227,7 +229,7 @@ export function Assets() {
       event: "Mantenimiento programado desde Asset Profile",
       message: `${schedule.workOrder}: ${protocol.name} asignado sobre ${asset.id} para el ${start.format("DD/MM/YYYY")} a las ${schedule.hour}.`,
       status: "Sent",
-      createdAt: dayjs().toISOString(),
+      createdAt: demoNow().toISOString(),
     };
     setSchedules([schedule, ...schedules]);
     setNotifications([notification, ...notifications]);
@@ -268,7 +270,7 @@ export function Assets() {
             const protocol = protocols.find((item) => item.id === protocolId);
             if (!protocol) return;
             maintenanceForm.setFieldsValue({
-              operator: protocol.operators[0] ?? "Ana Torres",
+              operator: protocol.operators[0] ?? activeDemo.context.primaryOperator,
               tolerance: protocol.schedule[0]?.tolerance ?? 20,
             });
           }}
@@ -1028,7 +1030,7 @@ function MaintenanceScheduleModal({
               <DatePicker
                 style={{ width: "100%" }}
                 format="DD/MM/YYYY"
-                disabledDate={(date) => date.isBefore(dayjs().startOf("day"))}
+                disabledDate={(date) => date.isBefore(demoNow().startOf("day"))}
               />
             </Form.Item>
           </Col>

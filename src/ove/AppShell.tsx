@@ -26,12 +26,13 @@ import { OperatorApp } from "./operator/OperatorApp";
 import { SupervisorApp } from "./supervisor/SupervisorApp";
 import { LoginScreen } from "./LoginScreen";
 import type { Role } from "./types";
+import { activeDemo } from "../demo-config/active";
 
-const PRIMARY = "#7B35C1";
+const PRIMARY = activeDemo.branding.primaryColor;
 
 function Inner() {
   const { role, setRole, notifications, setNotifications, reset } = useStore();
-  const [plant, setPlant] = useState("Planta Monterrey");
+  const [plant, setPlant] = useState(activeDemo.context.defaultPlant);
   const [signedIn, setSignedIn] = useState(false);
   const roleNotifications = notifications.filter(
     (n) => n.recipientRole === role || n.recipientRole === "all" || !n.recipientRole,
@@ -79,7 +80,7 @@ function Inner() {
                   width: 36,
                   height: 36,
                   borderRadius: 10,
-                  background: `linear-gradient(135deg, ${PRIMARY}, #B57BFF)`,
+                  background: `linear-gradient(135deg, ${PRIMARY}, ${activeDemo.branding.primaryColorEnd})`,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -90,22 +91,19 @@ function Inner() {
               </div>
               <div style={{ lineHeight: 1.1 }}>
                 <Typography.Text strong style={{ fontSize: 15 }}>
-                  Zellship Maintenance OS
+                  {activeDemo.branding.productName}
                 </Typography.Text>
-                <div style={{ fontSize: 11, color: "#999" }}>
-                  Foundational Engines · Industrial Operations
-                </div>
+                <div style={{ fontSize: 11, color: "#999" }}>{activeDemo.branding.tagline}</div>
               </div>
             </Space>
 
             <Segmented
               value={role}
               onChange={(v) => setRole(v as Role)}
-              options={[
-                { label: "Administración", value: "admin" },
-                { label: "Operación móvil", value: "operator" },
-                { label: "Supervisión", value: "supervisor" },
-              ]}
+              options={activeDemo.context.enabledRoles.map((value) => ({
+                label: activeDemo.context.roleLabels[value],
+                value,
+              }))}
             />
 
             <Space size={12}>
@@ -117,9 +115,7 @@ function Inner() {
                   message.success(`Contexto actualizado: ${value}`);
                 }}
                 suffixIcon={<EnvironmentOutlined />}
-                options={["Planta Monterrey", "Planta Saltillo", "Todas las plantas"].map(
-                  (value) => ({ value, label: value }),
-                )}
+                options={activeDemo.context.plantOptions.map((value) => ({ value, label: value }))}
                 style={{ width: 174 }}
               />
               <Tooltip title="Reiniciar datos demo">
@@ -130,14 +126,7 @@ function Inner() {
                 placement="bottomRight"
                 title={
                   <Space style={{ justifyContent: "space-between", width: 320 }}>
-                    <b>
-                      Notificaciones ·{" "}
-                      {role === "admin"
-                        ? "Administración"
-                        : role === "operator"
-                          ? "Operador"
-                          : "Supervisor"}
-                    </b>
+                    <b>Notificaciones · {activeDemo.context.roleLabels[role]}</b>
                     <Button
                       type="link"
                       size="small"

@@ -42,7 +42,11 @@ npm run build:ssr    # Secondary TanStack Start/Cloudflare build
 
 ## Architecture
 
-- `src/ove/`: maintenance domain, role applications, state, and seeded scenarios.
+- `src/demo-config/`: scenario registry, capability profiles, branding, deterministic clock, and
+  distribution guardrails.
+- `src/demo-config/scenarios/industrial-base/`: versioned data package for the audited industrial
+  baseline.
+- `src/ove/`: maintenance domain, role applications, and state.
 - `src/ove/store.tsx`: browser state persisted in `localStorage`.
 - `src/ove/admin/`: administration and control-center experience.
 - `src/ove/operator/`: mobile technician experience.
@@ -51,6 +55,18 @@ npm run build:ssr    # Secondary TanStack Start/Cloudflare build
 - `src/routes/`: secondary TanStack Start/SSR entry.
 
 See [docs/architecture.md](docs/architecture.md) for data flow and deployment details.
+
+## Demo variants
+
+The default scenario is `industrial-base`. Variants are registered configuration and data packages;
+they do not copy the application. Use `VITE_DEMO_SCENARIO` to select a registered scenario and
+`VITE_DEMO_DATE` to freeze the walkthrough clock when repeatable screenshots or scripts are needed.
+
+See [docs/demo-variants.md](docs/demo-variants.md) for capability profiles, distribution rules, and
+the scenario authoring process. The audited baseline is recorded in
+[`docs/baselines/MNT-DEMO-BASE-001.json`](docs/baselines/MNT-DEMO-BASE-001.json), and the separation
+increment is closed in
+[`docs/increments/MNT-DEMO-BASE-002.md`](docs/increments/MNT-DEMO-BASE-002.md).
 
 ## Demo walkthrough
 

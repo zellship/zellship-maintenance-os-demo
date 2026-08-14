@@ -24,6 +24,10 @@ notifications, GPS, AI analysis, and real-time behavior are simulated unless doc
 
 - Preserve the GitHub Pages base path unless the repository or hosting URL changes.
 - Keep demo state compatible with `zellship-maintenance-os-v4`, or add an explicit migration.
+- Add client variants through `src/demo-config/scenarios/`; do not copy the application runtime.
+- Use canonical capability IDs for navigation and behavior. Do not add client-name conditionals.
+- Give every variant a unique browser-state key and distribution classification.
+- Never place client-identifiable data in a scenario classified as `public-demo`.
 - Clearly distinguish simulated behavior from real integrations in UI and documentation.
 - Do not edit `src/routeTree.gen.ts` manually.
 - Avoid new backend or hosting dependencies without an explicit architecture decision.

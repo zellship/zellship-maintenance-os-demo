@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Layout, Menu } from "antd";
+import type { MenuProps } from "antd";
 import {
   AppstoreOutlined,
   ApartmentOutlined,
@@ -31,6 +32,7 @@ import { MaintenanceResults } from "./MaintenanceResults";
 import { NotificationCenter } from "../shared/NotificationCenter";
 import { OperationsLive } from "./OperationsLive";
 import { OperationalFlows } from "./OperationalFlows";
+import { hasCapability } from "../../demo-config/active";
 
 type Key =
   | "dashboard"
@@ -58,6 +60,100 @@ export function AdminApp() {
     setKey(nextKey);
   };
 
+  const executionItems = [
+    ...(hasCapability("planning")
+      ? [{ key: "planning", icon: <CalendarOutlined />, label: "Programación" }]
+      : []),
+    ...(hasCapability("work-orders")
+      ? [{ key: "orders", icon: <ToolOutlined />, label: "Órdenes de trabajo" }]
+      : []),
+    ...(hasCapability("maintenance-results")
+      ? [{ key: "results", icon: <SafetyCertificateOutlined />, label: "Resultados" }]
+      : []),
+  ];
+  const entityItems = [
+    ...(hasCapability("asset-management")
+      ? [{ key: "assets", icon: <DeploymentUnitOutlined />, label: "Activos" }]
+      : []),
+    ...(hasCapability("resource-management")
+      ? [{ key: "resources", icon: <TeamOutlined />, label: "Recursos" }]
+      : []),
+  ];
+  const governanceItems = [
+    ...(hasCapability("incident-management")
+      ? [{ key: "incidents", icon: <AlertOutlined />, label: "Incidencias" }]
+      : []),
+    ...(hasCapability("notifications")
+      ? [{ key: "notifications", icon: <BellOutlined />, label: "Notificaciones" }]
+      : []),
+    ...(hasCapability("audit-log")
+      ? [{ key: "bitacora", icon: <HistoryOutlined />, label: "Bitácora" }]
+      : []),
+  ];
+  const designItems = [
+    ...(hasCapability("protocol-management")
+      ? [{ key: "catalog", icon: <FileProtectOutlined />, label: "Protocolos" }]
+      : []),
+    ...(hasCapability("operational-flows")
+      ? [{ key: "flows", icon: <BranchesOutlined />, label: "Flujos operativos" }]
+      : []),
+  ];
+  const menuItems: MenuProps["items"] = [
+    ...(hasCapability("admin-control-center")
+      ? [{ key: "dashboard", icon: <DashboardOutlined />, label: "Centro de control" }]
+      : []),
+    ...(executionItems.length
+      ? [
+          {
+            key: "execution",
+            icon: <AppstoreOutlined />,
+            label: "Operaciones",
+            children: executionItems,
+          },
+        ]
+      : []),
+    ...(entityItems.length
+      ? [
+          {
+            key: "entities",
+            icon: <ApartmentOutlined />,
+            label: "Recursos",
+            children: entityItems,
+          },
+        ]
+      : []),
+    ...(governanceItems.length
+      ? [
+          {
+            key: "governance",
+            icon: <SafetyCertificateOutlined />,
+            label: "Control",
+            children: governanceItems,
+          },
+        ]
+      : []),
+    ...(designItems.length
+      ? [
+          {
+            key: "design",
+            icon: <BranchesOutlined />,
+            label: "Configuraciones",
+            children: designItems,
+          },
+        ]
+      : []),
+    ...(hasCapability("executive-analytics")
+      ? [
+          {
+            key: "analytics",
+            icon: <BarChartOutlined />,
+            label: "Análisis",
+            children: [{ key: "reportes", icon: <BarChartOutlined />, label: "Reportes" }],
+          },
+        ]
+      : []),
+  ];
+
   return (
     <Layout>
       <Layout.Sider
@@ -80,65 +176,7 @@ export function AdminApp() {
           selectedKeys={[key]}
           onClick={(e) => navigate(e.key as Key)}
           style={{ borderRight: 0, paddingTop: 12 }}
-          items={[
-            {
-              key: "dashboard",
-              icon: <DashboardOutlined />,
-              label: "Centro de control",
-            },
-            {
-              key: "execution",
-              icon: <AppstoreOutlined />,
-              label: "Operaciones",
-              children: [
-                { key: "planning", icon: <CalendarOutlined />, label: "Programación" },
-                { key: "orders", icon: <ToolOutlined />, label: "Órdenes de trabajo" },
-                {
-                  key: "results",
-                  icon: <SafetyCertificateOutlined />,
-                  label: "Resultados",
-                },
-              ],
-            },
-            {
-              key: "entities",
-              icon: <ApartmentOutlined />,
-              label: "Recursos",
-              children: [
-                { key: "assets", icon: <DeploymentUnitOutlined />, label: "Activos" },
-                { key: "resources", icon: <TeamOutlined />, label: "Recursos" },
-              ],
-            },
-            {
-              key: "governance",
-              icon: <SafetyCertificateOutlined />,
-              label: "Control",
-              children: [
-                { key: "incidents", icon: <AlertOutlined />, label: "Incidencias" },
-                {
-                  key: "notifications",
-                  icon: <BellOutlined />,
-                  label: "Notificaciones",
-                },
-                { key: "bitacora", icon: <HistoryOutlined />, label: "Bitácora" },
-              ],
-            },
-            {
-              key: "design",
-              icon: <BranchesOutlined />,
-              label: "Configuraciones",
-              children: [
-                { key: "catalog", icon: <FileProtectOutlined />, label: "Protocolos" },
-                { key: "flows", icon: <BranchesOutlined />, label: "Flujos operativos" },
-              ],
-            },
-            {
-              key: "analytics",
-              icon: <BarChartOutlined />,
-              label: "Análisis",
-              children: [{ key: "reportes", icon: <BarChartOutlined />, label: "Reportes" }],
-            },
-          ]}
+          items={menuItems}
         />
       </Layout.Sider>
       <Layout.Content

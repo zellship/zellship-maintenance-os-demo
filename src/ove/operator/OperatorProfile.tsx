@@ -3,18 +3,27 @@ import { SafetyCertificateOutlined, UserOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useStore } from "../store";
 import { seedSkills } from "../seed";
+import { activeDemo } from "../../demo-config/active";
 
 export function OperatorProfile() {
   const { people } = useStore();
-  const person = people.find((p) => p.name === "Ana Torres");
+  const profile = activeDemo.context.loginProfiles.find(
+    (candidate) => candidate.name === activeDemo.context.primaryOperator,
+  );
+  const person = people.find((candidate) => candidate.name === activeDemo.context.primaryOperator);
   return (
     <Card style={{ textAlign: "center" }}>
-      <Avatar size={80} style={{ background: "#7B35C1" }} icon={<UserOutlined />} />
+      <Avatar
+        size={80}
+        style={{ background: activeDemo.branding.primaryColor }}
+        icon={<UserOutlined />}
+      />
       <Typography.Title level={4} style={{ marginTop: 12, marginBottom: 0 }}>
-        Ana Torres
+        {activeDemo.context.primaryOperator}
       </Typography.Title>
       <Typography.Text type="secondary">
-        Técnica de mantenimiento · Planta Monterrey
+        {profile?.title ?? "Técnica de mantenimiento"} ·{" "}
+        {person?.plant ?? activeDemo.context.defaultPlant}
       </Typography.Text>
       <Descriptions column={1} style={{ marginTop: 16, textAlign: "left" }}>
         <Descriptions.Item label="Turno">08:00 – 18:00</Descriptions.Item>

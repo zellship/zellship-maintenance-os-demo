@@ -4,6 +4,7 @@ import { SmartTable } from "../shared/SmartTable";
 import { useStore } from "../store";
 import { branches, operators } from "../seed";
 import dayjs from "dayjs";
+import { demoNow } from "../../demo-config/clock";
 
 export function SupervisorKPIs() {
   const { executions, incidents, protocols, schedules, people } = useStore();
@@ -18,8 +19,8 @@ export function SupervisorKPIs() {
       !period ||
       period === "Mes" ||
       (period === "Hoy"
-        ? dayjs(e.startAt).isSame(dayjs(), "day")
-        : dayjs(e.startAt).isAfter(dayjs().subtract(7, "day")));
+        ? dayjs(e.startAt).isSame(demoNow(), "day")
+        : dayjs(e.startAt).isAfter(demoNow().subtract(7, "day")));
     const shiftValue =
       person?.shift === "Morning" ? "Mañana" : person?.shift === "Afternoon" ? "Tarde" : "Noche";
     return (

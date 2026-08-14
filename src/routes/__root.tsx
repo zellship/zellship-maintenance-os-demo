@@ -9,6 +9,7 @@ import {
 } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
+import { activeDemo } from "../demo-config/active";
 
 function NotFoundComponent() {
   return (
@@ -72,24 +73,28 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Zellship Maintenance OS · Industrial Operations" },
+      {
+        title:
+          activeDemo.branding.productName +
+          " · " +
+          (activeDemo.branding.tagline.split("·").pop()?.trim() ?? activeDemo.label),
+      },
       {
         name: "description",
-        content:
-          "Sistema demostrativo de mantenimiento industrial: protocolos, órdenes, operación móvil, evidencias, validación y OEE.",
+        content: activeDemo.branding.metaDescription,
       },
-      { name: "author", content: "Zellship" },
-      { property: "og:title", content: "Zellship Maintenance OS" },
+      { name: "author", content: activeDemo.branding.brandName },
+      { property: "og:title", content: activeDemo.branding.productName },
       {
         property: "og:description",
-        content: "Del protocolo al desempeño del activo en un solo sistema.",
+        content: activeDemo.branding.socialDescription,
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:title", content: "Zellship Maintenance OS" },
+      { name: "twitter:title", content: activeDemo.branding.productName },
       {
         name: "twitter:description",
-        content: "Del protocolo al desempeño del activo en un solo sistema.",
+        content: activeDemo.branding.socialDescription,
       },
       { property: "og:image", content: "/og.png" },
       { name: "twitter:image", content: "/og.png" },
