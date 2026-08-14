@@ -1,0 +1,13 @@
+{
+  "id": "MNT-DEMO-BASE-001",
+  "version": "1.0.0",
+  "source_commit": "f12b7c85ee7ba20ca9df4168c66f4a9765abcccb",
+  "tag": "mnt-demo-base-v1.0.0",
+  "audited_on": "2026-08-14",
+  "canonical_repository": "https://github.com/zellship/zellship-maintenance-os-demo",
+  "canonical_publication": "https://zellship.github.io/zellship-maintenance-os-demo/",
+  "scenario_id": "industrial-base",
+  "scenario_version": "1.0.0",
+  "state_key": "zellship-maintenance-os-v4",
+  "deployment_workflow_run": "https://github.com/zellship/zellship-maintenance-os-demo/actions/runs/31229044508"
+}

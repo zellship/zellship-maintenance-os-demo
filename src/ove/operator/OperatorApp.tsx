@@ -37,8 +37,12 @@ import { ExecutionFlow } from "./ExecutionFlow";
 import { NotificationCenter } from "../shared/NotificationCenter";
 import { useStore } from "../store";
 import { seedAssets } from "../seed";
+import { activeDemo } from "../../demo-config/active";
 
-const OPERATOR = "Ana Torres";
+const OPERATOR = activeDemo.context.primaryOperator;
+const OPERATOR_PROFILE = activeDemo.context.loginProfiles.find(
+  (profile) => profile.name === OPERATOR,
+);
 
 export function OperatorApp() {
   const { schedules, protocols, notifications } = useStore();
@@ -87,12 +91,12 @@ export function OperatorApp() {
           <Card size="small" className="operator-context-card">
             <Space align="start">
               <Badge status="success" offset={[-2, 42]}>
-                <Avatar size={50}>AT</Avatar>
+                <Avatar size={50}>{OPERATOR_PROFILE?.initials ?? "OP"}</Avatar>
               </Badge>
               <div>
-                <b>Ana Torres</b>
+                <b>{OPERATOR}</b>
                 <Typography.Text type="secondary" className="operator-context-block">
-                  Técnico de mantenimiento
+                  {OPERATOR_PROFILE?.title ?? "Técnico de mantenimiento"}
                 </Typography.Text>
                 <Tag color="green" icon={<SafetyCertificateOutlined />}>
                   Skills validados
@@ -115,7 +119,7 @@ export function OperatorApp() {
               />
               <ContextLine
                 label="Ubicación"
-                value={currentSchedule?.plant ?? "Planta Monterrey"}
+                value={currentSchedule?.plant ?? activeDemo.context.defaultPlant}
                 icon={<EnvironmentOutlined />}
               />
             </Space>
@@ -257,7 +261,7 @@ export function OperatorApp() {
               SINCRONIZACIÓN EN VIVO
             </Typography.Text>
             <Typography.Title level={4} style={{ margin: "3px 0" }}>
-              Foundational Engines
+              {activeDemo.branding.tagline.split(" · ")[0]}
             </Typography.Title>
             <Typography.Text type="secondary">
               Cada acción del celular actualiza compromisos, evidencia y contexto.
@@ -274,7 +278,7 @@ export function OperatorApp() {
             </Space>
             <Progress percent={100} showInfo={false} strokeColor="#52c41a" />
             <Typography.Text type="secondary">
-              Maintenance OS · GPS · cámara · firma
+              {activeDemo.branding.productName} · GPS · cámara · firma
             </Typography.Text>
           </Card>
 

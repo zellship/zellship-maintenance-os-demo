@@ -40,12 +40,18 @@ import {
   WhatsAppOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
+import { demoNow } from "../../demo-config/clock";
 import { seedAssets, seedOperationalFlows } from "../seed";
 import { useStore } from "../store";
 import { statusTag } from "../ui";
 import type { Notification, ProtocolActivation, Schedule } from "../types";
+import { activeDemo } from "../../demo-config/active";
 
 type FeedFilter = "all" | "automatic" | "ondemand" | "critical";
+
+const primarySupervisor =
+  activeDemo.context.loginProfiles.find((profile) => profile.role === "supervisor")?.name ??
+  "Supervisión";
 
 const modeInfo: Record<
   ProtocolActivation,
@@ -117,7 +123,7 @@ export function OperationsLive({
 
   const addScheduleFromMode = (mode: ProtocolActivation) => {
     const protocol = protocols.find((item) => item.activationMode === mode) ?? protocols[0];
-    const start = dayjs()
+    const start = demoNow()
       .add(mode === "Recurring" ? 1 : 0, "day")
       .add(mode === "OnDemand" ? 20 : 10, "minute");
     const schedule: Schedule = {
@@ -126,7 +132,7 @@ export function OperationsLive({
       date: start.format("YYYY-MM-DD"),
       hour: start.format("HH:mm"),
       tolerance: protocol.schedule[0]?.tolerance ?? 20,
-      operator: protocol.operators[0] ?? "Ana Torres",
+      operator: protocol.operators[0] ?? activeDemo.context.primaryOperator,
       status: "Pending",
       assetId: protocol.assetIds?.[0],
       plant: protocol.branches[0],
@@ -144,7 +150,7 @@ export function OperationsLive({
       event: modeInfo[mode].label,
       message: `${schedule.workOrder} creada: ${protocol.name} · ${schedule.assetId} · ${schedule.hour}.`,
       status: "Sent",
-      createdAt: dayjs().toISOString(),
+      createdAt: demoNow().toISOString(),
     };
     setSchedules([schedule, ...schedules]);
     setNotifications([notification, ...notifications]);
@@ -163,12 +169,12 @@ export function OperationsLive({
       channel: "Push",
       actor: "Business Commitment Engine",
       recipientRole: next >= 4 ? "supervisor" : "operator",
-      recipient: next >= 4 ? "Roberto Salas" : "Ana Torres",
+      recipient: next >= 4 ? primarySupervisor : activeDemo.context.primaryOperator,
       source: "Automatic",
       event: "Avance de flujo",
       message: `Flujo AC-01 avanzó a: ${step.name}.`,
       status: "Sent",
-      createdAt: dayjs().toISOString(),
+      createdAt: demoNow().toISOString(),
     };
     setNotifications([notification, ...notifications]);
     setSelectedEventId(notification.id);
@@ -190,7 +196,7 @@ export function OperationsLive({
         message:
           "AC-01 detectó vibración crítica: flujo “Respuesta a condición” detonado automáticamente.",
         status: "Sent",
-        createdAt: dayjs().toISOString(),
+        createdAt: demoNow().toISOString(),
       },
       {
         id: `n-related-${Date.now()}-admin`,
@@ -203,7 +209,7 @@ export function OperationsLive({
         event: "Escalamiento entre flujos",
         message: "Nuevo compromiso predictivo creado y ligado al flujo de recuperación AC-01.",
         status: "Sent",
-        createdAt: dayjs().toISOString(),
+        createdAt: demoNow().toISOString(),
       },
     ];
     setNotifications([...events, ...notifications]);
@@ -220,7 +226,7 @@ export function OperationsLive({
     );
   };
 
-  const today = dayjs().format("YYYY-MM-DD");
+  const today = demoNow().format("YYYY-MM-DD");
   const programDate = schedules.some((schedule) => schedule.date === today)
     ? today
     : (schedules.map((schedule) => schedule.date).sort((a, b) => b.localeCompare(a))[0] ?? today);
@@ -296,7 +302,7 @@ export function OperationsLive({
         </div>
         <div className="operations-header-actions">
           <Tag color="purple" icon={<ApiOutlined />}>
-            Foundational Engines activos
+            {activeDemo.branding.tagline.split("·")[0].trim()} activos
           </Tag>
           <Badge count={openIncidents.length} size="small" offset={[-3, 3]}>
             <Button
@@ -870,7 +876,7 @@ function eventTone(event: Notification) {
 }
 
 function eventAge(event: Notification) {
-  const minutes = Math.max(1, dayjs().diff(dayjs(event.createdAt), "minute"));
+  const minutes = Math.max(1, demoNow().diff(dayjs(event.createdAt), "minute"));
   if (minutes < 60) return `Hace ${minutes} min`;
   const hours = Math.floor(minutes / 60);
   if (hours < 24) return `Hace ${hours} h`;

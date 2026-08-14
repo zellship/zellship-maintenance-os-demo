@@ -1,5 +1,7 @@
 import { ThunderboltOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
+import { demoNow } from "../../demo-config/clock";
+import { activeDemo } from "../../demo-config/active";
 
 interface ReportMetadata {
   label: string;
@@ -22,7 +24,7 @@ export function PrintReportHeader({
           <ThunderboltOutlined />
         </div>
         <div>
-          <strong>Zellship Maintenance OS</strong>
+          <strong>{activeDemo.branding.productName}</strong>
           <span>Industrial Operations · Documento controlado</span>
         </div>
       </div>
@@ -39,7 +41,7 @@ export function PrintReportHeader({
         ))}
         <div>
           <span>Emitido</span>
-          <strong>{dayjs().format("DD/MM/YYYY · HH:mm")}</strong>
+          <strong>{demoNow().format("DD/MM/YYYY · HH:mm")}</strong>
         </div>
       </div>
     </header>
@@ -49,7 +51,9 @@ export function PrintReportHeader({
 export function PrintReportFooter() {
   return (
     <footer className="print-report-footer">
-      <span>Zellship Maintenance OS · Foundational Engines</span>
+      <span>
+        {activeDemo.branding.productName} · {activeDemo.branding.tagline.split(" · ")[0]}
+      </span>
       <span>Uso interno · Información operativa del activo</span>
     </footer>
   );

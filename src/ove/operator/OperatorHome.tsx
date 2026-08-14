@@ -1,14 +1,16 @@
 import { Card, Typography, Button, Row, Col, Statistic, List, Tag, Space } from "antd";
 import { FireOutlined, CheckCircleOutlined, ClockCircleOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
+import { demoNow } from "../../demo-config/clock";
 import { useStore } from "../store";
 import { seedAssets } from "../seed";
+import { activeDemo } from "../../demo-config/active";
 
-const OPERATOR = "Ana Torres";
+const OPERATOR = activeDemo.context.primaryOperator;
 
 export function OperatorHome({ onStart }: { onStart: (id: string) => void }) {
   const { schedules, protocols } = useStore();
-  const today = dayjs().format("YYYY-MM-DD");
+  const today = demoNow().format("YYYY-MM-DD");
   const mine = schedules.filter((s) => s.operator === OPERATOR && s.date === today);
   const next = mine.find((s) => s.status === "Pending" || s.status === "InProgress") || mine[0];
   const nextProto = next ? protocols.find((p) => p.id === next.protocolId) : null;
@@ -21,14 +23,14 @@ export function OperatorHome({ onStart }: { onStart: (id: string) => void }) {
       {next && nextProto && (
         <Card
           style={{
-            background: "linear-gradient(135deg, #7B35C1, #B57BFF)",
+            background: `linear-gradient(135deg, ${activeDemo.branding.primaryColor}, ${activeDemo.branding.primaryColorEnd})`,
             color: "#fff",
             marginBottom: 12,
             border: "none",
           }}
           styles={{ body: { color: "#fff" } }}
         >
-          <Tag color="white" style={{ color: "#7B35C1", fontWeight: 600 }}>
+          <Tag color="white" style={{ color: activeDemo.branding.primaryColor, fontWeight: 600 }}>
             PRÓXIMA ACTIVIDAD
           </Tag>
           <Typography.Title level={3} style={{ color: "#fff", marginTop: 8, marginBottom: 4 }}>
@@ -42,7 +44,12 @@ export function OperatorHome({ onStart }: { onStart: (id: string) => void }) {
             <Button
               size="large"
               onClick={() => onStart(next.id)}
-              style={{ background: "#fff", color: "#7B35C1", fontWeight: 600, border: "none" }}
+              style={{
+                background: "#fff",
+                color: activeDemo.branding.primaryColor,
+                fontWeight: 600,
+                border: "none",
+              }}
             >
               Atender orden →
             </Button>

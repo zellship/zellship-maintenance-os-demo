@@ -6,8 +6,9 @@ import { useStore } from "../store";
 import { statusTag } from "../ui";
 import { MaintenanceResult } from "../shared/MaintenanceResult";
 import type { Execution } from "../types";
+import { activeDemo } from "../../demo-config/active";
 
-const OPERATOR = "Ana Torres";
+const OPERATOR = activeDemo.context.primaryOperator;
 
 export function OperatorHistory() {
   const { executions, protocols, schedules } = useStore();

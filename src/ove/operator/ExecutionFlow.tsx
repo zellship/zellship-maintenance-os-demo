@@ -34,6 +34,7 @@ import {
   RobotOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
+import { demoNow } from "../../demo-config/clock";
 import { useStore } from "../store";
 import type {
   EvidenceType,
@@ -87,7 +88,7 @@ export function ExecutionFlow({
       actualQuantity: a.mode === "Exact" ? a.quantity : (a.min ?? a.reservedQuantity),
     })),
   );
-  const startRef = useRef<string>(dayjs().toISOString());
+  const startRef = useRef<string>(demoNow().toISOString());
 
   if (!schedule || !protocol)
     return (
@@ -107,7 +108,7 @@ export function ExecutionFlow({
   const deviations = consumptions.filter(isConsumptionDeviation);
 
   const start = () => {
-    startRef.current = dayjs().toISOString();
+    startRef.current = demoNow().toISOString();
     setPhase("resources");
   };
 
@@ -131,7 +132,7 @@ export function ExecutionFlow({
         event: "Inicio de ejecución",
         message: `${schedule.workOrder}: ${schedule.operator} inició ${protocol.name}.`,
         status: "Sent",
-        createdAt: dayjs().toISOString(),
+        createdAt: demoNow().toISOString(),
       },
       ...notifications,
     ]);
@@ -145,7 +146,7 @@ export function ExecutionFlow({
       executionId: "pending",
       type: current.type,
       data,
-      timestamp: dayjs().toISOString(),
+      timestamp: demoNow().toISOString(),
       status: "Pending",
       ...extra,
     };
@@ -163,7 +164,7 @@ export function ExecutionFlow({
           event: "IA completada",
           message: `${schedule.workOrder}: evidencia visual analizada con ${ev.aiScore ?? 86}% de coincidencia.`,
           status: "Sent",
-          createdAt: dayjs().toISOString(),
+          createdAt: demoNow().toISOString(),
         },
         ...notifications,
       ]);
@@ -193,7 +194,7 @@ export function ExecutionFlow({
       scheduleId,
       protocolId: protocol.id,
       startAt: startRef.current,
-      endAt: dayjs().toISOString(),
+      endAt: demoNow().toISOString(),
       operator: schedule.operator,
       status: protocol.requiresValidation ? "PendingValidation" : "Completed",
       evidences: evidences.map((e) => ({ ...e, executionId: id, status: "Pending" })),
@@ -202,7 +203,7 @@ export function ExecutionFlow({
       humanScore: photo?.humanScore,
       toolIds: schedule.toolIds || [],
       materialConsumptions: consumptions,
-      resourceCheckInAt: dayjs().toISOString(),
+      resourceCheckInAt: demoNow().toISOString(),
     };
     setExecutions([exec, ...executions]);
     setSchedules(schedules.map((s) => (s.id === scheduleId ? { ...s, status: "Completed" } : s)));
@@ -233,7 +234,7 @@ export function ExecutionFlow({
           type: "Escalated",
           status: "Review",
           description: `${deviations.length} consumo(s) fuera del rango configurado; requiere revisión del supervisor.`,
-          createdAt: dayjs().toISOString(),
+          createdAt: demoNow().toISOString(),
         },
         ...incidents,
       ]);
@@ -249,7 +250,7 @@ export function ExecutionFlow({
         event: protocol.requiresValidation ? "Validación requerida" : "Ejecución completada",
         message: `${schedule.workOrder} enviada con calificación automática de ${score}%.`,
         status: "Sent",
-        createdAt: dayjs().toISOString(),
+        createdAt: demoNow().toISOString(),
       },
       {
         id: `n-submit-${Date.now()}-admin`,
@@ -262,7 +263,7 @@ export function ExecutionFlow({
         event: "Compromiso atendido",
         message: `${schedule.workOrder}: evidencia completa, recursos liberados y resultado registrado.`,
         status: "Sent",
-        createdAt: dayjs().toISOString(),
+        createdAt: demoNow().toISOString(),
       },
     ];
     setNotifications([...updates, ...notifications]);
@@ -525,9 +526,9 @@ export function ExecutionFlow({
           <Typography.Paragraph>
             <b>Inicio:</b> {dayjs(startRef.current).format("HH:mm:ss")}
             <br />
-            <b>Fin:</b> {dayjs().format("HH:mm:ss")}
+            <b>Fin:</b> {demoNow().format("HH:mm:ss")}
             <br />
-            <b>Duración:</b> {dayjs().diff(dayjs(startRef.current), "minute")} min
+            <b>Duración:</b> {demoNow().diff(dayjs(startRef.current), "minute")} min
             <br />
             <b>Evidencias:</b> {evidences.length} / {evidences_cfg.length}
             <br />
@@ -930,14 +931,14 @@ function EvidenceCapture({
   if (type === "Timestamp") {
     return (
       <div style={{ textAlign: "center" }}>
-        <Typography.Title level={2}>{dayjs().format("HH:mm:ss")}</Typography.Title>
-        <Typography.Text type="secondary">{dayjs().format("DD MMM YYYY")}</Typography.Text>
+        <Typography.Title level={2}>{demoNow().format("HH:mm:ss")}</Typography.Title>
+        <Typography.Text type="secondary">{demoNow().format("DD MMM YYYY")}</Typography.Text>
         <Button
           type="primary"
           block
           size="large"
           style={{ marginTop: 16 }}
-          onClick={() => onCapture(dayjs().toISOString())}
+          onClick={() => onCapture(demoNow().toISOString())}
         >
           Registrar timestamp
         </Button>

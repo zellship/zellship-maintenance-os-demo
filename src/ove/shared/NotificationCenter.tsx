@@ -26,19 +26,20 @@ import {
   WhatsAppOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
+import { demoNow } from "../../demo-config/clock";
 import { useStore } from "../store";
 import type { Notification, NotificationChannel, Role } from "../types";
+import { activeDemo, demoData } from "../../demo-config/active";
 
-const roleNames: Record<Role, string> = {
-  admin: "Administración",
-  operator: "Operador",
-  supervisor: "Supervisor",
-};
+const roleNames = activeDemo.context.roleLabels;
+
+const firstProfileByRole = (role: Role) =>
+  activeDemo.context.loginProfiles.find((profile) => profile.role === role)?.name;
 
 const actorByRole: Record<Role, string> = {
   admin: "Coordinación de mantenimiento",
-  operator: "Ana Torres",
-  supervisor: "Roberto Salas",
+  operator: activeDemo.context.primaryOperator,
+  supervisor: firstProfileByRole("supervisor") ?? "Supervisión",
 };
 
 export function NotificationCenter({ role, showAll = false }: { role: Role; showAll?: boolean }) {
@@ -76,7 +77,7 @@ export function NotificationCenter({ role, showAll = false }: { role: Role; show
       event: "Mensaje manual",
       message: values.message,
       status: "Sent",
-      createdAt: dayjs().toISOString(),
+      createdAt: demoNow().toISOString(),
     };
     setNotifications([notification, ...notifications]);
     form.resetFields(["message"]);
@@ -90,12 +91,12 @@ export function NotificationCenter({ role, showAll = false }: { role: Role; show
       channel: "WhatsApp",
       actor: "Business Commitment Engine",
       recipientRole: "operator",
-      recipient: "Ana Torres",
+      recipient: activeDemo.context.primaryOperator,
       source: "Automatic",
       event: "Asignación confirmada",
       message: "Nueva orden OT-2407-021 asignada: inspección de seguimiento AC-01 a las 14:30.",
       status: "Sent",
-      createdAt: dayjs().toISOString(),
+      createdAt: demoNow().toISOString(),
     };
     setNotifications([event, ...notifications]);
     message.success("Trigger ejecutado: WhatsApp transaccional enviado al operador");
@@ -254,7 +255,7 @@ export function NotificationCenter({ role, showAll = false }: { role: Role; show
                 layout="vertical"
                 initialValues={{
                   recipientRole: "operator",
-                  recipient: "Ana Torres",
+                  recipient: activeDemo.context.primaryOperator,
                   channel: "WhatsApp",
                 }}
                 onFinish={send}
@@ -265,9 +266,9 @@ export function NotificationCenter({ role, showAll = false }: { role: Role; show
                       form.setFieldValue(
                         "recipient",
                         value === "operator"
-                          ? "Ana Torres"
+                          ? activeDemo.context.primaryOperator
                           : value === "supervisor"
-                            ? "Roberto Salas"
+                            ? (firstProfileByRole("supervisor") ?? "Supervisión")
                             : "Coordinación de mantenimiento",
                       )
                     }
@@ -281,10 +282,10 @@ export function NotificationCenter({ role, showAll = false }: { role: Role; show
                 <Form.Item name="recipient" label="Destinatario" rules={[{ required: true }]}>
                   <Select
                     options={(composeRole === "supervisor"
-                      ? ["Roberto Salas", "Mónica Reyes"]
+                      ? demoData.taxonomy.supervisors
                       : composeRole === "admin"
                         ? ["Coordinación de mantenimiento"]
-                        : ["Ana Torres", "Jorge Ruiz", "Laura Díaz", "Diego Luna"]
+                        : demoData.taxonomy.operators
                     ).map((value) => ({ value, label: value }))}
                   />
                 </Form.Item>

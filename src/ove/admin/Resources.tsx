@@ -39,6 +39,7 @@ import {
   UserAddOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
+import { demoNow } from "../../demo-config/clock";
 import { useStore } from "../store";
 import { seedSkills } from "../seed";
 import type { Notification, Person } from "../types";
@@ -111,7 +112,7 @@ export function Resources() {
       event: "Mensaje desde perfil",
       message: `${person.name}: confirma disponibilidad para la siguiente ventana de mantenimiento.`,
       status: "Sent",
-      createdAt: dayjs().toISOString(),
+      createdAt: demoNow().toISOString(),
     };
     setNotifications([notification, ...notifications]);
     message.success(`Notificación push enviada a ${person.name}`);
@@ -146,7 +147,7 @@ export function Resources() {
       event: "Orden asignada",
       message: `${candidate.workOrder} fue asignada desde el perfil del colaborador.`,
       status: "Sent",
-      createdAt: dayjs().toISOString(),
+      createdAt: demoNow().toISOString(),
     };
     setNotifications([notification, ...notifications]);
     message.success(`${candidate.workOrder} asignada y WhatsApp enviado`);
@@ -339,7 +340,7 @@ export function Resources() {
                       width: 160,
                       render: (value) =>
                         value ? (
-                          <Tag color={dayjs(value).isAfter(dayjs()) ? "green" : "red"}>
+                          <Tag color={dayjs(value).isAfter(demoNow()) ? "green" : "red"}>
                             Hasta {dayjs(value).format("DD MMM YYYY")}
                           </Tag>
                         ) : (

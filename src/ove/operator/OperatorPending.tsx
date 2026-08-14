@@ -1,20 +1,22 @@
 import { Card, Typography, Button, Space, Tag, Empty } from "antd";
 import dayjs from "dayjs";
+import { demoNow } from "../../demo-config/clock";
 import { useStore } from "../store";
 import { seedAssets } from "../seed";
+import { activeDemo } from "../../demo-config/active";
 
-const OPERATOR = "Ana Torres";
+const OPERATOR = activeDemo.context.primaryOperator;
 
 export function OperatorPending({ onStart }: { onStart: (id: string) => void }) {
   const { schedules, protocols } = useStore();
-  const today = dayjs().format("YYYY-MM-DD");
+  const today = demoNow().format("YYYY-MM-DD");
   const mine = schedules.filter(
     (s) => s.operator === OPERATOR && s.date === today && s.status !== "Completed",
   );
 
   const semaphore = (hour: string, tol: number) => {
     const target = dayjs(`${today} ${hour}`);
-    const diff = target.diff(dayjs(), "minute");
+    const diff = target.diff(demoNow(), "minute");
     if (diff < -tol) return { color: "red", label: "Fuera de tiempo" };
     if (diff < 15) return { color: "orange", label: "Urgente" };
     return { color: "green", label: "A tiempo" };

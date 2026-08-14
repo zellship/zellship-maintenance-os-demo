@@ -34,6 +34,8 @@ import {
   ToolOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
+import { hasCapability } from "../../demo-config/active";
+import { demoNow } from "../../demo-config/clock";
 import { seedAssets, seedOperationalFlows } from "../seed";
 import { useStore } from "../store";
 import type { Notification, OperationalFlow, OperationalFlowStep, Protocol } from "../types";
@@ -62,14 +64,16 @@ const stepStatusLabel: Record<OperationalFlowStep["status"], string> = {
   Completed: "Completada",
 };
 
-const flowRules = [
-  "Validar skills y disponibilidad antes de asignar.",
-  "Reservar herramientas y materiales por protocolo.",
-  "Esperar todas las ramas paralelas antes de liberar.",
-  "Actualizar OEE y Asset Profile al completar.",
-];
-
 export function OperationalFlows() {
+  const showImprovement = hasCapability("improvement-insights");
+  const flowRules = [
+    "Validar skills y disponibilidad antes de asignar.",
+    "Reservar herramientas y materiales por protocolo.",
+    "Esperar todas las ramas paralelas antes de liberar.",
+    showImprovement
+      ? "Actualizar OEE y Asset Profile al completar."
+      : "Consolidar evidencias y cierre operativo al completar.",
+  ];
   const { protocols, notifications, setNotifications } = useStore();
   const [flows, setFlows] = useState<OperationalFlow[]>(seedOperationalFlows);
   const [selectedId, setSelectedId] = useState(seedOperationalFlows[0].id);
@@ -150,7 +154,7 @@ export function OperationalFlows() {
       event: "Orquestación de flujo",
       message: `${selected.name}: “${nextStep.name}” completado; dependencias reevaluadas.`,
       status: "Sent",
-      createdAt: dayjs().toISOString(),
+      createdAt: demoNow().toISOString(),
     };
     setNotifications([event, ...notifications]);
     message.success(`Etapa completada: ${nextStep.name}`);
@@ -248,7 +252,9 @@ export function OperationalFlows() {
         ...protocolFlowSteps,
         {
           id: `flow-end-${Date.now()}`,
-          name: "Liberación y actualización OEE",
+          name: showImprovement
+            ? "Liberación y actualización OEE"
+            : "Cierre y consolidación de evidencias",
           mode: "Linear",
           status: "Waiting",
           trigger: "Todos los protocolos completados",
@@ -451,7 +457,10 @@ export function OperationalFlows() {
                     {currentStep ? `ETAPA ACTUAL · ${currentStepIndex + 1}` : "FLUJO COMPLETADO"}
                   </Typography.Text>
                   <Typography.Title level={4}>
-                    {currentStep?.name ?? "Activo liberado y OEE actualizado"}
+                    {currentStep?.name ??
+                      (showImprovement
+                        ? "Activo liberado y OEE actualizado"
+                        : "Servicio cerrado y evidencias consolidadas")}
                   </Typography.Title>
                   <Typography.Text type="secondary">
                     {currentStep

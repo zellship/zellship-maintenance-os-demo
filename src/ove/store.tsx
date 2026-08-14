@@ -22,6 +22,7 @@ import {
   seedInventory,
   seedReservations,
 } from "./seed";
+import { activeDemo } from "../demo-config/active";
 
 interface State {
   role: Role;
@@ -51,10 +52,10 @@ interface Store extends State {
 }
 
 const StoreCtx = createContext<Store | null>(null);
-const KEY = "zellship-maintenance-os-v4";
+const KEY = activeDemo.persistence.stateKey;
 
 const initial: State = {
-  role: "admin",
+  role: activeDemo.context.defaultRole,
   protocols: seedProtocols,
   schedules: seedSchedules,
   executions: seedExecutions,

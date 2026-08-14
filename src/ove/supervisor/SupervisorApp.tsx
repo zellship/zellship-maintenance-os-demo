@@ -12,6 +12,7 @@ import { SupervisorAlerts } from "./SupervisorAlerts";
 import { SupervisorValidations } from "./SupervisorValidations";
 import { SupervisorKPIs } from "./SupervisorKPIs";
 import { NotificationCenter } from "../shared/NotificationCenter";
+import { hasCapability } from "../../demo-config/active";
 
 type SupervisorSection = "alerts" | "validations" | "notifications" | "kpis";
 
@@ -19,6 +20,20 @@ export function SupervisorApp() {
   const [key, setKey] = useState<SupervisorSection>("validations");
   const [collapsed, setCollapsed] = useState(false);
   const [mobile, setMobile] = useState(false);
+  const menuItems = [
+    ...(hasCapability("supervisor-alerts")
+      ? [{ key: "alerts", icon: <AlertOutlined />, label: "Alertas" }]
+      : []),
+    ...(hasCapability("supervisor-validation")
+      ? [{ key: "validations", icon: <CheckSquareOutlined />, label: "Validaciones" }]
+      : []),
+    ...(hasCapability("notifications")
+      ? [{ key: "notifications", icon: <BellOutlined />, label: "Notificaciones" }]
+      : []),
+    ...(hasCapability("executive-analytics")
+      ? [{ key: "kpis", icon: <BarChartOutlined />, label: "KPIs" }]
+      : []),
+  ];
 
   return (
     <Layout>
@@ -42,12 +57,7 @@ export function SupervisorApp() {
           selectedKeys={[key]}
           onClick={(e) => setKey(e.key as SupervisorSection)}
           style={{ borderRight: 0, paddingTop: 12 }}
-          items={[
-            { key: "alerts", icon: <AlertOutlined />, label: "Alertas" },
-            { key: "validations", icon: <CheckSquareOutlined />, label: "Validaciones" },
-            { key: "notifications", icon: <BellOutlined />, label: "Notificaciones" },
-            { key: "kpis", icon: <BarChartOutlined />, label: "KPIs" },
-          ]}
+          items={menuItems}
         />
       </Layout.Sider>
       <Layout.Content className="supervisor-content">

@@ -2,6 +2,7 @@ import type { CSSProperties, KeyboardEvent } from "react";
 import { ClockCircleOutlined, WarningOutlined } from "@ant-design/icons";
 import { Badge, Empty, Tag, Typography } from "antd";
 import dayjs, { type Dayjs } from "dayjs";
+import { demoNow } from "../../demo-config/clock";
 import type { Schedule } from "../types";
 import { PLANNING_MONTH_NAMES, type PlanningView } from "./planningCalendarUtils";
 
@@ -53,7 +54,7 @@ export function PlanningCalendar({
         <button
           key={date.format("YYYY-MM-DD")}
           type="button"
-          className={`planning-day-heading ${date.isSame(dayjs(), "day") ? "is-today" : ""}`}
+          className={`planning-day-heading ${date.isSame(demoNow(), "day") ? "is-today" : ""}`}
           onClick={() => onSelectDate(date)}
         >
           <span>{WEEKDAY_NAMES[date.day()]}</span>
@@ -74,7 +75,7 @@ export function PlanningCalendar({
           return (
             <div
               key={`${dateKey}-${hour}`}
-              className={`planning-time-cell ${date.isSame(dayjs(), "day") ? "is-today" : ""}`}
+              className={`planning-time-cell ${date.isSame(demoNow(), "day") ? "is-today" : ""}`}
               role="button"
               tabIndex={0}
               aria-label={`Programar el ${date.format("DD/MM/YYYY")} a las ${hour}:00`}
@@ -122,7 +123,7 @@ function MonthCalendar({
         return (
           <div
             key={dateKey}
-            className={`planning-month-day ${isCurrentMonth ? "" : "is-outside"} ${date.isSame(dayjs(), "day") ? "is-today" : ""}`}
+            className={`planning-month-day ${isCurrentMonth ? "" : "is-outside"} ${date.isSame(demoNow(), "day") ? "is-today" : ""}`}
             role="button"
             tabIndex={0}
             onDoubleClick={() => onCreateAt(date)}

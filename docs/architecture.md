@@ -22,20 +22,25 @@ transitive security advisories must be reviewed before any server deployment.
 - Supervision: alerts, pending validations, notifications, and KPIs.
 
 The shared domain contracts live in `src/ove/types.ts`. Initial entities and scenarios live in
-`src/ove/seed.ts`.
+`src/demo-config/scenarios/`. `src/ove/seed.ts` is a compatibility adapter that exposes data from
+the active scenario to existing screens.
+
+`src/demo-config/active.ts` is the only scenario selection point. Branding, login profiles,
+terminals, plants, browser-state identity, distribution classification, and capabilities are read
+from the active scenario. Navigation uses capability IDs rather than client-specific conditions.
 
 ## State and data flow
 
 `StoreProvider` owns protocols, schedules, executions, incidents, notifications, people, tools,
-inventory, and reservations. State is written to browser `localStorage` under
-`zellship-maintenance-os-v4`.
+inventory, and reservations. State is written to browser `localStorage` under the active scenario's
+`persistence.stateKey`. The industrial baseline keeps `zellship-maintenance-os-v4` for backward
+compatibility.
 
 There is no remote persistence or multi-user synchronization. Resetting restores the seed data.
 Changing the storage schema requires either a new key or an explicit migration.
 
-Some presentation data, including assets and operational-flow seeds, is still consumed directly
-from `seed.ts`. Move it into the store before adding editing or persistence behavior for those
-entities.
+Some presentation profiles remain scenario-specific static modules. Move them into the store before
+adding editing or remote persistence behavior for those entities.
 
 ## Builds and hosting
 

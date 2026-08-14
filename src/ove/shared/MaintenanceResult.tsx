@@ -30,6 +30,7 @@ import type { Execution, Protocol, Schedule } from "../types";
 import { maintenanceCapturedUrl, maintenanceReferenceUrl } from "./maintenanceAssets";
 import { PrintReportFooter, PrintReportHeader } from "./PrintReport";
 import { SendReportModal, type ReportDeliverySelection } from "./SendReportModal";
+import { hasCapability } from "../../demo-config/active";
 
 export function MaintenanceResult({
   execution,
@@ -57,6 +58,8 @@ export function MaintenanceResult({
   const startedAt = dayjs(execution.startAt);
   const completedAt = dayjs(execution.endAt ?? execution.startAt);
   const eventTime = (moment: dayjs.Dayjs) => moment.format("HH:mm");
+  const showImprovement = hasCapability("improvement-insights");
+  const metricColumnWidth = showImprovement ? 6 : 8;
 
   const printReport = () => {
     const previousTitle = document.title;
@@ -113,7 +116,7 @@ export function MaintenanceResult({
         </Space>
 
         <Row gutter={[12, 12]} style={{ marginTop: 20 }}>
-          <Col xs={12} lg={6}>
+          <Col xs={12} lg={metricColumnWidth}>
             <Card size="small">
               <Statistic
                 title="Calificación final"
@@ -123,7 +126,7 @@ export function MaintenanceResult({
               />
             </Card>
           </Col>
-          <Col xs={12} lg={6}>
+          <Col xs={12} lg={metricColumnWidth}>
             <Card size="small">
               <Statistic
                 title="Salud del activo"
@@ -134,17 +137,19 @@ export function MaintenanceResult({
               />
             </Card>
           </Col>
-          <Col xs={12} lg={6}>
-            <Card size="small">
-              <Statistic
-                title="Impacto estimado OEE"
-                value={1.8}
-                prefix={<ThunderboltOutlined />}
-                suffix=" pts"
-              />
-            </Card>
-          </Col>
-          <Col xs={12} lg={6}>
+          {showImprovement && (
+            <Col xs={12} lg={metricColumnWidth}>
+              <Card size="small">
+                <Statistic
+                  title="Impacto estimado OEE"
+                  value={1.8}
+                  prefix={<ThunderboltOutlined />}
+                  suffix=" pts"
+                />
+              </Card>
+            </Col>
+          )}
+          <Col xs={12} lg={metricColumnWidth}>
             <Card size="small">
               <Statistic
                 title="Paro evitado"
@@ -317,7 +322,9 @@ export function MaintenanceResult({
                 </Tag>
               </Descriptions.Item>
               <Descriptions.Item label="Engines">
-                Entity · Commitment · Operational Excellence
+                {showImprovement
+                  ? "Entity · Commitment · Operational Excellence"
+                  : "Entity · Commitment"}
               </Descriptions.Item>
             </Descriptions>
           </Card>
@@ -340,7 +347,7 @@ export function MaintenanceResult({
             <Space wrap style={{ marginTop: 12 }}>
               <Tag color="green">Activo {schedule?.assetId ?? "actualizado"} actualizado</Tag>
               <Tag color="blue">Historial técnico registrado</Tag>
-              <Tag color="purple">OEE recalculado</Tag>
+              {showImprovement && <Tag color="purple">OEE recalculado</Tag>}
               <Tag color="orange">Seguimiento generado</Tag>
             </Space>
           </Col>
