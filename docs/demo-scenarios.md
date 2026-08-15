@@ -12,7 +12,7 @@ npm run demo:atm
 ## ATM field service — eight-scene walkthrough
 
 The presenter-ready timing, narration, safe short cut, truth boundaries, and release gate are in
-[`MNT-DEMO-ATM-003D`](increments/MNT-DEMO-ATM-003D.md).
+[`MNT-DEMO-ATM-003E`](increments/MNT-DEMO-ATM-003E.md).
 
 1. Enter as **Coordinación**. The unified **Centro operativo** opens with **Servicios recibidos** as its first workspace.
 2. Review `SO-ATM-2401`, distinguish Correctivo, REMOTO, and Comercio, then accept it before the

@@ -17,9 +17,9 @@ import {
   BellOutlined,
   CheckCircleOutlined,
   CloudSyncOutlined,
-  CompressOutlined,
   EnvironmentOutlined,
-  ExpandOutlined,
+  EyeInvisibleOutlined,
+  EyeOutlined,
   HistoryOutlined,
   HomeOutlined,
   SafetyCertificateOutlined,
@@ -48,7 +48,7 @@ export function OperatorApp() {
   const { schedules, protocols, notifications } = useStore();
   const [tab, setTab] = useState("home");
   const [activeSchedule, setActiveSchedule] = useState<string | null>(null);
-  const [expanded, setExpanded] = useState(false);
+  const [showContext, setShowContext] = useState(false);
 
   const start = (id: string) => setActiveSchedule(id);
   const back = () => setActiveSchedule(null);
@@ -73,7 +73,7 @@ export function OperatorApp() {
   );
 
   return (
-    <div className={`operator-demo-stage ${expanded ? "expanded" : ""}`}>
+    <div className={`operator-demo-stage ${showContext ? "" : "context-hidden"}`}>
       <aside className="operator-context-panel operator-context-left">
         <Space direction="vertical" size={14} style={{ width: "100%" }}>
           <div>
@@ -154,11 +154,13 @@ export function OperatorApp() {
             <Typography.Text strong>Vista del operador</Typography.Text>
           </Space>
           <Button
+            className="operator-context-toggle"
             size="small"
-            icon={expanded ? <CompressOutlined /> : <ExpandOutlined />}
-            onClick={() => setExpanded(!expanded)}
+            icon={showContext ? <EyeInvisibleOutlined /> : <EyeOutlined />}
+            onClick={() => setShowContext((visible) => !visible)}
+            aria-pressed={!showContext}
           >
-            {expanded ? "Vista teléfono" : "Ampliar app"}
+            {showContext ? "Ocultar contexto" : "Mostrar contexto"}
           </Button>
         </div>
 

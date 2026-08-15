@@ -41,7 +41,7 @@ const data: DemoScenarioData = {
 
 const descriptor = demoScenarioDescriptorSchema.parse({
   id: "atm-field-service",
-  version: "0.4.1",
+  version: "0.4.2",
   sourceBaseline: "ae475d5cac324f59ee654c2b2db1825bbdc9de60",
   label: "ATM field service",
   description:
