@@ -17,7 +17,7 @@ const primaryProtocol = scenario.data.protocols.find(
   (protocol) => protocol.id === primaryRequest.protocolId,
 )!;
 
-describe("MNT-DEMO-ATM-003D eight-scene walkthrough contract", () => {
+describe("MNT-DEMO-ATM-003E eight-scene walkthrough contract", () => {
   it("scene 1 starts with an urgent corrective and an exact 24-hour acceptance window", () => {
     expect(primaryRequest).toMatchObject({
       status: "Received",
