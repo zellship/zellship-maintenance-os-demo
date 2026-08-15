@@ -11,6 +11,9 @@ export function OperatorProfile() {
     (candidate) => candidate.name === activeDemo.context.primaryOperator,
   );
   const person = people.find((candidate) => candidate.name === activeDemo.context.primaryOperator);
+  const supervisor = activeDemo.context.loginProfiles.find(
+    (candidate) => candidate.role === "supervisor",
+  )?.name;
   return (
     <Card style={{ textAlign: "center" }}>
       <Avatar
@@ -27,7 +30,7 @@ export function OperatorProfile() {
       </Typography.Text>
       <Descriptions column={1} style={{ marginTop: 16, textAlign: "left" }}>
         <Descriptions.Item label="Turno">08:00 – 18:00</Descriptions.Item>
-        <Descriptions.Item label="Supervisor">Roberto Salas</Descriptions.Item>
+        <Descriptions.Item label="Supervisor">{supervisor ?? "Supervisión"}</Descriptions.Item>
         <Descriptions.Item label="Cumplimiento">94%</Descriptions.Item>
         <Descriptions.Item label="Certificación">
           Vigente hasta{" "}

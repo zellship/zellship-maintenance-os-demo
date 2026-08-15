@@ -10,6 +10,7 @@ import type {
   MaintenanceTool,
   InventoryItem,
   ResourceReservation,
+  ServiceRequest,
 } from "./types";
 import {
   seedProtocols,
@@ -21,6 +22,7 @@ import {
   seedTools,
   seedInventory,
   seedReservations,
+  seedServiceRequests,
 } from "./seed";
 import { activeDemo } from "../demo-config/active";
 
@@ -35,6 +37,7 @@ interface State {
   tools: MaintenanceTool[];
   inventory: InventoryItem[];
   reservations: ResourceReservation[];
+  serviceRequests: ServiceRequest[];
 }
 
 interface Store extends State {
@@ -48,6 +51,7 @@ interface Store extends State {
   setTools: (t: MaintenanceTool[]) => void;
   setInventory: (i: InventoryItem[]) => void;
   setReservations: (r: ResourceReservation[]) => void;
+  setServiceRequests: (requests: ServiceRequest[]) => void;
   reset: () => void;
 }
 
@@ -65,6 +69,7 @@ const initial: State = {
   tools: seedTools,
   inventory: seedInventory,
   reservations: seedReservations,
+  serviceRequests: seedServiceRequests,
 };
 
 export function StoreProvider({ children }: { children: ReactNode }) {
@@ -100,6 +105,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setTools: (tools) => setState((s) => ({ ...s, tools })),
       setInventory: (inventory) => setState((s) => ({ ...s, inventory })),
       setReservations: (reservations) => setState((s) => ({ ...s, reservations })),
+      setServiceRequests: (serviceRequests) => setState((s) => ({ ...s, serviceRequests })),
       reset: () => setState(initial),
     }),
     [state],

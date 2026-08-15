@@ -25,7 +25,7 @@ export function PrintReportHeader({
         </div>
         <div>
           <strong>{activeDemo.branding.productName}</strong>
-          <span>Industrial Operations · Documento controlado</span>
+          <span>{activeDemo.branding.tagline} · Documento controlado</span>
         </div>
       </div>
       <div className="print-report-document">

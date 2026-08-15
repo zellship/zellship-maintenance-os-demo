@@ -10,6 +10,7 @@ export function statusTag(s: string) {
     Validated: { color: "success", label: "Validado" },
     PendingValidation: { color: "warning", label: "Pendiente validación" },
     Rejected: { color: "error", label: "Rechazado" },
+    Reopened: { color: "purple", label: "Reabierto para corrección" },
     Draft: { color: "default", label: "Borrador" },
     Active: { color: "green", label: "Activo" },
     Inactive: { color: "default", label: "Inactivo" },

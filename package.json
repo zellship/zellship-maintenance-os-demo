@@ -9,8 +9,11 @@
   },
   "scripts": {
     "dev": "vite dev --config vite.pages.config.ts",
+    "demo:atm": "VITE_DEMO_SCENARIO=atm-field-service VITE_DEMO_DATE=2026-08-14T09:30:00-06:00 vite dev --config vite.pages.config.ts",
     "build": "npm run build:pages",
     "build:pages": "vite build --config vite.pages.config.ts",
+    "build:atm": "VITE_DEMO_SCENARIO=atm-field-service VITE_DEMO_DATE=2026-08-14T09:30:00-06:00 vite build --config vite.pages.config.ts",
+    "build:industrial": "VITE_DEMO_SCENARIO=industrial-base VITE_DEMO_DATE=2026-08-14T09:30:00-06:00 vite build --config vite.pages.config.ts",
     "build:ssr": "vite build",
     "build:dev": "vite build --mode development",
     "preview": "vite preview --config vite.pages.config.ts",
@@ -21,7 +24,8 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "check": "npm run typecheck && npm run lint && npm run format:check && npm run test && npm run build:pages"
+    "check": "npm run typecheck && npm run lint && npm run format:check && npm run test && npm run build:pages",
+    "check:release": "npm run typecheck && npm run lint && npm run format:check && npm run test && npm run build:industrial && npm run build:atm"
   },
   "dependencies": {
     "@ant-design/icons": "^6.2.3",

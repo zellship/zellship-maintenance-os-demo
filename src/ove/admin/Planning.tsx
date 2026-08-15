@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Alert,
   Button,
@@ -60,7 +60,19 @@ type FormValues = {
   toolIds: string[];
 };
 
-export function Planning({ onOpenOrder }: { onOpenOrder: (scheduleId: string) => void }) {
+export function Planning({
+  onOpenOrder,
+  initialProtocolId = null,
+  initialServiceRequestId = null,
+  onProtocolRequestConsumed,
+  onServiceRequestConsumed,
+}: {
+  onOpenOrder: (scheduleId: string) => void;
+  initialProtocolId?: string | null;
+  initialServiceRequestId?: string | null;
+  onProtocolRequestConsumed?: () => void;
+  onServiceRequestConsumed?: () => void;
+}) {
   const {
     schedules,
     setSchedules,
@@ -72,12 +84,15 @@ export function Planning({ onOpenOrder }: { onOpenOrder: (scheduleId: string) =>
     setInventory,
     reservations,
     setReservations,
+    serviceRequests,
+    setServiceRequests,
   } = useStore();
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<PlanningView>("week");
   const [anchorDate, setAnchorDate] = useState(demoNow());
   const [plantFilter, setPlantFilter] = useState<string>("all");
   const [operatorFilter, setOperatorFilter] = useState<string>("all");
+  const [activeServiceRequestId, setActiveServiceRequestId] = useState<string | null>(null);
   const [form] = Form.useForm<FormValues>();
   const protocolId = Form.useWatch("protocolId", form);
   const operatorName = Form.useWatch("operator", form);
@@ -87,6 +102,9 @@ export function Planning({ onOpenOrder }: { onOpenOrder: (scheduleId: string) =>
   const toolIds = Form.useWatch("toolIds", form) || [];
   const selectedProtocol = protocols.find((p) => p.id === protocolId);
   const active = protocols.filter((p) => p.status === "Active");
+  const activeServiceRequest = serviceRequests.find(
+    (request) => request.id === activeServiceRequestId,
+  );
 
   const interval = getInterval(selectedDate, selectedHour, selectedProtocol);
   const selectedPerson = people.find((p) => p.name === operatorName);
@@ -109,6 +127,15 @@ export function Planning({ onOpenOrder }: { onOpenOrder: (scheduleId: string) =>
     const item = inventory.find((i) => i.id === a.inventoryItemId);
     return !item || item.onHand - item.reserved - item.quarantine < a.reservedQuantity;
   });
+  const accessRequirements = activeServiceRequest?.accessRequirements ?? [];
+  const completedAccessRequirements = accessRequirements.filter(
+    (requirement) =>
+      !requirement.required ||
+      requirement.completed ||
+      (requirement.id === "identification" && Boolean(selectedPerson)),
+  );
+  const accessReady =
+    !activeServiceRequest || completedAccessRequirements.length === accessRequirements.length;
   const configured =
     !!selectedProtocol && !!assetId && !!selectedPerson && !!selectedDate && !!selectedHour;
   const ready =
@@ -117,7 +144,8 @@ export function Planning({ onOpenOrder }: { onOpenOrder: (scheduleId: string) =>
     !assetConflict &&
     !personConflict &&
     toolConflicts.length === 0 &&
-    stockIssues.length === 0;
+    stockIssues.length === 0 &&
+    accessReady;
 
   const selectProtocol = (id: string) => {
     const p = protocols.find((item) => item.id === id);
@@ -130,16 +158,49 @@ export function Planning({ onOpenOrder }: { onOpenOrder: (scheduleId: string) =>
     });
   };
 
-  const openCreate = (date = anchorDate, hour = "10:00", suggestedProtocolId?: string) => {
+  const openCreate = (
+    date = anchorDate,
+    hour = "10:00",
+    suggestedProtocolId?: string,
+    serviceRequestId?: string,
+  ) => {
     setOpen(true);
+    setActiveServiceRequestId(serviceRequestId ?? null);
+    const request = serviceRequests.find((item) => item.id === serviceRequestId);
     form.setFieldsValue({
       date,
       hour: dayjs(hour, "HH:mm"),
       tolerance: 20,
       toolIds: [],
+      assetId: request?.assetId,
     });
-    if (suggestedProtocolId) selectProtocol(suggestedProtocolId);
+    if (suggestedProtocolId) {
+      selectProtocol(suggestedProtocolId);
+      if (request) form.setFieldValue("assetId", request.assetId);
+    }
   };
+
+  useEffect(() => {
+    if (!initialServiceRequestId) return;
+    const request = serviceRequests.find((item) => item.id === initialServiceRequestId);
+    if (!request || request.status !== "Accepted") return;
+    openCreate(anchorDate, "10:00", request.protocolId, request.id);
+    onServiceRequestConsumed?.();
+    // Open only when administration explicitly hands a request to planning.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialServiceRequestId]);
+
+  useEffect(() => {
+    if (!initialProtocolId || initialServiceRequestId) return;
+    const protocol = protocols.find(
+      (item) => item.id === initialProtocolId && item.status === "Active",
+    );
+    if (!protocol) return;
+    openCreate(anchorDate, "10:00", protocol.id);
+    onProtocolRequestConsumed?.();
+    // Open only when the control center explicitly hands a protocol to planning.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialProtocolId, initialServiceRequestId]);
 
   const create = (values: FormValues) => {
     const protocol = protocols.find((p) => p.id === values.protocolId)!;
@@ -167,6 +228,15 @@ export function Planning({ onOpenOrder }: { onOpenOrder: (scheduleId: string) =>
       toolIds: values.toolIds,
       materialAllocations: allocations,
       eligibilityValidated: true,
+      serviceRequestId: activeServiceRequest?.id,
+      serviceReference: activeServiceRequest?.externalReference,
+      siteLabel: activeServiceRequest?.siteLabel,
+      classification: activeServiceRequest?.classification,
+      accessRequirements: activeServiceRequest?.accessRequirements.map((requirement) =>
+        requirement.id === "identification"
+          ? { ...requirement, completed: true, detail: `${values.operator} · perfil validado` }
+          : requirement,
+      ),
     };
     const startAt = dayjs(`${schedule.date} ${schedule.hour}`).toISOString();
     const endAt = dayjs(startAt)
@@ -222,7 +292,17 @@ export function Planning({ onOpenOrder }: { onOpenOrder: (scheduleId: string) =>
           : item;
       }),
     );
+    if (activeServiceRequest) {
+      setServiceRequests(
+        serviceRequests.map((request) =>
+          request.id === activeServiceRequest.id
+            ? { ...request, status: "Planned", scheduleId }
+            : request,
+        ),
+      );
+    }
     setOpen(false);
+    setActiveServiceRequestId(null);
     form.resetFields();
     message.success(`${schedule.workOrder} creada · recursos e inventario reservados`);
   };
@@ -251,6 +331,12 @@ export function Planning({ onOpenOrder }: { onOpenOrder: (scheduleId: string) =>
   const backlog = active
     .filter(
       (protocol) =>
+        !serviceRequests.some(
+          (request) =>
+            request.protocolId === protocol.id &&
+            request.requiresAcceptance &&
+            request.status === "Received",
+        ) &&
         !schedules.some(
           (schedule) =>
             schedule.protocolId === protocol.id &&
@@ -556,12 +642,24 @@ export function Planning({ onOpenOrder }: { onOpenOrder: (scheduleId: string) =>
         width={760}
         title="Programar orden con recursos"
         open={open}
-        onCancel={() => setOpen(false)}
+        onCancel={() => {
+          setOpen(false);
+          setActiveServiceRequestId(null);
+        }}
         onOk={() => form.submit()}
         okText="Validar y reservar"
         cancelText="Cancelar"
         okButtonProps={{ disabled: !ready }}
       >
+        {activeServiceRequest && (
+          <Alert
+            type="info"
+            showIcon
+            message={`${activeServiceRequest.externalReference} · ${activeServiceRequest.siteLabel}`}
+            description={`${activeServiceRequest.classification.serviceType} · ${activeServiceRequest.classification.installationClass} · ${activeServiceRequest.classification.accessContext}`}
+            style={{ marginBottom: 16 }}
+          />
+        )}
         <Form
           form={form}
           layout="vertical"
@@ -699,6 +797,16 @@ export function Planning({ onOpenOrder }: { onOpenOrder: (scheduleId: string) =>
                   }
                 />
               </Col>
+              {activeServiceRequest && (
+                <Col span={24}>
+                  <Readiness
+                    ok={accessReady}
+                    icon={<SafetyCertificateOutlined />}
+                    title="Preparación de acceso"
+                    detail={`${completedAccessRequirements.length} de ${accessRequirements.length} condiciones listas · la identificación se vincula al técnico seleccionado`}
+                  />
+                </Col>
+              )}
             </Row>
           </>
         )}

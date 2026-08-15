@@ -66,7 +66,7 @@ export function MaintenanceResults() {
     );
     setNotifications([...updates, ...notifications]);
     message.success(
-      `Reporte enviado a ${contact.name} por ${channels
+      `Envío simulado a ${contact.name} por ${channels
         .map((channel) => (channel === "Email" ? "correo" : "WhatsApp"))
         .join(" y ")}`,
     );
@@ -84,8 +84,8 @@ export function MaintenanceResults() {
           Volver a órdenes completadas
         </Button>
         <Typography.Paragraph type="secondary" className="maintenance-results-detail-intro">
-          Detalle del cierre: evidencia contra estándar, calificación, decisión, trazabilidad e
-          impacto operacional.
+          Expediente del cierre: datos generales, diagnóstico, acciones, bitácora fotográfica,
+          conceptos y aprobación.
         </Typography.Paragraph>
         <MaintenanceResult
           execution={selected.execution}

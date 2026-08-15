@@ -4,6 +4,7 @@ import { resolveDemoNow } from "./clock";
 import { resolveDemoScenario } from "./registry";
 import { demoScenarioDescriptorSchema } from "./schema";
 import { industrialBaseScenario } from "./scenarios/industrial-base/config";
+import { atmFieldServiceScenario } from "./scenarios/atm-field-service/config";
 
 describe("demo scenario registry", () => {
   it("preserves the audited industrial baseline contract", () => {
@@ -22,6 +23,64 @@ describe("demo scenario registry", () => {
     expect(() => resolveDemoScenario("missing-scenario")).toThrow(
       "Unknown demo scenario: missing-scenario",
     );
+  });
+
+  it("registers an isolated ATM field-service scenario", () => {
+    const scenario = resolveDemoScenario("atm-field-service");
+    const corrective = scenario.data.serviceRequests.find(
+      (request) => request.classification.serviceType === "Correctivo",
+    );
+    const preventive = scenario.data.serviceRequests.find(
+      (request) => request.classification.serviceType === "Preventivo",
+    );
+
+    expect(scenario).toBe(atmFieldServiceScenario);
+    expect(scenario.capabilityProfile).toBe("execution-only");
+    expect(scenario.capabilities).toContain("service-request-intake");
+    expect(scenario.capabilities).not.toContain("improvement-insights");
+    expect(scenario.capabilities).not.toContain("executive-analytics");
+    expect(scenario.persistence.stateKey).not.toBe(industrialBaseScenario.persistence.stateKey);
+    expect(scenario.distribution).toEqual({
+      classification: "public-demo",
+      containsClientIdentifiableData: false,
+    });
+    expect(corrective).toMatchObject({
+      requiresAcceptance: true,
+      acceptancePolicy: { durationHours: 24 },
+      classification: {
+        installationClass: "REMOTO",
+        accessContext: "Comercio",
+      },
+    });
+    expect(preventive).toMatchObject({ requiresAcceptance: false, status: "Planned" });
+  });
+
+  it("keeps ATM acceptance and access dimensions internally consistent", () => {
+    const scenario = resolveDemoScenario("atm-field-service");
+    const corrective = scenario.data.serviceRequests.filter(
+      (request) => request.classification.serviceType === "Correctivo",
+    );
+    const preventive = scenario.data.serviceRequests.filter(
+      (request) => request.classification.serviceType === "Preventivo",
+    );
+    const accessContexts = new Set(
+      scenario.data.serviceRequests.map((request) => request.classification.accessContext),
+    );
+
+    expect(corrective.every((request) => request.requiresAcceptance)).toBe(true);
+    expect(corrective.every((request) => request.acceptancePolicy?.durationHours === 24)).toBe(
+      true,
+    );
+    expect(preventive.every((request) => !request.requiresAcceptance)).toBe(true);
+    expect(accessContexts).toEqual(new Set(["Banco", "Comercio", "Torre residencial", "Mall"]));
+    expect(
+      scenario.data.serviceRequests.every((request) => {
+        const protocol = scenario.data.protocols.find(
+          (candidate) => candidate.id === request.protocolId,
+        );
+        return protocol?.assetIds?.includes(request.assetId);
+      }),
+    ).toBe(true);
   });
 });
 

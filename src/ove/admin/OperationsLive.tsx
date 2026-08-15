@@ -34,6 +34,7 @@ import {
   DownOutlined,
   ExclamationCircleOutlined,
   EyeOutlined,
+  InboxOutlined,
   PlayCircleOutlined,
   ThunderboltOutlined,
   UserAddOutlined,
@@ -45,7 +46,9 @@ import { seedAssets, seedOperationalFlows } from "../seed";
 import { useStore } from "../store";
 import { statusTag } from "../ui";
 import type { Notification, ProtocolActivation, Schedule } from "../types";
-import { activeDemo } from "../../demo-config/active";
+import { activeDemo, hasCapability } from "../../demo-config/active";
+import { ServiceRequests } from "./ServiceRequests";
+import { resolveValidationExecutionId } from "../domain";
 
 type FeedFilter = "all" | "automatic" | "ondemand" | "critical";
 
@@ -80,9 +83,15 @@ const modeInfo: Record<
 export function OperationsLive({
   onNav,
   onOpenOrder,
+  onScheduleRequest,
+  onScheduleProtocol,
+  onOpenValidation,
 }: {
   onNav: (key: string) => void;
   onOpenOrder: (orderId: string) => void;
+  onScheduleRequest: (requestId: string) => void;
+  onScheduleProtocol: (protocolId: string) => void;
+  onOpenValidation: (executionId: string | null) => void;
 }) {
   const {
     protocols,
@@ -92,6 +101,8 @@ export function OperationsLive({
     setSchedules,
     incidents,
     setIncidents,
+    executions,
+    serviceRequests,
   } = useStore();
   const [flowStep, setFlowStep] = useState(2);
   const [feedFilter, setFeedFilter] = useState<FeedFilter>("all");
@@ -99,6 +110,7 @@ export function OperationsLive({
   const [eventDrawerOpen, setEventDrawerOpen] = useState(false);
   const [alertsDrawerOpen, setAlertsDrawerOpen] = useState(false);
   const modes: ProtocolActivation[] = ["Triggered", "Recurring", "OnDemand"];
+  const showServiceIntake = hasCapability("service-request-intake") && serviceRequests.length > 0;
 
   const feed = useMemo(
     () =>
@@ -226,6 +238,11 @@ export function OperationsLive({
     );
   };
 
+  const openValidation = (event: Notification) => {
+    setEventDrawerOpen(false);
+    onOpenValidation(resolveValidationExecutionId(event, schedules, executions));
+  };
+
   const today = demoNow().format("YYYY-MM-DD");
   const programDate = schedules.some((schedule) => schedule.date === today)
     ? today
@@ -243,6 +260,9 @@ export function OperationsLive({
   const openIncidents = incidents.filter(
     (incident) => incident.status !== "Closed" && incident.status !== "Resolved",
   );
+  const receivedRequests = serviceRequests.filter(
+    (request) => request.status === "Received",
+  ).length;
   const averageAvailability = Math.round(
     seedAssets.reduce((sum, asset) => sum + asset.availability, 0) / seedAssets.length,
   );
@@ -262,7 +282,7 @@ export function OperationsLive({
     {
       key: "ondemand",
       icon: <PlayCircleOutlined />,
-      label: "Asignar protocolo ahora",
+      label: "Programar protocolo ahora",
     },
     {
       key: "recurring",
@@ -280,7 +300,16 @@ export function OperationsLive({
   ];
 
   const handleQuickAction: MenuProps["onClick"] = ({ key }) => {
-    if (key === "ondemand") addScheduleFromMode("OnDemand");
+    if (key === "ondemand") {
+      const protocol =
+        protocols.find((item) => item.activationMode === "OnDemand" && item.status === "Active") ??
+        protocols.find((item) => item.status === "Active");
+      if (!protocol) {
+        message.warning("No hay protocolos activos disponibles para programar");
+        return;
+      }
+      onScheduleProtocol(protocol.id);
+    }
     if (key === "recurring") addScheduleFromMode("Recurring");
     if (key === "related-flow") triggerRelatedFlow();
   };
@@ -291,10 +320,14 @@ export function OperationsLive({
         <div>
           <Space>
             <span className="live-dot" />
-            <Typography.Text strong>CENTRO DE CONTROL · EN VIVO</Typography.Text>
+            <Typography.Text strong>
+              {showServiceIntake ? "CENTRO OPERATIVO · EN VIVO" : "CENTRO DE CONTROL · EN VIVO"}
+            </Typography.Text>
           </Space>
           <Typography.Title level={2} style={{ margin: "3px 0 0" }}>
-            Operación, alertas y decisiones
+            {showServiceIntake
+              ? "Recepción, operación y decisiones"
+              : "Operación, alertas y decisiones"}
           </Typography.Title>
           <Typography.Text type="secondary">
             Una vista para entender el estado, atender excepciones y seguir cada evento.
@@ -326,6 +359,24 @@ export function OperationsLive({
           </Button>
         </div>
       </div>
+
+      {showServiceIntake && (
+        <>
+          <section className="operations-intake-section" aria-label="Servicios recibidos">
+            <ServiceRequests embedded onSchedule={onScheduleRequest} />
+          </section>
+
+          <div className="operations-section-heading">
+            <div>
+              <Typography.Text className="planning-eyebrow">SEGUIMIENTO · EN VIVO</Typography.Text>
+              <Typography.Title level={3}>Estado y atención operativa</Typography.Title>
+            </div>
+            <Typography.Text type="secondary">
+              Indicadores, excepciones y eventos del programa en curso.
+            </Typography.Text>
+          </div>
+        </>
+      )}
 
       <div className="operations-command-grid">
         <Card
@@ -371,10 +422,17 @@ export function OperationsLive({
             </div>
 
             <div className="operations-health-metrics">
-              <div className="operations-health-metric availability">
-                <Avatar icon={<DeploymentUnitOutlined />} />
-                <Statistic title="Disponibilidad" value={averageAvailability} suffix="%" />
-              </div>
+              {showServiceIntake ? (
+                <div className="operations-health-metric intake">
+                  <Avatar icon={<InboxOutlined />} />
+                  <Statistic title="Por aceptar" value={receivedRequests} />
+                </div>
+              ) : (
+                <div className="operations-health-metric availability">
+                  <Avatar icon={<DeploymentUnitOutlined />} />
+                  <Statistic title="Disponibilidad" value={averageAvailability} suffix="%" />
+                </div>
+              )}
               <div className="operations-health-metric pending">
                 <Avatar icon={<ClockCircleOutlined />} />
                 <Statistic title="Pendientes" value={pendingInProgram} />
@@ -446,7 +504,7 @@ export function OperationsLive({
                     onClick={(clickEvent) => {
                       clickEvent.stopPropagation();
                       if (critical) setAlertsDrawerOpen(true);
-                      else inspectEvent(event);
+                      else openValidation(event);
                     }}
                   >
                     {critical ? "Atender incidencia" : "Revisar validación"}
@@ -765,6 +823,17 @@ export function OperationsLive({
               message="Trazabilidad registrada"
               description="El evento, su entrega y la consulta quedaron relacionados con la operación y el activo."
             />
+            {selectedEvent.type === "ValidationRequired" && (
+              <Button
+                type="primary"
+                block
+                icon={<CheckCircleOutlined />}
+                style={{ marginTop: 16 }}
+                onClick={() => openValidation(selectedEvent)}
+              >
+                Abrir validación requerida
+              </Button>
+            )}
           </div>
         ) : (
           <Alert type="info" message="Selecciona un evento del feed" />

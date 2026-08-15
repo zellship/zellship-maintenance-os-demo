@@ -67,6 +67,10 @@ the scenario authoring process. The audited baseline is recorded in
 [`docs/baselines/MNT-DEMO-BASE-001.json`](docs/baselines/MNT-DEMO-BASE-001.json), and the separation
 increment is closed in
 [`docs/increments/MNT-DEMO-BASE-002.md`](docs/increments/MNT-DEMO-BASE-002.md).
+The ATM field-service discovery and scenario contract is frozen in
+[`docs/increments/MNT-DEMO-ATM-001.md`](docs/increments/MNT-DEMO-ATM-001.md).
+Its eight-scene storyboard and implementation blueprint is defined in
+[`docs/increments/MNT-DEMO-ATM-002.md`](docs/increments/MNT-DEMO-ATM-002.md).
 
 ## Demo walkthrough
 
@@ -77,4 +81,5 @@ in [docs/demo-scenarios.md](docs/demo-scenarios.md).
 ## Deployment
 
 Pushes to `main` are validated and published by `.github/workflows/deploy-pages.yml`. The workflow
-uploads `dist-pages` using GitHub's official Pages actions.
+validates both scenarios, leaves the ATM variant as the final `dist-pages` artifact, and uploads it
+using GitHub's official Pages actions.

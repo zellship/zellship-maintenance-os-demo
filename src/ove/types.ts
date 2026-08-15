@@ -3,7 +3,7 @@ export type Role = "admin" | "operator" | "supervisor";
 export type ProtocolStatus = "Draft" | "Active" | "Inactive" | "Archived";
 export type ScheduleStatus = "Pending" | "InProgress" | "Completed" | "Expired" | "Cancelled";
 export type ExecutionStatus =
-  "InProgress" | "Completed" | "PendingValidation" | "Validated" | "Rejected";
+  "InProgress" | "Completed" | "PendingValidation" | "Validated" | "Rejected" | "Reopened";
 export type EvidenceType = "Photo" | "Video" | "Signature" | "GPS" | "QR" | "Timestamp" | "File";
 export type EvidenceStatus = "Pending" | "Valid" | "Invalid";
 export type IncidentType =
@@ -13,6 +13,55 @@ export type ResourceStatus = "Available" | "Reserved" | "InUse" | "Calibration" 
 export type ConsumptionMode = "Exact" | "Range" | "Variable";
 export type ProtocolActivation = "Recurring" | "Triggered" | "OnDemand";
 export type NotificationChannel = "System" | "Push" | "WhatsApp" | "Email" | "SMS";
+export type ServiceRequestStatus = "Received" | "Accepted" | "Declined" | "Expired" | "Planned";
+
+export interface ServiceClassification {
+  serviceType: string;
+  installationClass: string;
+  accessContext: string;
+}
+
+export interface AccessRequirement {
+  id: string;
+  label: string;
+  required: boolean;
+  completed: boolean;
+  detail?: string;
+}
+
+export interface AcceptancePolicy {
+  durationHours: number;
+  expiresTo: "Declined" | "Expired";
+}
+
+export interface ServiceRequest {
+  id: string;
+  externalReference: string;
+  title: string;
+  description: string;
+  source: string;
+  assetId: string;
+  siteLabel: string;
+  region: string;
+  receivedAt: string;
+  acceptanceDueAt?: string;
+  acceptancePolicy?: AcceptancePolicy;
+  requiresAcceptance: boolean;
+  status: ServiceRequestStatus;
+  classification: ServiceClassification;
+  accessRequirements: AccessRequirement[];
+  protocolId: string;
+  acceptedAt?: string;
+  acceptedBy?: string;
+  scheduleId?: string;
+}
+
+export interface WorkConcept {
+  code: string;
+  description: string;
+  unit: string;
+  quantity: number;
+}
 
 export interface FormField {
   id: string;
@@ -33,12 +82,17 @@ export interface FormField {
 }
 
 export interface EvidenceConfig {
+  id?: string;
   type: EvidenceType;
   required: boolean;
   minCount?: number;
   radius?: number;
   qrCode?: string;
   referenceData?: string;
+  captureData?: string;
+  label?: string;
+  phase?: "Pre-intervention" | "Intervention" | "Post-intervention";
+  guidance?: string;
   aiValidation?: boolean;
   humanRating?: boolean;
 }
@@ -71,6 +125,7 @@ export interface Protocol {
   requiredSkillIds?: string[];
   requiredToolIds?: string[];
   materialRequirements?: MaterialRequirement[];
+  workConceptTemplates?: WorkConcept[];
 }
 
 export interface Skill {
@@ -148,10 +203,15 @@ export interface Schedule {
   assetId?: string;
   plant?: string;
   workOrder?: string;
+  serviceReference?: string;
+  siteLabel?: string;
   toolIds?: string[];
   materialAllocations?: MaterialAllocation[];
   eligibilityValidated?: boolean;
   notes?: string;
+  serviceRequestId?: string;
+  classification?: ServiceClassification;
+  accessRequirements?: AccessRequirement[];
 }
 
 export interface EvidenceRecord {
@@ -160,6 +220,8 @@ export interface EvidenceRecord {
   type: EvidenceType;
   data: string;
   gps?: { lat: number; lng: number };
+  label?: string;
+  phase?: "Pre-intervention" | "Intervention" | "Post-intervention";
   timestamp: string;
   status: EvidenceStatus;
   referenceData?: string;
@@ -190,6 +252,12 @@ export interface Execution {
   toolIds?: string[];
   materialConsumptions?: MaterialAllocation[];
   resourceCheckInAt?: string;
+  workConcepts?: WorkConcept[];
+  revision?: number;
+  previousExecutionId?: string;
+  reopenedAt?: string;
+  reopenedBy?: string;
+  reopenReason?: string;
 }
 
 export interface Asset {

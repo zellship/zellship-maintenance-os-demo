@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Card,
   Typography,
@@ -37,20 +37,30 @@ import { maintenanceCapturedUrl, maintenanceReferenceUrl } from "../shared/maint
 import { PrintReportFooter, PrintReportHeader } from "../shared/PrintReport";
 import { SendReportModal, type ReportDeliverySelection } from "../shared/SendReportModal";
 import type { Notification } from "../types";
+import { activeDemo } from "../../demo-config/active";
+import { canRejectExecution } from "../domain";
 
-export function SupervisorValidations() {
+export function SupervisorValidations({
+  initialSelectedId,
+}: {
+  initialSelectedId?: string | null;
+}) {
   const {
     executions,
     setExecutions,
     protocols,
     schedules,
+    setSchedules,
     incidents,
     setIncidents,
     notifications,
     setNotifications,
+    role,
   } = useStore();
   const pending = executions.filter((e) => e.status === "PendingValidation");
-  const [selectedId, setSelectedId] = useState<string | null>(pending[0]?.id ?? null);
+  const [selectedId, setSelectedId] = useState<string | null>(
+    initialSelectedId ?? pending[0]?.id ?? null,
+  );
   const [comments, setComments] = useState("");
   const [sendModalOpen, setSendModalOpen] = useState(false);
 
@@ -65,6 +75,14 @@ export function SupervisorValidations() {
   );
   const photoEvidence = exec?.evidences.find((evidence) => evidence.type === "Photo");
   const gpsEvidence = exec?.evidences.find((evidence) => evidence.type === "GPS");
+  const decisionActor =
+    activeDemo.context.loginProfiles.find((profile) => profile.role === role)?.name ??
+    (role === "admin" ? "Coordinación" : "Supervisión");
+  const canReject = canRejectExecution(role);
+
+  useEffect(() => {
+    if (initialSelectedId) setSelectedId(initialSelectedId);
+  }, [initialSelectedId]);
 
   const printReport = () => {
     if (!exec) return;
@@ -81,18 +99,18 @@ export function SupervisorValidations() {
       id: `n-report-${sentAt}-${index}`,
       type: "Completed",
       channel,
-      actor: "Roberto Salas",
+      actor: decisionActor,
       recipientRole: contact.role,
       recipient: contact.name,
       source: "OnDemand",
-      event: "Reporte de inspección enviado",
-      message: `${proto?.name ?? "Mantenimiento"}: reporte de ${exec.operator} enviado con calificación de ${exec.score ?? 94}%.`,
+      event: "Envío de reporte simulado",
+      message: `${proto?.name ?? "Mantenimiento"}: simulación de entrega del reporte de ${exec.operator} con calificación de ${exec.score ?? 94}%.`,
       status: "Sent",
       createdAt: demoNow().toISOString(),
     }));
     setNotifications([...notices, ...notifications]);
     message.success(
-      `Reporte enviado a ${contact.name} por ${channels
+      `Envío simulado a ${contact.name} por ${channels
         .map((channel) => (channel === "Email" ? "correo" : "WhatsApp"))
         .join(" y ")}`,
     );
@@ -100,6 +118,10 @@ export function SupervisorValidations() {
 
   const decide = (decision: "Approved" | "Rejected") => {
     if (!exec) return;
+    if (decision === "Rejected" && !canReject) {
+      message.error("Coordinación puede aprobar o reabrir, pero no rechazar internamente.");
+      return;
+    }
     if (decision === "Rejected" && !comments.trim()) {
       message.warning("Comentario obligatorio para rechazar");
       return;
@@ -111,7 +133,7 @@ export function SupervisorValidations() {
               ...e,
               status: decision === "Approved" ? "Validated" : "Rejected",
               approval: {
-                supervisor: "Roberto Salas",
+                supervisor: decisionActor,
                 decision,
                 comments,
                 at: demoNow().toISOString(),
@@ -139,7 +161,7 @@ export function SupervisorValidations() {
       id: `n-decision-${Date.now()}`,
       type: decision === "Approved" ? "Completed" : "Incident",
       channel: "WhatsApp",
-      actor: "Roberto Salas",
+      actor: decisionActor,
       recipientRole: "operator",
       recipient: exec.operator,
       source: "Automatic",
@@ -154,13 +176,57 @@ export function SupervisorValidations() {
     message.success(decision === "Approved" ? "Ejecución aprobada" : "Ejecución rechazada");
   };
 
+  const reopen = () => {
+    if (!exec || !schedule) return;
+    if (!comments.trim()) {
+      message.warning("Indica la corrección requerida antes de reabrir.");
+      return;
+    }
+    const reopenedAt = demoNow().toISOString();
+    setExecutions(
+      executions.map((item) =>
+        item.id === exec.id
+          ? {
+              ...item,
+              status: "Reopened",
+              reopenedAt,
+              reopenedBy: decisionActor,
+              reopenReason: comments,
+            }
+          : item,
+      ),
+    );
+    setSchedules(
+      schedules.map((item) => (item.id === schedule.id ? { ...item, status: "Pending" } : item)),
+    );
+    setNotifications([
+      {
+        id: `n-reopen-${Date.now()}`,
+        type: "Incident",
+        channel: "Push",
+        actor: decisionActor,
+        recipientRole: "operator",
+        recipient: exec.operator,
+        source: "OnDemand",
+        event: "Ejecución reabierta",
+        message: `${schedule.workOrder}: requiere corrección y reenvío. R${exec.revision ?? 1} se conserva.`,
+        status: "Sent",
+        createdAt: reopenedAt,
+      },
+      ...notifications,
+    ]);
+    setComments("");
+    setSelectedId(null);
+    message.success(`${schedule.workOrder} reabierta · revisión anterior conservada`);
+  };
+
   return (
     <div className="supervisor-control">
       <div className="supervisor-control-header">
         <div>
           <Space size={8} className="supervisor-eyebrow">
             <span className="live-dot" />
-            SUPERVISIÓN · CONTROL DE CALIDAD
+            {role === "admin" ? "COORDINACIÓN" : "SUPERVISIÓN"} · CONTROL DE CALIDAD
           </Space>
           <Typography.Title level={2}>Revisión y decisiones</Typography.Title>
           <Typography.Text type="secondary">
@@ -269,7 +335,7 @@ export function SupervisorValidations() {
               metadata={[
                 { label: "Orden", value: schedule?.workOrder ?? exec.id },
                 { label: "Activo", value: schedule?.assetId ?? "Sin activo" },
-                { label: "Inspector", value: "Roberto Salas" },
+                { label: "Inspector", value: decisionActor },
                 { label: "Estado", value: "Pendiente de validación" },
               ]}
             />
@@ -322,14 +388,14 @@ export function SupervisorValidations() {
                     <Avatar icon={<EnvironmentOutlined />} />
                     <span>
                       <small>Ubicación</small>
-                      <strong>{gpsEvidence ? "GPS verificado" : "Sin GPS"}</strong>
+                      <strong>{gpsEvidence ? "GPS simulado" : "Sin GPS"}</strong>
                     </span>
                   </div>
                   <div>
                     <Avatar icon={<CameraOutlined />} />
                     <span>
                       <small>Captura</small>
-                      <strong>{photoEvidence ? "Foto original" : "Sin fotografía"}</strong>
+                      <strong>{photoEvidence ? "Foto simulada" : "Sin fotografía"}</strong>
                     </span>
                   </div>
                 </div>
@@ -355,7 +421,7 @@ export function SupervisorValidations() {
 
                 <div className="supervisor-ai-rating">
                   <span>
-                    Coincidencia IA <b>{photoEvidence?.aiScore ?? 86}%</b>
+                    Coincidencia simulada <b>{photoEvidence?.aiScore ?? 86}%</b>
                   </span>
                   <Rate disabled value={photoEvidence?.humanScore ?? 4} />
                 </div>
@@ -394,7 +460,7 @@ export function SupervisorValidations() {
                     <CheckOutlined /> Evidencias completas
                   </div>
                   <div>
-                    <CheckOutlined /> Ubicación verificada
+                    <CheckOutlined /> Registro GPS simulado presente
                   </div>
                   <div>
                     <CheckOutlined /> Formulario respondido
@@ -408,13 +474,26 @@ export function SupervisorValidations() {
                   value={comments}
                   onChange={(event) => setComments(event.target.value)}
                 />
+                {!canReject && (
+                  <Alert
+                    type="info"
+                    showIcon
+                    message="Coordinación puede aprobar o reabrir"
+                    description="El rechazo interno permanece reservado para Supervisión."
+                  />
+                )}
                 <div className="validation-decision-actions supervisor-decision-actions">
-                  <Button icon={<AlertOutlined />} danger onClick={() => decide("Rejected")}>
-                    Generar incidencia
-                  </Button>
-                  <Button icon={<CloseOutlined />} onClick={() => decide("Rejected")}>
-                    Rechazar
-                  </Button>
+                  {canReject && (
+                    <Button icon={<AlertOutlined />} danger onClick={() => decide("Rejected")}>
+                      Generar incidencia
+                    </Button>
+                  )}
+                  {canReject && (
+                    <Button icon={<CloseOutlined />} onClick={() => decide("Rejected")}>
+                      Rechazar
+                    </Button>
+                  )}
+                  <Button onClick={reopen}>Reabrir para corregir</Button>
                   <Button
                     type="primary"
                     icon={<CheckOutlined />}
