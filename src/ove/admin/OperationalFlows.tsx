@@ -34,7 +34,7 @@ import {
   ToolOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
-import { hasCapability } from "../../demo-config/active";
+import { activeDemo, hasCapability } from "../../demo-config/active";
 import { demoNow } from "../../demo-config/clock";
 import { seedAssets, seedOperationalFlows } from "../seed";
 import { useStore } from "../store";
@@ -149,7 +149,9 @@ export function OperationalFlows() {
       channel: "Push",
       actor: "Business Commitment Engine",
       recipientRole: "supervisor",
-      recipient: "Roberto Salas",
+      recipient:
+        activeDemo.context.loginProfiles.find((profile) => profile.role === "supervisor")?.name ??
+        "Supervisión",
       source: "Automatic",
       event: "Orquestación de flujo",
       message: `${selected.name}: “${nextStep.name}” completado; dependencias reevaluadas.`,

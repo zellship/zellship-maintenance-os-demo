@@ -32,6 +32,10 @@ VITE_DEMO_DATE=2026-08-14T09:30:00-06:00 npm run dev
 - `full`: execution, Improvement insights, and Executive analytics.
 - `execution-only`: operational execution without Improvement insights or Executive analytics.
 
+`service-request-intake` is a reusable operational capability. Its navigation appears only when the
+active scenario also provides service-request data, so adding the capability contract does not
+change the audited industrial baseline experience.
+
 Navigation is derived from capabilities. `improvement-insights` controls OEE content inside the
 maintenance result; `executive-analytics` controls Reports and supervisor KPIs. Scenario-specific
 data must not rely on hiding a menu item alone.
@@ -53,9 +57,11 @@ access-control system.
 2. Choose `full` or `execution-only`; override individual capabilities only with a documented
    reason.
 3. Give the scenario a unique `persistence.stateKey` so browser data cannot leak across demos.
-4. Register it in `src/demo-config/registry.ts`.
-5. Add contract tests for identity, capabilities, data counts, distribution, and reset behavior.
-6. Run `npm run check` and a smoke walkthrough for every enabled role.
+4. Configure scenario-owned evidence assets and guidance rather than hard-coding client media in
+   shared components.
+5. Register it in `src/demo-config/registry.ts`.
+6. Add contract tests for identity, capabilities, data counts, distribution, and reset behavior.
+7. Run `npm run check` and a smoke walkthrough for every enabled role.
 
 Do not add real credentials, bank information, exact customer locations, personal contact details,
 or other confidential prospect data to a public repository.

@@ -12,6 +12,7 @@ export const seedExecutions = demoData.executions;
 export const seedIncidents = demoData.incidents;
 export const seedNotifications = demoData.notifications;
 export const seedOperationalFlows = demoData.operationalFlows;
+export const seedServiceRequests = demoData.serviceRequests;
 
 export const plants = demoData.taxonomy.plants;
 export const branches = demoData.taxonomy.branches;

@@ -34,6 +34,7 @@ const data: DemoScenarioData = {
   incidents: seedIncidents,
   notifications: seedNotifications,
   operationalFlows: seedOperationalFlows,
+  serviceRequests: [],
   taxonomy: {
     plants,
     branches,
@@ -153,6 +154,18 @@ const descriptor = demoScenarioDescriptorSchema.parse({
         whatsapp: "+52 81 5550 0184",
       },
     ],
+    evidenceAssets: {
+      referencePath: "maintenance/compressor-reference.jpg",
+      capturedPath: "maintenance/compressor-captured.jpg?v=2",
+      subjectLabel: "AC-01",
+      guidance: "Busca alineación, tensión uniforme, limpieza y marcas de inspección.",
+      aiFindings: [
+        "Guardas y componentes visibles",
+        "Desgaste leve en borde de banda",
+        "Alineación requiere seguimiento",
+      ],
+      defaultOperatorComment: "Condición operable; programar ajuste en próxima ventana.",
+    },
     demoPin: "1234",
   },
   persistence: {

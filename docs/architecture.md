@@ -47,7 +47,8 @@ adding editing or remote persistence behavior for those entities.
 - `npm run build:pages`: static build in `dist-pages`; canonical production artifact.
 - `npm run build:ssr`: TanStack Start build in `dist`; secondary compatibility artifact.
 - GitHub Pages base path: `/zellship-maintenance-os-demo/`.
-- `.github/workflows/deploy-pages.yml`: validates and deploys `main`.
+- `.github/workflows/deploy-pages.yml`: validates both scenarios and deploys the ATM build from
+  `main`.
 - `.github/workflows/ci.yml`: validates pull requests.
 
 The hard-coded Pages base and social image URL must change if the repository is renamed, forked to

@@ -11,6 +11,7 @@ import type {
   ResourceReservation,
   Role,
   Schedule,
+  ServiceRequest,
   Skill,
 } from "../ove/types";
 import type { CapabilityProfileId, DemoCapabilityId } from "./capabilities";
@@ -39,6 +40,7 @@ export type DemoScenarioData = {
   incidents: Incident[];
   notifications: Notification[];
   operationalFlows: OperationalFlow[];
+  serviceRequests: ServiceRequest[];
   taxonomy: {
     plants: string[];
     branches: string[];
@@ -83,6 +85,14 @@ export type DemoScenario = {
       email?: string;
       whatsapp?: string;
     }>;
+    evidenceAssets: {
+      referencePath: string;
+      capturedPath: string;
+      subjectLabel: string;
+      guidance: string;
+      aiFindings: string[];
+      defaultOperatorComment: string;
+    };
     demoPin: string;
   };
   persistence: {

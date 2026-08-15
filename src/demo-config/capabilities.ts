@@ -13,6 +13,7 @@ export const capabilityIds = [
   "mobile-execution",
   "supervisor-alerts",
   "supervisor-validation",
+  "service-request-intake",
   "improvement-insights",
   "executive-analytics",
 ] as const;

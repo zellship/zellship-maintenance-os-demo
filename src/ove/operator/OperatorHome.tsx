@@ -11,12 +11,21 @@ const OPERATOR = activeDemo.context.primaryOperator;
 export function OperatorHome({ onStart }: { onStart: (id: string) => void }) {
   const { schedules, protocols } = useStore();
   const today = demoNow().format("YYYY-MM-DD");
-  const mine = schedules.filter((s) => s.operator === OPERATOR && s.date === today);
-  const next = mine.find((s) => s.status === "Pending" || s.status === "InProgress") || mine[0];
+  const mine = schedules
+    .filter((s) => s.operator === OPERATOR)
+    .slice()
+    .sort((a, b) => `${a.date}${a.hour}`.localeCompare(`${b.date}${b.hour}`));
+  const todayMine = mine.filter((schedule) => schedule.date === today);
+  const next =
+    mine.find(
+      (s) =>
+        ["Pending", "InProgress"].includes(s.status) &&
+        dayjs(`${s.date} ${s.hour}`).isAfter(demoNow().subtract(1, "minute")),
+    ) || mine.find((s) => s.status === "Pending" || s.status === "InProgress");
   const nextProto = next ? protocols.find((p) => p.id === next.protocolId) : null;
 
-  const urgent = mine.filter((s) => s.status === "Pending").length;
-  const completed = mine.filter((s) => s.status === "Completed").length;
+  const urgent = todayMine.filter((s) => s.status === "Pending").length;
+  const completed = todayMine.filter((s) => s.status === "Completed").length;
 
   return (
     <>
@@ -37,7 +46,7 @@ export function OperatorHome({ onStart }: { onStart: (id: string) => void }) {
             {nextProto.name}
           </Typography.Title>
           <Typography.Text style={{ color: "#fff", opacity: 0.9 }}>
-            <ClockCircleOutlined /> {next.hour} ·{" "}
+            <ClockCircleOutlined /> {dayjs(next.date).format("DD MMM")} · {next.hour} ·{" "}
             {seedAssets.find((a) => a.id === next.assetId)?.name} · Tolerancia {next.tolerance} min
           </Typography.Text>
           <div style={{ marginTop: 16 }}>
@@ -69,7 +78,10 @@ export function OperatorHome({ onStart }: { onStart: (id: string) => void }) {
         </Col>
         <Col span={8}>
           <Card>
-            <Statistic title="Pendientes" value={mine.length - completed} />
+            <Statistic
+              title="Pendientes"
+              value={mine.filter((schedule) => schedule.status !== "Completed").length}
+            />
           </Card>
         </Col>
         <Col span={8}>

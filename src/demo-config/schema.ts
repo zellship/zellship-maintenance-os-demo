@@ -61,6 +61,14 @@ export const demoScenarioDescriptorSchema = z
           }),
         )
         .min(1),
+      evidenceAssets: z.object({
+        referencePath: z.string().min(1),
+        capturedPath: z.string().min(1),
+        subjectLabel: z.string().min(1),
+        guidance: z.string().min(1),
+        aiFindings: z.array(z.string().min(1)).min(1),
+        defaultOperatorComment: z.string().min(1),
+      }),
       demoPin: z.string().regex(/^\d{4}$/),
     }),
     persistence: z.object({

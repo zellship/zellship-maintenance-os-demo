@@ -33,6 +33,9 @@ import { NotificationCenter } from "../shared/NotificationCenter";
 import { OperationsLive } from "./OperationsLive";
 import { OperationalFlows } from "./OperationalFlows";
 import { hasCapability } from "../../demo-config/active";
+import { ServiceRequests } from "./ServiceRequests";
+import { useStore } from "../store";
+import { SupervisorValidations } from "../supervisor/SupervisorValidations";
 
 type Key =
   | "dashboard"
@@ -42,6 +45,8 @@ type Key =
   | "planning"
   | "orders"
   | "results"
+  | "requests"
+  | "validations"
   | "assets"
   | "resources"
   | "notifications"
@@ -50,8 +55,12 @@ type Key =
   | "reportes";
 
 export function AdminApp() {
+  const { serviceRequests } = useStore();
   const [key, setKey] = useState<Key>("dashboard");
   const [requestedOrderId, setRequestedOrderId] = useState<string | null>(null);
+  const [requestedServiceRequestId, setRequestedServiceRequestId] = useState<string | null>(null);
+  const [requestedProtocolId, setRequestedProtocolId] = useState<string | null>(null);
+  const [requestedExecutionId, setRequestedExecutionId] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState(false);
   const [mobile, setMobile] = useState(false);
 
@@ -69,6 +78,9 @@ export function AdminApp() {
       : []),
     ...(hasCapability("maintenance-results")
       ? [{ key: "results", icon: <SafetyCertificateOutlined />, label: "Resultados" }]
+      : []),
+    ...(hasCapability("supervisor-validation") && serviceRequests.length
+      ? [{ key: "validations", icon: <SafetyCertificateOutlined />, label: "Validaciones" }]
       : []),
   ];
   const entityItems = [
@@ -100,7 +112,13 @@ export function AdminApp() {
   ];
   const menuItems: MenuProps["items"] = [
     ...(hasCapability("admin-control-center")
-      ? [{ key: "dashboard", icon: <DashboardOutlined />, label: "Centro de control" }]
+      ? [
+          {
+            key: "dashboard",
+            icon: <DashboardOutlined />,
+            label: serviceRequests.length ? "Centro operativo" : "Centro de control",
+          },
+        ]
       : []),
     ...(executionItems.length
       ? [
@@ -186,14 +204,48 @@ export function AdminApp() {
           <OperationsLive
             onNav={(nextKey) => navigate(nextKey as Key)}
             onOpenOrder={(orderId) => navigate("orders", orderId)}
+            onScheduleRequest={(requestId) => {
+              setRequestedProtocolId(null);
+              setRequestedServiceRequestId(requestId);
+              navigate("planning");
+            }}
+            onScheduleProtocol={(protocolId) => {
+              setRequestedServiceRequestId(null);
+              setRequestedProtocolId(protocolId);
+              navigate("planning");
+            }}
+            onOpenValidation={(executionId) => {
+              setRequestedExecutionId(executionId);
+              navigate("validations");
+            }}
           />
         )}
         {key === "catalog" && <ProtocolCatalog onNew={() => setKey("new")} />}
         {key === "flows" && <OperationalFlows />}
         {key === "new" && <ProtocolWizard onDone={() => setKey("catalog")} />}
-        {key === "planning" && <Planning onOpenOrder={(orderId) => navigate("orders", orderId)} />}
+        {key === "requests" && (
+          <ServiceRequests
+            onSchedule={(requestId) => {
+              setRequestedProtocolId(null);
+              setRequestedServiceRequestId(requestId);
+              navigate("planning");
+            }}
+          />
+        )}
+        {key === "planning" && (
+          <Planning
+            initialProtocolId={requestedProtocolId}
+            initialServiceRequestId={requestedServiceRequestId}
+            onOpenOrder={(orderId) => navigate("orders", orderId)}
+            onProtocolRequestConsumed={() => setRequestedProtocolId(null)}
+            onServiceRequestConsumed={() => setRequestedServiceRequestId(null)}
+          />
+        )}
         {key === "orders" && <WorkOrders initialSelectedId={requestedOrderId} />}
         {key === "results" && <MaintenanceResults />}
+        {key === "validations" && (
+          <SupervisorValidations initialSelectedId={requestedExecutionId} />
+        )}
         {key === "assets" && <Assets />}
         {key === "resources" && <Resources />}
         {key === "notifications" && <NotificationCenter role="admin" showAll />}

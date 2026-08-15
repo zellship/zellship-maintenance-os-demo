@@ -2,7 +2,34 @@
 
 Start each walkthrough by pressing the reset button in the header.
 
-## 1. Control center and planning
+Select the scenario at build or development time. The industrial walkthrough remains the default;
+the ATM walkthrough uses a separate state key and fictional dataset.
+
+```bash
+npm run demo:atm
+```
+
+## ATM field service — eight-scene walkthrough
+
+The presenter-ready timing, narration, safe short cut, truth boundaries, and release gate are in
+[`MNT-DEMO-ATM-003D`](increments/MNT-DEMO-ATM-003D.md).
+
+1. Enter as **Coordinación**. The unified **Centro operativo** opens with **Servicios recibidos** as its first workspace.
+2. Review `SO-ATM-2401`, distinguish Correctivo, REMOTO, and Comercio, then accept it before the
+   simulated four-hour remainder expires.
+3. Select **Programar servicio** and use the existing Planning modal to assign resources and complete
+   access readiness.
+4. Change to **Operación móvil**, open the assigned order, and confirm the simulated site/GPS check.
+5. Follow the protocol and capture the guided simulated photo evidence.
+6. Complete the form, materials, concepts and quantities, effective time, and submit the execution.
+7. Change to **Supervisión**, reopen with a required reason, return to the technician for a corrected
+   revision, and submit again.
+8. Return to **Coordinación**, approve, and open the consolidated operational report.
+
+Keep the monthly preventive order visible as proof of the second operating path, but do not execute
+a second full story. Improvement and Executive are intentionally absent.
+
+## Industrial base — control center and planning
 
 1. Select **Administración**.
 2. Review the live control center and active maintenance commitments.
@@ -13,7 +40,7 @@ Start each walkthrough by pressing the reset button in the header.
 Expected result: the audience sees how protocol configuration becomes executable work with
 resources and traceability.
 
-## 2. Technician execution
+## Industrial base — technician execution
 
 1. Select **Operación móvil**.
 2. Open an assigned or pending order for Ana Torres.
@@ -24,7 +51,7 @@ resources and traceability.
 Expected result: the schedule becomes completed, resources are released, inventory is adjusted,
 and notifications or validation work are created.
 
-## 3. Supervisor validation
+## Industrial base — supervisor validation
 
 1. Select **Supervisión** after completing the operator flow.
 2. Open **Validaciones** and inspect the submitted evidence and score.

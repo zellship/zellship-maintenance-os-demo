@@ -178,6 +178,19 @@ export function WorkOrders({ initialSelectedId = null }: { initialSelectedId?: s
                 {asset?.plant} · {asset?.area}
               </Descriptions.Item>
               <Descriptions.Item label="Responsable">{selected.operator}</Descriptions.Item>
+              {selected.serviceReference && (
+                <Descriptions.Item label="Servicio origen">
+                  {selected.serviceReference}
+                  {selected.siteLabel ? ` · ${selected.siteLabel}` : ""}
+                </Descriptions.Item>
+              )}
+              {selected.classification && (
+                <Descriptions.Item label="Clasificación">
+                  {selected.classification.serviceType} ·{" "}
+                  {selected.classification.installationClass} ·{" "}
+                  {selected.classification.accessContext}
+                </Descriptions.Item>
+              )}
               <Descriptions.Item label="Ventana">
                 {dayjs(selected.date).format("DD MMM YYYY")} · {selected.hour} ±{" "}
                 {selected.tolerance} min
@@ -318,6 +331,13 @@ function WorkOrderDetailPage({
                   Vinculada a flujo
                 </Tag>
               )}
+              {schedule.classification && (
+                <>
+                  <Tag>{schedule.classification.serviceType}</Tag>
+                  <Tag>{schedule.classification.installationClass}</Tag>
+                  <Tag>{schedule.classification.accessContext}</Tag>
+                </>
+              )}
             </Space>
             <Typography.Title level={2}>Detalle operativo de la orden</Typography.Title>
             <Typography.Text type="secondary">
@@ -396,6 +416,13 @@ function WorkOrderDetailPage({
                   {asset?.area}
                 </Descriptions.Item>
                 <Descriptions.Item label="Responsable">{schedule.operator}</Descriptions.Item>
+                {schedule.classification && (
+                  <Descriptions.Item label="Clasificación operativa">
+                    {schedule.classification.serviceType} ·{" "}
+                    {schedule.classification.installationClass} ·{" "}
+                    {schedule.classification.accessContext}
+                  </Descriptions.Item>
+                )}
                 <Descriptions.Item label="Ventana">
                   {dayjs(schedule.date).format("DD MMM YYYY")} · {schedule.hour} ±{" "}
                   {schedule.tolerance} min
@@ -415,6 +442,18 @@ function WorkOrderDetailPage({
                   </Descriptions.Item>
                 )}
               </Descriptions>
+              {!!schedule.accessRequirements?.length && (
+                <>
+                  <Divider>Preparación de acceso</Divider>
+                  <Space wrap>
+                    {schedule.accessRequirements.map((requirement) => (
+                      <Tag key={requirement.id} color={requirement.completed ? "green" : "orange"}>
+                        {requirement.label} · {requirement.completed ? "Lista" : "Pendiente"}
+                      </Tag>
+                    ))}
+                  </Space>
+                </>
+              )}
             </Card>
           </Space>
         </Col>
@@ -489,7 +528,7 @@ function OrderCaptureDetails({
           <Avatar icon={<EnvironmentOutlined />} />
           <span>
             <small>GPS</small>
-            <strong>{gps ? "Ubicación verificada" : "Sin captura"}</strong>
+            <strong>{gps ? "Ubicación simulada" : "Sin captura"}</strong>
           </span>
         </div>
         <div>
@@ -563,6 +602,18 @@ function OrderCaptureDetails({
           ))}
         </Descriptions>
       </div>
+      {!!execution.workConcepts?.length && (
+        <div className="work-order-form-capture">
+          <Typography.Text strong>Conceptos ejecutados · sin precios</Typography.Text>
+          <Descriptions bordered column={1} size="small">
+            {execution.workConcepts.map((concept) => (
+              <Descriptions.Item key={concept.code} label={concept.code}>
+                {concept.description} · {concept.quantity} {concept.unit}
+              </Descriptions.Item>
+            ))}
+          </Descriptions>
+        </div>
+      )}
     </div>
   );
 }

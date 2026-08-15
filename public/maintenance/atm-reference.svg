@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="640" viewBox="0 0 960 640">
+  <defs>
+    <linearGradient id="wall" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#edf0f5"/>
+      <stop offset="1" stop-color="#c9ced8"/>
+    </linearGradient>
+    <linearGradient id="atm" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#5b626d"/>
+      <stop offset="1" stop-color="#343943"/>
+    </linearGradient>
+  </defs>
+  <rect width="960" height="640" fill="url(#wall)"/>
+  <rect x="265" y="54" width="430" height="548" rx="24" fill="url(#atm)"/>
+  <rect x="303" y="92" width="354" height="188" rx="16" fill="#1d2638"/>
+  <rect x="329" y="118" width="302" height="136" rx="10" fill="#26355e"/>
+  <text x="480" y="178" fill="#fff" font-family="Arial" font-size="30" font-weight="700" text-anchor="middle">ATM 014</text>
+  <text x="480" y="216" fill="#cdd7ef" font-family="Arial" font-size="18" text-anchor="middle">Pantalla y marco completos</text>
+  <rect x="318" y="316" width="324" height="68" rx="12" fill="#20252d"/>
+  <rect x="344" y="338" width="128" height="24" rx="5" fill="#949aa5"/>
+  <rect x="505" y="334" width="104" height="32" rx="6" fill="#15191f"/>
+  <rect x="318" y="420" width="324" height="112" rx="14" fill="#444b56" stroke="#858c98" stroke-width="3"/>
+  <rect x="356" y="449" width="248" height="26" rx="6" fill="#181d24"/>
+  <rect x="356" y="489" width="180" height="18" rx="4" fill="#737b87"/>
+  <path d="M284 74h44M284 74v44M676 74h-44M676 74v44M284 582h44M284 582v-44M676 582h-44M676 582v-44" fill="none" stroke="#7041da" stroke-width="6" stroke-linecap="round"/>
+  <rect x="28" y="28" width="252" height="50" rx="25" fill="#fff" opacity=".92"/>
+  <circle cx="57" cy="53" r="13" fill="#278a52"/>
+  <path d="m51 53 4 4 8-9" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+  <text x="80" y="60" fill="#262a33" font-family="Arial" font-size="18" font-weight="700">Referencia de encuadre</text>
+  <text x="480" y="625" fill="#555b66" font-family="Arial" font-size="15" text-anchor="middle">Ilustración ficticia · Evidencia simulada</text>
+</svg>

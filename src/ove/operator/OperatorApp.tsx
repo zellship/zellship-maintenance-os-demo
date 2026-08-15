@@ -109,12 +109,12 @@ export function OperatorApp() {
             <Space direction="vertical" size={9} style={{ width: "100%" }}>
               <ContextLine
                 label="Orden"
-                value={currentSchedule?.workOrder ?? "OT-2407-013"}
+                value={currentSchedule?.workOrder ?? "Sin orden activa"}
                 icon={<ToolOutlined />}
               />
               <ContextLine
                 label="Activo"
-                value={currentAsset ? `${currentAsset.id} · ${currentAsset.name}` : "AC-01"}
+                value={currentAsset ? `${currentAsset.id} · ${currentAsset.name}` : "Por asignar"}
                 icon={<CloudSyncOutlined />}
               />
               <ContextLine
@@ -129,7 +129,7 @@ export function OperatorApp() {
             <List
               size="small"
               dataSource={[
-                "GPS dentro de geocerca",
+                "Ubicación simulada coincide",
                 "Herramientas reservadas",
                 "Materiales disponibles",
                 "Permisos y skills vigentes",
@@ -274,11 +274,11 @@ export function OperatorApp() {
                 <span className="live-dot" />
                 <b>Conectado</b>
               </Space>
-              <Tag color="green">Tiempo real</Tag>
+              <Tag color="green">Simulación activa</Tag>
             </Space>
             <Progress percent={100} showInfo={false} strokeColor="#52c41a" />
             <Typography.Text type="secondary">
-              {activeDemo.branding.productName} · GPS · cámara · firma
+              {activeDemo.branding.productName} · GPS, cámara y firma simulados
             </Typography.Text>
           </Card>
 

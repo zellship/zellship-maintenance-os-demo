@@ -27,10 +27,17 @@ import {
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import type { Execution, Protocol, Schedule } from "../types";
-import { maintenanceCapturedUrl, maintenanceReferenceUrl } from "./maintenanceAssets";
+import {
+  maintenanceAiFindings,
+  maintenanceCapturedUrl,
+  maintenanceDefaultOperatorComment,
+  maintenanceEvidenceGuidance,
+  maintenanceReferenceUrl,
+} from "./maintenanceAssets";
 import { PrintReportFooter, PrintReportHeader } from "./PrintReport";
 import { SendReportModal, type ReportDeliverySelection } from "./SendReportModal";
-import { hasCapability } from "../../demo-config/active";
+import { activeDemo, hasCapability } from "../../demo-config/active";
+import { FieldServiceReport } from "./FieldServiceReport";
 
 export function MaintenanceResult({
   execution,
@@ -47,11 +54,7 @@ export function MaintenanceResult({
   const photo = execution.evidences.find((e) => e.type === "Photo");
   const aiScore = photo?.aiScore ?? 86;
   const humanScore = photo?.humanScore ?? execution.humanScore ?? 4;
-  const findings = photo?.aiFindings ?? [
-    "Guardas y componentes visibles",
-    "Desgaste leve en borde de banda",
-    "Alineación requiere seguimiento",
-  ];
+  const findings = photo?.aiFindings ?? maintenanceAiFindings;
   const validated = execution.status === "Validated";
   const resultStatusLabel = validated ? "Mantenimiento validado" : "Mantenimiento completado";
   const operatorFirstName = execution.operator.split(" ")[0];
@@ -59,7 +62,8 @@ export function MaintenanceResult({
   const completedAt = dayjs(execution.endAt ?? execution.startAt);
   const eventTime = (moment: dayjs.Dayjs) => moment.format("HH:mm");
   const showImprovement = hasCapability("improvement-insights");
-  const metricColumnWidth = showImprovement ? 6 : 8;
+  const durationMinutes = Math.max(0, completedAt.diff(startedAt, "minute"));
+  const isFieldService = Boolean(schedule?.classification);
 
   const printReport = () => {
     const previousTitle = document.title;
@@ -68,6 +72,17 @@ export function MaintenanceResult({
     document.title = previousTitle;
   };
 
+  if (isFieldService && schedule) {
+    return (
+      <FieldServiceReport
+        execution={execution}
+        protocol={protocol}
+        schedule={schedule}
+        onSend={onSend}
+      />
+    );
+  }
+
   return (
     <div className="maintenance-result">
       <PrintReportHeader
@@ -75,6 +90,10 @@ export function MaintenanceResult({
         subject={protocol.name}
         metadata={[
           { label: "Orden", value: schedule?.workOrder ?? "OT-2407-013" },
+          ...(schedule?.serviceReference
+            ? [{ label: "Servicio", value: schedule.serviceReference }]
+            : []),
+          ...(schedule?.siteLabel ? [{ label: "Sitio", value: schedule.siteLabel }] : []),
           { label: "Activo", value: schedule?.assetId ?? "AC-01" },
           { label: "Estado", value: validated ? "Validado" : "Completado" },
         ]}
@@ -95,6 +114,7 @@ export function MaintenanceResult({
               </Tag>
               <Tag color="purple">{schedule?.workOrder ?? "OT-2407-013"}</Tag>
               <Tag>{schedule?.assetId ?? "AC-01"}</Tag>
+              {execution.revision && <Tag>R{execution.revision}</Tag>}
             </Space>
             <Typography.Title level={2} style={{ margin: "10px 0 4px" }}>
               Resultado del mantenimiento
@@ -116,7 +136,7 @@ export function MaintenanceResult({
         </Space>
 
         <Row gutter={[12, 12]} style={{ marginTop: 20 }}>
-          <Col xs={12} lg={metricColumnWidth}>
+          <Col xs={12} lg={6}>
             <Card size="small">
               <Statistic
                 title="Calificación final"
@@ -126,47 +146,102 @@ export function MaintenanceResult({
               />
             </Card>
           </Col>
-          <Col xs={12} lg={metricColumnWidth}>
-            <Card size="small">
-              <Statistic
-                title="Salud del activo"
-                value={94}
-                prefix={<SafetyCertificateOutlined />}
-                suffix="%"
-                valueStyle={{ color: "#7B35C1" }}
-              />
-            </Card>
-          </Col>
-          {showImprovement && (
-            <Col xs={12} lg={metricColumnWidth}>
-              <Card size="small">
-                <Statistic
-                  title="Impacto estimado OEE"
-                  value={1.8}
-                  prefix={<ThunderboltOutlined />}
-                  suffix=" pts"
-                />
-              </Card>
-            </Col>
+          {showImprovement ? (
+            <>
+              <Col xs={12} lg={6}>
+                <Card size="small">
+                  <Statistic
+                    title="Salud del activo"
+                    value={94}
+                    prefix={<SafetyCertificateOutlined />}
+                    suffix="%"
+                    valueStyle={{ color: "#7B35C1" }}
+                  />
+                </Card>
+              </Col>
+              <Col xs={12} lg={6}>
+                <Card size="small">
+                  <Statistic
+                    title="Impacto estimado OEE"
+                    value={1.8}
+                    prefix={<ThunderboltOutlined />}
+                    suffix=" pts"
+                  />
+                </Card>
+              </Col>
+              <Col xs={12} lg={6}>
+                <Card size="small">
+                  <Statistic
+                    title="Paro evitado"
+                    value={4.2}
+                    prefix={<ClockCircleOutlined />}
+                    suffix=" h"
+                  />
+                </Card>
+              </Col>
+            </>
+          ) : (
+            <>
+              <Col xs={12} lg={6}>
+                <Card size="small">
+                  <Statistic
+                    title="Tiempo efectivo"
+                    value={durationMinutes}
+                    prefix={<ClockCircleOutlined />}
+                    suffix=" min"
+                  />
+                </Card>
+              </Col>
+              <Col xs={12} lg={6}>
+                <Card size="small">
+                  <Statistic title="Evidencias" value={execution.evidences.length} />
+                </Card>
+              </Col>
+              <Col xs={12} lg={6}>
+                <Card size="small">
+                  <Statistic title="Conceptos" value={execution.workConcepts?.length ?? 0} />
+                </Card>
+              </Col>
+            </>
           )}
-          <Col xs={12} lg={metricColumnWidth}>
-            <Card size="small">
-              <Statistic
-                title="Paro evitado"
-                value={4.2}
-                prefix={<ClockCircleOutlined />}
-                suffix=" h"
-              />
-            </Card>
-          </Col>
         </Row>
       </Card>
+
+      {(schedule?.classification || execution.workConcepts?.length) && (
+        <Card title="Resumen operativo" style={{ marginTop: 16 }}>
+          {schedule?.classification && (
+            <Descriptions bordered size="small" column={{ xs: 1, md: 3 }}>
+              <Descriptions.Item label="Servicio">
+                {schedule.classification.serviceType}
+              </Descriptions.Item>
+              <Descriptions.Item label="Instalación">
+                {schedule.classification.installationClass}
+              </Descriptions.Item>
+              <Descriptions.Item label="Contexto">
+                {schedule.classification.accessContext}
+              </Descriptions.Item>
+            </Descriptions>
+          )}
+          {!!execution.workConcepts?.length && (
+            <>
+              <Divider>Conceptos ejecutados · sin precios</Divider>
+              <Descriptions bordered size="small" column={1}>
+                {execution.workConcepts.map((concept) => (
+                  <Descriptions.Item key={concept.code} label={concept.code}>
+                    {concept.description} · {concept.quantity} {concept.unit}
+                  </Descriptions.Item>
+                ))}
+              </Descriptions>
+            </>
+          )}
+        </Card>
+      )}
 
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
         <Col xs={24} xl={16}>
           <Card
             title="Comparación visual contra el estándar"
-            extra={<Tag color="purple">AI Vision · {aiScore}% match</Tag>}
+            extra={<Tag color="purple">Validación visual simulada · {aiScore}%</Tag>}
           >
             <Row gutter={[12, 12]}>
               <Col xs={24} md={12}>
@@ -179,7 +254,7 @@ export function MaintenanceResult({
                   className="evidence-result-image"
                 />
                 <Typography.Paragraph type="secondary" style={{ margin: "8px 0 0" }}>
-                  Condición esperada: bandas alineadas, tensión uniforme y zona limpia.
+                  {maintenanceEvidenceGuidance}
                 </Typography.Paragraph>
               </Col>
               <Col xs={24} md={12}>
@@ -203,7 +278,7 @@ export function MaintenanceResult({
                 <Alert
                   type={aiScore >= 90 ? "success" : "warning"}
                   showIcon
-                  message={`Observación IA · Coincidencia ${aiScore}%`}
+                  message={`Resultado visual simulado · Coincidencia ${aiScore}%`}
                   description={
                     <Space wrap style={{ marginTop: 8 }}>
                       {findings.map((finding, index) => (
@@ -223,7 +298,7 @@ export function MaintenanceResult({
                     <Typography.Text type="secondary">· condición operable</Typography.Text>
                   </div>
                   <Typography.Paragraph type="secondary" style={{ margin: "6px 0 0" }}>
-                    {photo?.operatorComment ?? "Programar ajuste en próxima ventana."}
+                    {photo?.operatorComment ?? maintenanceDefaultOperatorComment}
                   </Typography.Paragraph>
                 </Card>
               </Col>
@@ -239,10 +314,10 @@ export function MaintenanceResult({
                   color: "green",
                   children: (
                     <>
-                      <b>{eventTime(startedAt)} · Ubicación verificada</b>
+                      <b>{eventTime(startedAt)} · Ubicación simulada registrada</b>
                       <br />
                       <Typography.Text type="secondary">
-                        GPS dentro de radio permitido · 34 m
+                        GPS simulado dentro del radio configurado · 34 m
                       </Typography.Text>
                     </>
                   ),
@@ -254,7 +329,7 @@ export function MaintenanceResult({
                       <b>{eventTime(startedAt.add(3, "minute"))} · Recursos confirmados</b>
                       <br />
                       <Typography.Text type="secondary">
-                        Skills, LOTO, torquímetro e inventario
+                        Skills, herramientas e inventario confirmados
                       </Typography.Text>
                     </>
                   ),
@@ -278,7 +353,7 @@ export function MaintenanceResult({
                       <b>{eventTime(completedAt.subtract(19, "minute"))} · Análisis automático</b>
                       <br />
                       <Typography.Text type="secondary">
-                        AI Vision 86% · 2 observaciones
+                        Validación visual simulada · {aiScore}%
                       </Typography.Text>
                     </>
                   ),
@@ -314,7 +389,10 @@ export function MaintenanceResult({
             <Descriptions column={1} size="small">
               <Descriptions.Item label="Operador">{execution.operator}</Descriptions.Item>
               <Descriptions.Item label="Supervisor">
-                {execution.approval?.supervisor ?? "Roberto Salas"}
+                {execution.approval?.supervisor ??
+                  activeDemo.context.loginProfiles.find((profile) => profile.role === "supervisor")
+                    ?.name ??
+                  "Supervisión"}
               </Descriptions.Item>
               <Descriptions.Item label="Integridad">
                 <Tag color="green" icon={<AimOutlined />}>
@@ -341,14 +419,26 @@ export function MaintenanceResult({
             <Alert
               type="success"
               showIcon
-              message="Activo apto para retorno a servicio"
-              description="La ejecución cumple el estándar. La observación de tensión no bloquea la liberación; el sistema generó una inspección de seguimiento para la próxima ventana."
+              message={
+                isFieldService
+                  ? "Servicio aprobado y expediente listo para entrega"
+                  : "Activo apto para retorno a servicio"
+              }
+              description={
+                isFieldService
+                  ? "La ejecución cumple el protocolo configurado y consolida evidencias, conceptos, cantidades y tiempo efectivo sin incluir precios."
+                  : "La ejecución cumple el estándar. La observación de tensión no bloquea la liberación; el sistema generó una inspección de seguimiento para la próxima ventana."
+              }
             />
             <Space wrap style={{ marginTop: 12 }}>
               <Tag color="green">Activo {schedule?.assetId ?? "actualizado"} actualizado</Tag>
-              <Tag color="blue">Historial técnico registrado</Tag>
+              <Tag color="blue">
+                {isFieldService ? "Expediente consolidado" : "Historial técnico registrado"}
+              </Tag>
               {showImprovement && <Tag color="purple">OEE recalculado</Tag>}
-              <Tag color="orange">Seguimiento generado</Tag>
+              <Tag color="orange">
+                {isFieldService ? "Listo para entrega" : "Seguimiento generado"}
+              </Tag>
             </Space>
           </Col>
         </Row>

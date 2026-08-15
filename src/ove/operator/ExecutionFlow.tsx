@@ -37,15 +37,25 @@ import dayjs from "dayjs";
 import { demoNow } from "../../demo-config/clock";
 import { useStore } from "../store";
 import type {
-  EvidenceType,
+  EvidenceConfig,
   FormField,
   Execution,
   EvidenceRecord,
   MaterialAllocation,
   Notification,
+  WorkConcept,
 } from "../types";
 import { seedAssets, seedSkills } from "../seed";
-import { maintenanceCapturedUrl, maintenanceReferenceUrl } from "../shared/maintenanceAssets";
+import {
+  maintenanceCapturedUrl,
+  maintenanceReferenceUrl,
+  maintenanceSubjectLabel,
+  maintenanceEvidenceGuidance,
+  maintenanceAiFindings,
+  maintenanceDefaultOperatorComment,
+  maintenanceAssetUrl,
+} from "../shared/maintenanceAssets";
+import { EvidenceGpsStamp } from "../shared/EvidenceGpsStamp";
 import { isConsumptionDeviation, isFormValid } from "../domain";
 
 export function ExecutionFlow({
@@ -77,11 +87,14 @@ export function ExecutionFlow({
   const protocol = protocols.find((p) => p.id === schedule?.protocolId);
   const asset = seedAssets.find((a) => a.id === schedule?.assetId);
   const [phase, setPhase] = useState<
-    "intro" | "resources" | "evidence" | "form" | "consumption" | "confirm" | "done"
+    "intro" | "resources" | "evidence" | "form" | "concepts" | "consumption" | "confirm" | "done"
   >("intro");
   const [evidenceIdx, setEvidenceIdx] = useState(0);
   const [evidences, setEvidences] = useState<EvidenceRecord[]>([]);
   const [answers, setAnswers] = useState<Record<string, unknown>>({});
+  const [workConcepts, setWorkConcepts] = useState<WorkConcept[]>(() =>
+    (protocol?.workConceptTemplates ?? []).map((concept) => ({ ...concept })),
+  );
   const [consumptions, setConsumptions] = useState<MaterialAllocation[]>(() =>
     (schedule?.materialAllocations || []).map((a) => ({
       ...a,
@@ -106,6 +119,9 @@ export function ExecutionFlow({
   const missingSkills =
     protocol.requiredSkillIds?.filter((id) => !technician?.skillIds.includes(id)) || [];
   const deviations = consumptions.filter(isConsumptionDeviation);
+  const previousExecution = executions
+    .filter((execution) => execution.scheduleId === scheduleId)
+    .sort((a, b) => (b.revision ?? 1) - (a.revision ?? 1))[0];
 
   const start = () => {
     startRef.current = demoNow().toISOString();
@@ -141,6 +157,7 @@ export function ExecutionFlow({
   };
 
   const captureEvidence = (data: string, extra?: Partial<EvidenceRecord>) => {
+    const location = evidences.find((evidence) => evidence.type === "GPS")?.gps;
     const ev: EvidenceRecord = {
       id: `ev${Date.now()}`,
       executionId: "pending",
@@ -148,6 +165,9 @@ export function ExecutionFlow({
       data,
       timestamp: demoNow().toISOString(),
       status: "Pending",
+      label: current.label,
+      phase: current.phase,
+      gps: current.type === "Photo" ? location : undefined,
       ...extra,
     };
     setEvidences([...evidences, ev]);
@@ -161,8 +181,8 @@ export function ExecutionFlow({
           recipientRole: "operator",
           recipient: schedule.operator,
           source: "Automatic",
-          event: "IA completada",
-          message: `${schedule.workOrder}: evidencia visual analizada con ${ev.aiScore ?? 86}% de coincidencia.`,
+          event: "Validación visual simulada",
+          message: `${schedule.workOrder}: evidencia procesada en la simulación con ${ev.aiScore ?? 86}% de coincidencia.`,
           status: "Sent",
           createdAt: demoNow().toISOString(),
         },
@@ -204,6 +224,9 @@ export function ExecutionFlow({
       toolIds: schedule.toolIds || [],
       materialConsumptions: consumptions,
       resourceCheckInAt: demoNow().toISOString(),
+      workConcepts,
+      revision: (previousExecution?.revision ?? 0) + 1,
+      previousExecutionId: previousExecution?.id,
     };
     setExecutions([exec, ...executions]);
     setSchedules(schedules.map((s) => (s.id === scheduleId ? { ...s, status: "Completed" } : s)));
@@ -416,14 +439,16 @@ export function ExecutionFlow({
       {phase === "evidence" && current && (
         <Card>
           <Steps
+            className="evidence-steps"
             size="small"
             current={evidenceIdx}
-            items={evidences_cfg.map((e) => ({ title: e.type }))}
+            responsive={false}
+            items={evidences_cfg.map((e) => ({ title: evidenceStepTitle(e) }))}
           />
           <Divider />
           <EvidenceCapture
-            type={current.type}
-            qrCode={current.qrCode}
+            key={`${evidenceIdx}-${current.type}`}
+            evidence={current}
             onCapture={captureEvidence}
           />
           <Divider />
@@ -446,11 +471,73 @@ export function ExecutionFlow({
             type="primary"
             block
             size="large"
-            onClick={() => setPhase(consumptions.length ? "consumption" : "confirm")}
+            onClick={() =>
+              setPhase(
+                workConcepts.length ? "concepts" : consumptions.length ? "consumption" : "confirm",
+              )
+            }
             disabled={!isFormValid(protocol.formConfig, answers)}
           >
             Continuar
           </Button>
+        </Card>
+      )}
+
+      {phase === "concepts" && (
+        <Card title="Conceptos ejecutados">
+          <Typography.Paragraph type="secondary">
+            Confirma los trabajos realizados y sus cantidades. Este escenario no registra precios.
+          </Typography.Paragraph>
+          <List
+            dataSource={workConcepts}
+            renderItem={(concept) => (
+              <List.Item>
+                <Space style={{ width: "100%", justifyContent: "space-between" }} align="center">
+                  <div>
+                    <Tag>{concept.code}</Tag>
+                    <Typography.Text strong>{concept.description}</Typography.Text>
+                    <br />
+                    <Typography.Text type="secondary">Unidad: {concept.unit}</Typography.Text>
+                  </div>
+                  <InputNumber
+                    min={0}
+                    value={concept.quantity}
+                    addonAfter={concept.unit}
+                    onChange={(quantity) =>
+                      setWorkConcepts(
+                        workConcepts.map((item) =>
+                          item.code === concept.code
+                            ? { ...item, quantity: Number(quantity) || 0 }
+                            : item,
+                        ),
+                      )
+                    }
+                  />
+                </Space>
+              </List.Item>
+            )}
+          />
+          <Alert
+            type="info"
+            showIcon
+            message="Cantidades operativas · sin precios"
+            style={{ marginTop: 12 }}
+          />
+          <Divider />
+          <Space direction="vertical" style={{ width: "100%" }}>
+            <Button
+              type="primary"
+              size="large"
+              block
+              disabled={workConcepts.some((concept) => concept.quantity <= 0)}
+              onClick={() => setPhase(consumptions.length ? "consumption" : "confirm")}
+            >
+              Continuar a materiales
+            </Button>
+            <Button block onClick={() => setPhase("form")}>
+              Volver al formulario
+            </Button>
+          </Space>
         </Card>
       )}
 
@@ -538,6 +625,8 @@ export function ExecutionFlow({
             <br />
             <b>Consumos registrados:</b> {consumptions.length}{" "}
             {deviations.length ? `· ${deviations.length} con desviación` : "· dentro de estándar"}
+            <br />
+            <b>Conceptos ejecutados:</b> {workConcepts.length} · sin precios
           </Typography.Paragraph>
           {protocol.requiresValidation && (
             <Alert
@@ -550,7 +639,14 @@ export function ExecutionFlow({
             <Button type="primary" block size="large" onClick={submit}>
               Confirmar y enviar
             </Button>
-            <Button block onClick={() => setPhase(consumptions.length ? "consumption" : "form")}>
+            <Button
+              block
+              onClick={() =>
+                setPhase(
+                  consumptions.length ? "consumption" : workConcepts.length ? "concepts" : "form",
+                )
+              }
+            >
               Volver a editar
             </Button>
           </Space>
@@ -571,7 +667,7 @@ export function ExecutionFlow({
                 type="success"
                 showIcon
                 message="Automatizaciones ejecutadas"
-                description="Push enviado al supervisor · evento registrado para administración · resultado disponible en el historial."
+                description="Push simulado para supervisión · evento registrado para administración · resultado disponible en el historial."
               />
               <Button type="primary" onClick={onClose}>
                 Volver
@@ -585,14 +681,13 @@ export function ExecutionFlow({
 }
 
 function EvidenceCapture({
-  type,
-  qrCode,
+  evidence,
   onCapture,
 }: {
-  type: EvidenceType;
-  qrCode?: string;
+  evidence: EvidenceConfig;
   onCapture: (data: string, extra?: Partial<EvidenceRecord>) => void;
 }) {
+  const { type, qrCode } = evidence;
   const [preview, setPreview] = useState<string | null>(null);
   const [flash, setFlash] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
@@ -603,12 +698,15 @@ function EvidenceCapture({
   const [qrInput, setQrInput] = useState("");
   const [gpsOk] = useState(true);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const capturedPhotoUrl = maintenanceAssetUrl(evidence.captureData) ?? maintenanceCapturedUrl;
+  const referencePhotoUrl = maintenanceAssetUrl(evidence.referenceData) ?? maintenanceReferenceUrl;
+  const simulatedGps = { lat: 25.6866, lng: -100.3161 };
 
   const takePhoto = () => {
     setFlash(true);
     setTimeout(() => {
       setFlash(false);
-      setPreview(maintenanceCapturedUrl);
+      setPreview(capturedPhotoUrl);
       setAnalyzing(true);
       setTimeout(() => {
         setAnalyzing(false);
@@ -627,11 +725,23 @@ function EvidenceCapture({
   if (type === "Photo") {
     return (
       <div>
+        <div className="photo-manifest-heading">
+          <div>
+            <Typography.Text type="secondary">TOMA SOLICITADA POR EL PROTOCOLO</Typography.Text>
+            <Typography.Title level={4}>
+              {evidence.label ?? "Evidencia fotográfica"}
+            </Typography.Title>
+          </div>
+          {evidence.phase && <Tag color="blue">{evidencePhaseLabel(evidence.phase)}</Tag>}
+        </div>
         <Alert
           type="info"
           showIcon
           message="Compara antes de capturar"
-          description="La imagen patrón define encuadre, componentes visibles y condición esperada."
+          description={
+            evidence.guidance ??
+            "La imagen patrón define encuadre, componentes visibles y condición esperada."
+          }
           style={{ marginBottom: 12 }}
         />
         <div className="photo-reference">
@@ -640,37 +750,37 @@ function EvidenceCapture({
           </div>
           <Image
             preview={false}
-            src={maintenanceReferenceUrl}
-            alt="Referencia de inspección del compresor"
+            src={referencePhotoUrl}
+            alt={`Referencia de inspección de ${maintenanceSubjectLabel}`}
           />
           <Typography.Text type="secondary">
-            Busca: alineación, tensión uniforme, limpieza y marcas de inspección.
+            {evidence.guidance ?? maintenanceEvidenceGuidance}
           </Typography.Text>
         </div>
 
         <Divider>Captura del operador</Divider>
-        <div
-          className={`camera-stage ${flash ? "is-flashing" : ""}`}
-          style={{
-            backgroundImage: `linear-gradient(rgba(12, 15, 22, 0.58), rgba(12, 15, 22, 0.58)), url("${maintenanceReferenceUrl}")`,
-          }}
-        >
+        <div className={`camera-stage ${flash ? "is-flashing" : ""}`} aria-live="polite">
           {preview ? (
             <img src={preview} alt="Evidencia capturada por el operador" />
           ) : (
             <div className="camera-ready">
               <CameraOutlined />
-              <b>AC-01 en cuadro</b>
+              <b>{maintenanceSubjectLabel} en cuadro</b>
               <span>Alinea la toma con la referencia</span>
             </div>
           )}
           {flash && <div className="camera-flash" />}
-          <div className="camera-reticle">
-            <span />
-            <span />
-            <span />
-            <span />
-          </div>
+          {preview && (
+            <EvidenceGpsStamp gps={simulatedGps} timestamp={demoNow().toISOString()} compact />
+          )}
+          {!preview && (
+            <div className="camera-reticle">
+              <span />
+              <span />
+              <span />
+              <span />
+            </div>
+          )}
         </div>
 
         {!preview ? (
@@ -683,14 +793,16 @@ function EvidenceCapture({
               {analyzing ? (
                 <Space>
                   <Spin size="small" />
-                  <Typography.Text strong>IA comparando contra el estándar…</Typography.Text>
+                  <Typography.Text strong>
+                    Validación visual simulada contra el estándar…
+                  </Typography.Text>
                 </Space>
               ) : (
                 <>
                   <Space style={{ width: "100%", justifyContent: "space-between" }}>
                     <Space>
                       <RobotOutlined style={{ color: "#7B35C1" }} />
-                      <b>Calificación AI Vision</b>
+                      <b>Resultado visual simulado</b>
                     </Space>
                     <Typography.Title level={3} style={{ margin: 0, color: "#7B35C1" }}>
                       {aiScore}%
@@ -698,9 +810,11 @@ function EvidenceCapture({
                   </Space>
                   <Progress percent={aiScore ?? 0} strokeColor="#7B35C1" />
                   <Space wrap>
-                    <Tag color="green">Componentes visibles</Tag>
-                    <Tag color="orange">Desgaste leve</Tag>
-                    <Tag color="orange">Revisar tensión</Tag>
+                    {maintenanceAiFindings.map((finding, index) => (
+                      <Tag key={finding} color={index === 0 ? "green" : "orange"}>
+                        {finding}
+                      </Tag>
+                    ))}
                   </Space>
                 </>
               )}
@@ -730,16 +844,14 @@ function EvidenceCapture({
                 disabled={analyzing || !aiScore || humanScore === 0}
                 onClick={() =>
                   onCapture(preview, {
-                    referenceData: maintenanceReferenceUrl,
+                    referenceData: referencePhotoUrl,
+                    gps: simulatedGps,
+                    label: evidence.label,
+                    phase: evidence.phase,
                     aiScore: aiScore ?? undefined,
                     humanScore,
-                    aiFindings: [
-                      "Guardas y componentes visibles",
-                      "Desgaste leve en borde de banda",
-                      "Alineación requiere seguimiento",
-                    ],
-                    operatorComment:
-                      operatorComment || "Condición operable; programar ajuste en próxima ventana.",
+                    aiFindings: maintenanceAiFindings,
+                    operatorComment: operatorComment || maintenanceDefaultOperatorComment,
                   })
                 }
               >
@@ -873,7 +985,9 @@ function EvidenceCapture({
         >
           <EnvironmentOutlined style={{ fontSize: 48, color: "#7B35C1" }} />
           <Typography.Text strong>25.6866° N, 100.3161° W</Typography.Text>
-          <Tag color={gpsOk ? "green" : "red"}>{gpsOk ? "Dentro de rango" : "Fuera de rango"}</Tag>
+          <Tag color={gpsOk ? "green" : "red"}>
+            {gpsOk ? "Ubicación simulada coincide" : "Fuera de rango"}
+          </Tag>
         </div>
         <Button
           type="primary"
@@ -947,6 +1061,33 @@ function EvidenceCapture({
   }
 
   return null;
+}
+
+function evidenceStepTitle(evidence: EvidenceConfig) {
+  if (evidence.type === "Photo") {
+    if (evidence.phase === "Pre-intervention") return "Antes";
+    if (evidence.phase === "Intervention") return "Durante";
+    if (evidence.phase === "Post-intervention") return "Final";
+  }
+  const labels: Record<EvidenceConfig["type"], string> = {
+    Photo: "Foto",
+    Video: "Video",
+    Signature: "Firma",
+    GPS: "GPS",
+    QR: "QR",
+    Timestamp: "Hora",
+    File: "Archivo",
+  };
+  return labels[evidence.type];
+}
+
+function evidencePhaseLabel(phase: NonNullable<EvidenceConfig["phase"]>) {
+  const labels = {
+    "Pre-intervention": "Antes",
+    Intervention: "Durante",
+    "Post-intervention": "Resultado final",
+  };
+  return labels[phase];
 }
 
 function DynamicForm({
