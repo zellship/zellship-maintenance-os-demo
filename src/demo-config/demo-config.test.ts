@@ -5,6 +5,7 @@ import { resolveDemoScenario } from "./registry";
 import { demoScenarioDescriptorSchema } from "./schema";
 import { industrialBaseScenario } from "./scenarios/industrial-base/config";
 import { atmFieldServiceScenario } from "./scenarios/atm-field-service/config";
+import { wirePlantMaintenanceScenario } from "./scenarios/wire-plant-maintenance/config";
 
 describe("demo scenario registry", () => {
   it("preserves the audited industrial baseline contract", () => {
@@ -82,6 +83,25 @@ describe("demo scenario registry", () => {
       }),
     ).toBe(true);
   });
+
+  it("registers the neutral wire-plant maintenance scenario", () => {
+    const scenario = resolveDemoScenario("wire-plant-maintenance");
+
+    expect(scenario).toBe(wirePlantMaintenanceScenario);
+    expect(scenario.capabilityProfile).toBe("industrial-maintenance");
+    expect(scenario.capabilities).toContain("asset-management");
+    expect(scenario.capabilities).toContain("mobile-execution");
+    expect(scenario.capabilities).not.toContain("service-request-intake");
+    expect(scenario.capabilities).not.toContain("improvement-insights");
+    expect(scenario.capabilities).not.toContain("executive-analytics");
+    expect(scenario.data.assets).toHaveLength(26);
+    expect(scenario.data.people).toHaveLength(11);
+    expect(scenario.data.serviceRequests).toHaveLength(0);
+    expect(scenario.distribution).toEqual({
+      classification: "public-demo",
+      containsClientIdentifiableData: false,
+    });
+  });
 });
 
 describe("capability profiles", () => {
@@ -90,6 +110,12 @@ describe("capability profiles", () => {
     expect(capabilityProfiles.full).toContain("executive-analytics");
     expect(capabilityProfiles["execution-only"]).not.toContain("improvement-insights");
     expect(capabilityProfiles["execution-only"]).not.toContain("executive-analytics");
+  });
+
+  it("keeps client intake and executive analytics outside industrial maintenance", () => {
+    expect(capabilityProfiles["industrial-maintenance"]).not.toContain("service-request-intake");
+    expect(capabilityProfiles["industrial-maintenance"]).not.toContain("improvement-insights");
+    expect(capabilityProfiles["industrial-maintenance"]).not.toContain("executive-analytics");
   });
 });
 

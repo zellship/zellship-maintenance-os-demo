@@ -44,12 +44,14 @@ adding editing or remote persistence behavior for those entities.
 
 ## Builds and hosting
 
-- `npm run build:pages`: static build in `dist-pages`; canonical production artifact.
+- `npm run build:pages:all`: assembles the public ATM root and wire-plant `/wire/` route in
+  `dist-pages`.
 - `npm run build:ssr`: TanStack Start build in `dist`; secondary compatibility artifact.
-- GitHub Pages base path: `/zellship-maintenance-os-demo/`.
-- `.github/workflows/deploy-pages.yml`: validates both scenarios and deploys the ATM build from
+- GitHub Pages base paths: `/zellship-maintenance-os-demo/` for ATM and
+  `/zellship-maintenance-os-demo/wire/` for the neutral wire-plant scenario.
+- `.github/workflows/deploy-pages.yml`: validates all scenarios and deploys both public routes from
   `main`.
 - `.github/workflows/ci.yml`: validates pull requests.
 
-The hard-coded Pages base and social image URL must change if the repository is renamed, forked to
-a different path, or moved to a custom domain.
+The default Pages base, the wire route build variable and social image URL must change if the
+repository is renamed, forked to a different path, or moved to a custom domain.

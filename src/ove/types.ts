@@ -306,6 +306,8 @@ export interface Notification {
   source?: "Automatic" | "OnDemand";
   event?: string;
   message: string;
+  templateName?: string;
+  actionLabel?: string;
   status: "Sent" | "Read";
   createdAt: string;
 }

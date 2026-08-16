@@ -11,7 +11,7 @@ export const demoScenarioDescriptorSchema = z
     sourceBaseline: z.string().regex(/^[0-9a-f]{40}$/),
     label: z.string().min(1),
     description: z.string().min(1),
-    capabilityProfile: z.enum(["full", "execution-only"]),
+    capabilityProfile: z.enum(["full", "execution-only", "industrial-maintenance"]),
     capabilities: z.array(capabilitySchema).min(1),
     branding: z.object({
       brandName: z.string().min(1),

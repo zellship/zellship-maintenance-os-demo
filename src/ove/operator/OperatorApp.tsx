@@ -308,7 +308,13 @@ export function OperatorApp() {
                         <br />
                         <small>
                           {notification.channel} ·{" "}
-                          {notification.status === "Read" ? "Recibido" : "Enviado"}
+                          {notification.channel === "WhatsApp"
+                            ? notification.status === "Read"
+                              ? "Template revisado"
+                              : "Template simulado"
+                            : notification.status === "Read"
+                              ? "Revisado"
+                              : "Generado"}
                         </small>
                       </span>
                     }

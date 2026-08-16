@@ -4,7 +4,8 @@ Interactive frontend demo for industrial maintenance operations. It connects pro
 planning, work orders, mobile execution, evidence, supervisor validation, incidents, resources,
 and operational KPIs in one browser-based experience.
 
-[Open the published demo](https://zellship.github.io/zellship-maintenance-os-demo/)
+- [Open the ATM field-service demo](https://zellship.github.io/zellship-maintenance-os-demo/)
+- [Open the neutral wire-plant demo](https://zellship.github.io/zellship-maintenance-os-demo/wire/)
 
 ## Demo boundaries
 
@@ -26,11 +27,22 @@ npm run dev
 
 The default development command runs the same static application used by GitHub Pages.
 
+Run the neutral wire-plant maintenance scenario with:
+
+```bash
+npm run demo:wire
+```
+
 ## Commands
 
 ```bash
 npm run dev          # Static demo development server
+npm run demo:atm     # ATM field-service scenario
+npm run demo:wire    # Neutral wire-plant maintenance scenario
 npm run build        # Canonical GitHub Pages build
+npm run build:atm    # ATM production build
+npm run build:wire   # Wire-plant production build
+npm run build:pages:all # Assemble both public routes
 npm run preview      # Preview the static build
 npm run test         # Domain unit tests
 npm run typecheck    # TypeScript validation
@@ -81,5 +93,5 @@ in [docs/demo-scenarios.md](docs/demo-scenarios.md).
 ## Deployment
 
 Pushes to `main` are validated and published by `.github/workflows/deploy-pages.yml`. The workflow
-validates both scenarios, leaves the ATM variant as the final `dist-pages` artifact, and uploads it
-using GitHub's official Pages actions.
+keeps the ATM variant at the repository root, builds the neutral wire-plant variant under `/wire/`,
+and uploads the combined `dist-pages` artifact using GitHub's official Pages actions.

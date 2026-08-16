@@ -31,6 +31,8 @@ VITE_DEMO_DATE=2026-08-14T09:30:00-06:00 npm run dev
 
 - `full`: execution, Improvement insights, and Executive analytics.
 - `execution-only`: operational execution without Improvement insights or Executive analytics.
+- `industrial-maintenance`: operational maintenance without service intake, Improvement insights
+  or Executive analytics.
 
 `service-request-intake` is a reusable operational capability. Its navigation appears only when the
 active scenario also provides service-request data, so adding the capability contract does not

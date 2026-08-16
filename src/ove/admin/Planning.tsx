@@ -49,6 +49,7 @@ import {
   getStatusPlanningLabel,
   type PlanningView,
 } from "./planningCalendarUtils";
+import { WorkOrderDetailModal } from "./WorkOrders";
 
 type FormValues = {
   protocolId: string;
@@ -61,13 +62,11 @@ type FormValues = {
 };
 
 export function Planning({
-  onOpenOrder,
   initialProtocolId = null,
   initialServiceRequestId = null,
   onProtocolRequestConsumed,
   onServiceRequestConsumed,
 }: {
-  onOpenOrder: (scheduleId: string) => void;
   initialProtocolId?: string | null;
   initialServiceRequestId?: string | null;
   onProtocolRequestConsumed?: () => void;
@@ -92,6 +91,7 @@ export function Planning({
   const [anchorDate, setAnchorDate] = useState(demoNow());
   const [plantFilter, setPlantFilter] = useState<string>("all");
   const [operatorFilter, setOperatorFilter] = useState<string>("all");
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [activeServiceRequestId, setActiveServiceRequestId] = useState<string | null>(null);
   const [form] = Form.useForm<FormValues>();
   const protocolId = Form.useWatch("protocolId", form);
@@ -550,7 +550,7 @@ export function Planning({
                     if (view === "month") setView("day");
                   }}
                   onCreateAt={(date, hour) => openCreate(date, hour)}
-                  onOpenOrder={onOpenOrder}
+                  onOpenOrder={setSelectedOrderId}
                 />
               ) : (
                 <PlanningCalendarEmpty />
@@ -630,7 +630,7 @@ export function Planning({
                 <Button
                   type="text"
                   icon={<EyeOutlined />}
-                  onClick={() => onOpenOrder(row.id)}
+                  onClick={() => setSelectedOrderId(row.id)}
                   aria-label={`Abrir ${row.workOrder}`}
                 />
               ),
@@ -638,6 +638,7 @@ export function Planning({
           ]}
         />
       </Card>
+      <WorkOrderDetailModal scheduleId={selectedOrderId} onClose={() => setSelectedOrderId(null)} />
       <Modal
         width={760}
         title="Programar orden con recursos"

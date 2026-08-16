@@ -3,13 +3,16 @@ import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
+const pagesBase = process.env.VITE_PAGES_BASE ?? "/zellship-maintenance-os-demo/";
+const pagesOutDir = process.env.VITE_PAGES_OUT_DIR ?? "../dist-pages";
+
 export default defineConfig({
   root: "pages-entry",
-  base: "/zellship-maintenance-os-demo/",
+  base: pagesBase,
   publicDir: "../public",
   plugins: [react(), tailwindcss(), tsconfigPaths()],
   build: {
-    outDir: "../dist-pages",
+    outDir: pagesOutDir,
     emptyOutDir: true,
   },
 });

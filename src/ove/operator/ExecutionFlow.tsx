@@ -171,7 +171,7 @@ export function ExecutionFlow({
       ...extra,
     };
     setEvidences([...evidences, ev]);
-    if (current.type === "Photo") {
+    if (current.type === "Photo" && current.aiValidation) {
       setNotifications([
         {
           id: `n-ai-${Date.now()}`,
@@ -449,6 +449,7 @@ export function ExecutionFlow({
           <EvidenceCapture
             key={`${evidenceIdx}-${current.type}`}
             evidence={current}
+            includeGps={evidences_cfg.some((evidence) => evidence.type === "GPS")}
             onCapture={captureEvidence}
           />
           <Divider />
@@ -682,9 +683,11 @@ export function ExecutionFlow({
 
 function EvidenceCapture({
   evidence,
+  includeGps,
   onCapture,
 }: {
   evidence: EvidenceConfig;
+  includeGps: boolean;
   onCapture: (data: string, extra?: Partial<EvidenceRecord>) => void;
 }) {
   const { type, qrCode } = evidence;
@@ -707,11 +710,13 @@ function EvidenceCapture({
     setTimeout(() => {
       setFlash(false);
       setPreview(capturedPhotoUrl);
-      setAnalyzing(true);
-      setTimeout(() => {
-        setAnalyzing(false);
-        setAiScore(86);
-      }, 1200);
+      if (evidence.aiValidation) {
+        setAnalyzing(true);
+        setTimeout(() => {
+          setAnalyzing(false);
+          setAiScore(86);
+        }, 1200);
+      }
     }, 380);
   };
 
@@ -770,7 +775,7 @@ function EvidenceCapture({
             </div>
           )}
           {flash && <div className="camera-flash" />}
-          {preview && (
+          {preview && includeGps && (
             <EvidenceGpsStamp gps={simulatedGps} timestamp={demoNow().toISOString()} compact />
           )}
           {!preview && (
@@ -789,42 +794,53 @@ function EvidenceCapture({
           </Button>
         ) : (
           <>
-            <Card size="small" style={{ marginTop: 12, background: "#faf7ff" }}>
-              {analyzing ? (
-                <Space>
-                  <Spin size="small" />
-                  <Typography.Text strong>
-                    Validación visual simulada contra el estándar…
-                  </Typography.Text>
-                </Space>
-              ) : (
-                <>
-                  <Space style={{ width: "100%", justifyContent: "space-between" }}>
-                    <Space>
-                      <RobotOutlined style={{ color: "#7B35C1" }} />
-                      <b>Resultado visual simulado</b>
+            {evidence.aiValidation ? (
+              <Card size="small" style={{ marginTop: 12, background: "#faf7ff" }}>
+                {analyzing ? (
+                  <Space>
+                    <Spin size="small" />
+                    <Typography.Text strong>
+                      Validación visual simulada contra el estándar…
+                    </Typography.Text>
+                  </Space>
+                ) : (
+                  <>
+                    <Space style={{ width: "100%", justifyContent: "space-between" }}>
+                      <Space>
+                        <RobotOutlined style={{ color: "#7B35C1" }} />
+                        <b>Resultado visual simulado</b>
+                      </Space>
+                      <Typography.Title level={3} style={{ margin: 0, color: "#7B35C1" }}>
+                        {aiScore}%
+                      </Typography.Title>
                     </Space>
-                    <Typography.Title level={3} style={{ margin: 0, color: "#7B35C1" }}>
-                      {aiScore}%
-                    </Typography.Title>
-                  </Space>
-                  <Progress percent={aiScore ?? 0} strokeColor="#7B35C1" />
-                  <Space wrap>
-                    {maintenanceAiFindings.map((finding, index) => (
-                      <Tag key={finding} color={index === 0 ? "green" : "orange"}>
-                        {finding}
-                      </Tag>
-                    ))}
-                  </Space>
-                </>
-              )}
-            </Card>
+                    <Progress percent={aiScore ?? 0} strokeColor="#7B35C1" />
+                    <Space wrap>
+                      {maintenanceAiFindings.map((finding, index) => (
+                        <Tag key={finding} color={index === 0 ? "green" : "orange"}>
+                          {finding}
+                        </Tag>
+                      ))}
+                    </Space>
+                  </>
+                )}
+              </Card>
+            ) : (
+              <Alert
+                type="success"
+                showIcon
+                message="Evidencia capturada"
+                description="La fotografía quedará disponible para la validación humana del supervisor."
+                style={{ marginTop: 12 }}
+              />
+            )}
 
-            {!analyzing && aiScore && (
+            {!analyzing && (evidence.aiValidation ? Boolean(aiScore) : evidence.humanRating) && (
               <Card size="small" title="Tu evaluación" style={{ marginTop: 12 }}>
                 <Typography.Paragraph type="secondary">
-                  Califica la condición observada; tu criterio se combina con la IA y las reglas del
-                  protocolo.
+                  {evidence.aiValidation
+                    ? "Califica la condición observada; tu criterio se combina con la IA y las reglas del protocolo."
+                    : "Califica la condición observada para complementar la revisión del supervisor."}
                 </Typography.Paragraph>
                 <Rate value={humanScore} onChange={setHumanScore} />
                 <Input.TextArea
@@ -841,17 +857,23 @@ function EvidenceCapture({
               <Button onClick={retake}>Retomar</Button>
               <Button
                 type="primary"
-                disabled={analyzing || !aiScore || humanScore === 0}
+                disabled={
+                  analyzing ||
+                  (Boolean(evidence.aiValidation) && !aiScore) ||
+                  (Boolean(evidence.humanRating) && humanScore === 0)
+                }
                 onClick={() =>
                   onCapture(preview, {
                     referenceData: referencePhotoUrl,
-                    gps: simulatedGps,
+                    gps: includeGps ? simulatedGps : undefined,
                     label: evidence.label,
                     phase: evidence.phase,
-                    aiScore: aiScore ?? undefined,
-                    humanScore,
-                    aiFindings: maintenanceAiFindings,
-                    operatorComment: operatorComment || maintenanceDefaultOperatorComment,
+                    aiScore: evidence.aiValidation ? (aiScore ?? undefined) : undefined,
+                    humanScore: evidence.humanRating ? humanScore : undefined,
+                    aiFindings: evidence.aiValidation ? maintenanceAiFindings : undefined,
+                    operatorComment:
+                      operatorComment ||
+                      (evidence.aiValidation ? maintenanceDefaultOperatorComment : undefined),
                   })
                 }
               >

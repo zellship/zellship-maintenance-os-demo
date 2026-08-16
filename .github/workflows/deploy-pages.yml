@@ -31,8 +31,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Validate both scenarios and build ATM static site
+      - name: Validate all scenarios
         run: npm run check:release
+
+      - name: Assemble ATM and wire-plant public sites
+        run: npm run build:pages:all
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
