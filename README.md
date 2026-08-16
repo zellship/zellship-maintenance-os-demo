@@ -11,7 +11,8 @@ and operational KPIs in one browser-based experience.
 
 This is not a production CMMS. It has no backend, database, authentication, or real external
 integrations. GPS, camera capture, AI validation, notifications, and real-time activity are
-simulated with seeded data and browser state.
+simulated with seeded data and browser state. Document uploads and incident attachments store only
+demonstration metadata in the current browser; they are not a document repository.
 
 ## Requirements
 
@@ -39,6 +40,8 @@ npm run demo:wire
 npm run dev          # Static demo development server
 npm run demo:atm     # ATM field-service scenario
 npm run demo:wire    # Neutral wire-plant maintenance scenario
+npm run demo:atm:fixed  # ATM walkthrough frozen at the audited demo date
+npm run demo:wire:fixed # Wire walkthrough frozen at the audited demo date
 npm run build        # Canonical GitHub Pages build
 npm run build:atm    # ATM production build
 npm run build:wire   # Wire-plant production build
@@ -73,6 +76,8 @@ See [docs/architecture.md](docs/architecture.md) for data flow and deployment de
 The default scenario is `industrial-base`. Variants are registered configuration and data packages;
 they do not copy the application. Use `VITE_DEMO_SCENARIO` to select a registered scenario and
 `VITE_DEMO_DATE` to freeze the walkthrough clock when repeatable screenshots or scripts are needed.
+Public builds use the current calendar date and a logical session clock so generated events remain
+chronological. Fixed scripts are reserved for repeatable QA and screenshots.
 
 See [docs/demo-variants.md](docs/demo-variants.md) for capability profiles, distribution rules, and
 the scenario authoring process. The audited baseline is recorded in

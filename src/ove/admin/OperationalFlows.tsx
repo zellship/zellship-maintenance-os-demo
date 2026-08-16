@@ -35,7 +35,7 @@ import {
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { activeDemo, hasCapability } from "../../demo-config/active";
-import { demoNow } from "../../demo-config/clock";
+import { advanceDemoClock, demoNow } from "../../demo-config/clock";
 import { seedAssets, seedOperationalFlows } from "../seed";
 import { useStore } from "../store";
 import type { Notification, OperationalFlow, OperationalFlowStep, Protocol } from "../types";
@@ -156,7 +156,7 @@ export function OperationalFlows() {
       event: "Orquestación de flujo",
       message: `${selected.name}: “${nextStep.name}” completado; dependencias reevaluadas.`,
       status: "Sent",
-      createdAt: demoNow().toISOString(),
+      createdAt: advanceDemoClock(1).toISOString(),
     };
     setNotifications([event, ...notifications]);
     message.success(`Etapa completada: ${nextStep.name}`);

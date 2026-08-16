@@ -34,7 +34,7 @@ import {
   RobotOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
-import { demoNow } from "../../demo-config/clock";
+import { advanceDemoClock, demoNow } from "../../demo-config/clock";
 import { useStore } from "../store";
 import type {
   EvidenceConfig,
@@ -102,6 +102,7 @@ export function ExecutionFlow({
     })),
   );
   const startRef = useRef<string>(demoNow().toISOString());
+  const resourceCheckInRef = useRef<string | undefined>(undefined);
 
   if (!schedule || !protocol)
     return (
@@ -125,10 +126,13 @@ export function ExecutionFlow({
 
   const start = () => {
     startRef.current = demoNow().toISOString();
+    resourceCheckInRef.current = undefined;
     setPhase("resources");
   };
 
   const confirmResources = () => {
+    const checkedInAt = advanceDemoClock(2).toISOString();
+    resourceCheckInRef.current = checkedInAt;
     setTools(tools.map((t) => (schedule.toolIds?.includes(t.id) ? { ...t, status: "InUse" } : t)));
     setReservations(
       reservations.map((r) =>
@@ -148,7 +152,7 @@ export function ExecutionFlow({
         event: "Inicio de ejecución",
         message: `${schedule.workOrder}: ${schedule.operator} inició ${protocol.name}.`,
         status: "Sent",
-        createdAt: demoNow().toISOString(),
+        createdAt: checkedInAt,
       },
       ...notifications,
     ]);
@@ -158,12 +162,14 @@ export function ExecutionFlow({
 
   const captureEvidence = (data: string, extra?: Partial<EvidenceRecord>) => {
     const location = evidences.find((evidence) => evidence.type === "GPS")?.gps;
+    const capturedAt =
+      extra?.timestamp ?? advanceDemoClock(current.type === "Photo" ? 4 : 2).toISOString();
     const ev: EvidenceRecord = {
       id: `ev${Date.now()}`,
       executionId: "pending",
       type: current.type,
       data,
-      timestamp: demoNow().toISOString(),
+      timestamp: capturedAt,
       status: "Pending",
       label: current.label,
       phase: current.phase,
@@ -184,7 +190,7 @@ export function ExecutionFlow({
           event: "Validación visual simulada",
           message: `${schedule.workOrder}: evidencia procesada en la simulación con ${ev.aiScore ?? 86}% de coincidencia.`,
           status: "Sent",
-          createdAt: demoNow().toISOString(),
+          createdAt: advanceDemoClock(1).toISOString(),
         },
         ...notifications,
       ]);
@@ -204,6 +210,7 @@ export function ExecutionFlow({
 
   const submit = () => {
     const id = `e${Date.now()}`;
+    const completedAt = advanceDemoClock(3).toISOString();
     const photo = evidences.find((e) => e.type === "Photo");
     const processScore = Math.max(70, 96 - deviations.length * 8);
     const score = photo?.aiScore
@@ -214,7 +221,7 @@ export function ExecutionFlow({
       scheduleId,
       protocolId: protocol.id,
       startAt: startRef.current,
-      endAt: demoNow().toISOString(),
+      endAt: completedAt,
       operator: schedule.operator,
       status: protocol.requiresValidation ? "PendingValidation" : "Completed",
       evidences: evidences.map((e) => ({ ...e, executionId: id, status: "Pending" })),
@@ -223,7 +230,7 @@ export function ExecutionFlow({
       humanScore: photo?.humanScore,
       toolIds: schedule.toolIds || [],
       materialConsumptions: consumptions,
-      resourceCheckInAt: demoNow().toISOString(),
+      resourceCheckInAt: resourceCheckInRef.current,
       workConcepts,
       revision: (previousExecution?.revision ?? 0) + 1,
       previousExecutionId: previousExecution?.id,
@@ -257,7 +264,10 @@ export function ExecutionFlow({
           type: "Escalated",
           status: "Review",
           description: `${deviations.length} consumo(s) fuera del rango configurado; requiere revisión del supervisor.`,
-          createdAt: demoNow().toISOString(),
+          createdAt: completedAt,
+          assetId: schedule.assetId,
+          priority: protocol.priority,
+          owner: protocol.supervisors[0] ?? "Supervisión de mantenimiento",
         },
         ...incidents,
       ]);
@@ -273,7 +283,7 @@ export function ExecutionFlow({
         event: protocol.requiresValidation ? "Validación requerida" : "Ejecución completada",
         message: `${schedule.workOrder} enviada con calificación automática de ${score}%.`,
         status: "Sent",
-        createdAt: demoNow().toISOString(),
+        createdAt: completedAt,
       },
       {
         id: `n-submit-${Date.now()}-admin`,
@@ -286,7 +296,7 @@ export function ExecutionFlow({
         event: "Compromiso atendido",
         message: `${schedule.workOrder}: evidencia completa, recursos liberados y resultado registrado.`,
         status: "Sent",
-        createdAt: demoNow().toISOString(),
+        createdAt: completedAt,
       },
     ];
     setNotifications([...updates, ...notifications]);
@@ -692,6 +702,7 @@ function EvidenceCapture({
 }) {
   const { type, qrCode } = evidence;
   const [preview, setPreview] = useState<string | null>(null);
+  const [capturedAt, setCapturedAt] = useState<string | null>(null);
   const [flash, setFlash] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [aiScore, setAiScore] = useState<number | null>(null);
@@ -706,6 +717,7 @@ function EvidenceCapture({
   const simulatedGps = { lat: 25.6866, lng: -100.3161 };
 
   const takePhoto = () => {
+    setCapturedAt(advanceDemoClock(4).toISOString());
     setFlash(true);
     setTimeout(() => {
       setFlash(false);
@@ -722,6 +734,7 @@ function EvidenceCapture({
 
   const retake = () => {
     setPreview(null);
+    setCapturedAt(null);
     setAiScore(null);
     setHumanScore(0);
     setOperatorComment("");
@@ -776,7 +789,11 @@ function EvidenceCapture({
           )}
           {flash && <div className="camera-flash" />}
           {preview && includeGps && (
-            <EvidenceGpsStamp gps={simulatedGps} timestamp={demoNow().toISOString()} compact />
+            <EvidenceGpsStamp
+              gps={simulatedGps}
+              timestamp={capturedAt ?? demoNow().toISOString()}
+              compact
+            />
           )}
           {!preview && (
             <div className="camera-reticle">
@@ -865,6 +882,7 @@ function EvidenceCapture({
                 onClick={() =>
                   onCapture(preview, {
                     referenceData: referencePhotoUrl,
+                    timestamp: capturedAt ?? undefined,
                     gps: includeGps ? simulatedGps : undefined,
                     label: evidence.label,
                     phase: evidence.phase,
@@ -1074,7 +1092,10 @@ function EvidenceCapture({
           block
           size="large"
           style={{ marginTop: 16 }}
-          onClick={() => onCapture(demoNow().toISOString())}
+          onClick={() => {
+            const timestamp = advanceDemoClock(2).toISOString();
+            onCapture(timestamp, { timestamp });
+          }}
         >
           Registrar timestamp
         </Button>

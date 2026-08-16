@@ -21,7 +21,8 @@ VITE_DEMO_SCENARIO=industrial-base npm run build:pages
 ```
 
 Set `VITE_DEMO_DATE` when a sales walkthrough or screenshot must be deterministic. Without it, the
-demo uses the current date and time.
+demo anchors its seed data to the current calendar date and advances a logical session clock as the
+presenter performs actions.
 
 ```bash
 VITE_DEMO_DATE=2026-08-14T09:30:00-06:00 npm run dev
@@ -63,7 +64,9 @@ access-control system.
    shared components.
 5. Register it in `src/demo-config/registry.ts`.
 6. Add contract tests for identity, capabilities, data counts, distribution, and reset behavior.
-7. Run `npm run check` and a smoke walkthrough for every enabled role.
+7. Ensure documents reference valid scenario assets or people and that temporal events cannot move
+   backwards or end in the future.
+8. Run `npm run check` and a smoke walkthrough for every enabled role.
 
 Do not add real credentials, bank information, exact customer locations, personal contact details,
 or other confidential prospect data to a public repository.

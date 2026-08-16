@@ -20,13 +20,34 @@ const today = demoNow().format("YYYY-MM-DD");
 const tomorrow = demoNow().add(1, "day").format("YYYY-MM-DD");
 
 type AssetSeed = Pick<Asset, "id" | "name" | "family" | "area"> &
-  Partial<Pick<Asset, "criticality" | "status" | "availability" | "health" | "runtimeHours">>;
+  Partial<
+    Pick<
+      Asset,
+      | "criticality"
+      | "status"
+      | "availability"
+      | "health"
+      | "runtimeHours"
+      | "availabilityStatus"
+      | "operationalCondition"
+      | "estimatedReleaseAt"
+    >
+  >;
 
 function createAsset(seed: AssetSeed, lastServiceDays = 30): Asset {
   return {
     plant: PLANT,
     criticality: seed.criticality ?? "Medium",
     status: seed.status ?? "Available",
+    availabilityStatus:
+      seed.availabilityStatus ?? (seed.status === "Available" ? "Available" : "Unavailable"),
+    operationalCondition:
+      seed.operationalCondition ??
+      (seed.status === "Maintenance"
+        ? "Maintenance"
+        : seed.status === "Risk"
+          ? "Review"
+          : "Operating"),
     availability: seed.availability ?? 97.2,
     health: seed.health ?? 90,
     runtimeHours: seed.runtimeHours ?? 7200,
@@ -53,6 +74,9 @@ export const seedAssets: Asset[] = [
       family: "Laminadoras",
       area: "Laminado",
       status: "Maintenance",
+      availabilityStatus: "Unavailable",
+      operationalCondition: "Maintenance",
+      estimatedReleaseAt: demoNow().hour(13).minute(30).toISOString(),
       health: 81,
     },
     42,
@@ -85,6 +109,8 @@ export const seedAssets: Asset[] = [
       area: "Trefilado para Recocido y Clavo",
       criticality: "Critical",
       status: "Risk",
+      availabilityStatus: "Assigned",
+      operationalCondition: "Review",
       availability: 89.6,
       health: 68,
       runtimeHours: 12480,
@@ -100,6 +126,8 @@ export const seedAssets: Asset[] = [
         area: "Clavo",
         criticality: index < 2 ? "High" : "Medium",
         status: index === 3 ? "Maintenance" : "Available",
+        availabilityStatus: index === 3 ? "Unavailable" : "Available",
+        operationalCondition: index === 3 ? "Quarantine" : "Operating",
         health: index === 3 ? 79 : 91 - index,
       },
       12 + index * 6,
@@ -798,6 +826,9 @@ export const seedIncidents: Incident[] = [
     description:
       "Escenario demostrativo: se reportó ruido y vibración fuera de la condición habitual en Trefiladora 3.",
     createdAt: demoNow().subtract(35, "minute").toISOString(),
+    assetId: "TRF-03",
+    priority: "Critical",
+    owner: "Eduardo Morales",
   },
   {
     id: "inc-crane-overdue",
@@ -807,6 +838,9 @@ export const seedIncidents: Incident[] = [
     status: "Review",
     description: "Revisión visual demostrativa de Grúa 3 fuera de su ventana programada.",
     createdAt: demoNow().subtract(1, "day").toISOString(),
+    assetId: "GRU-03",
+    priority: "High",
+    owner: "Mariana Torres",
   },
 ];
 

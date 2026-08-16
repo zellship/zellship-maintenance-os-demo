@@ -31,7 +31,7 @@ import {
   UserOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
-import { demoNow } from "../../demo-config/clock";
+import { advanceDemoClock, demoNow } from "../../demo-config/clock";
 import { useStore } from "../store";
 import { maintenanceCapturedUrl, maintenanceReferenceUrl } from "../shared/maintenanceAssets";
 import { PrintReportFooter, PrintReportHeader } from "../shared/PrintReport";
@@ -106,7 +106,7 @@ export function SupervisorValidations({
       event: "Envío de reporte simulado",
       message: `${proto?.name ?? "Mantenimiento"}: simulación de entrega del reporte de ${exec.operator} con calificación de ${exec.score ?? 94}%.`,
       status: "Sent",
-      createdAt: demoNow().toISOString(),
+      createdAt: advanceDemoClock(1).toISOString(),
     }));
     setNotifications([...notices, ...notifications]);
     message.success(
@@ -136,7 +136,7 @@ export function SupervisorValidations({
                 supervisor: decisionActor,
                 decision,
                 comments,
-                at: demoNow().toISOString(),
+                at: advanceDemoClock(1).toISOString(),
               },
               score: e.score ?? 94,
             }
@@ -152,7 +152,7 @@ export function SupervisorValidations({
           type: "Rejected",
           status: "Open",
           description: comments || "Ejecución rechazada por supervisor.",
-          createdAt: demoNow().toISOString(),
+          createdAt: advanceDemoClock(1).toISOString(),
         },
         ...incidents,
       ]);
@@ -168,7 +168,7 @@ export function SupervisorValidations({
       event: decision === "Approved" ? "Ejecución aprobada" : "Ejecución rechazada",
       message: `${proto?.name ?? "Mantenimiento"}: ${decision === "Approved" ? `aprobado con ${exec.score ?? 94}%` : "requiere corrección"}.`,
       status: "Sent",
-      createdAt: demoNow().toISOString(),
+      createdAt: advanceDemoClock(1).toISOString(),
     };
     setNotifications([notice, ...notifications]);
     setComments("");
@@ -182,7 +182,7 @@ export function SupervisorValidations({
       message.warning("Indica la corrección requerida antes de reabrir.");
       return;
     }
-    const reopenedAt = demoNow().toISOString();
+    const reopenedAt = advanceDemoClock(1).toISOString();
     setExecutions(
       executions.map((item) =>
         item.id === exec.id

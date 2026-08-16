@@ -25,7 +25,7 @@ import {
   WarningOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
-import { demoNow } from "../../demo-config/clock";
+import { advanceDemoClock, demoNow } from "../../demo-config/clock";
 import { activeDemo } from "../../demo-config/active";
 import { useStore } from "../store";
 import type { ServiceClassification, ServiceRequest, ServiceRequestStatus } from "../types";
@@ -55,7 +55,7 @@ export function ServiceRequests({
 
   const accept = (classification: ServiceClassification) => {
     if (!selected) return;
-    const acceptedAt = demoNow().toISOString();
+    const acceptedAt = advanceDemoClock(1).toISOString();
     setServiceRequests(
       serviceRequests.map((request) =>
         request.id === selected.id

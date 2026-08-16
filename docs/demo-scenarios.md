@@ -2,6 +2,9 @@
 
 Start each walkthrough by pressing the reset button in the header.
 
+Public development and production commands use the current calendar date. Use the `:fixed`
+development commands only when the walkthrough must reproduce the audited date exactly.
+
 Select the scenario at build or development time. The industrial walkthrough remains the default;
 the ATM walkthrough uses a separate state key and fictional dataset.
 
@@ -12,6 +15,23 @@ npm run demo:atm
 ```bash
 npm run demo:wire
 ```
+
+## Shared operational-profile walkthrough
+
+The following checks apply to Industrial, ATM, and Planta de Alambres:
+
+1. In **Coordinación**, use **Nueva orden** to create immediate work from the current screen. Keep
+   **Programación** for future commitments and calendar work.
+2. Open an incident and use **Dar seguimiento**. Add a comment or simulated attachment, create a
+   linked work order when action is required, record the resolution, and close only after review.
+3. Open an asset profile and read **Estado y plan** first: availability, operational condition,
+   plan compliance, next intervention, health, and open incidents. Confirm that availability and
+   condition are separate dimensions, then open a work-order detail without leaving the profile.
+4. Repeat the profile review for a collaborator in **Capacidad y carga**: current availability,
+   eight-hour demonstrated capacity, assigned hours, remaining capacity, shift plan, and related
+   incidents.
+5. Upload a simulated document and verify its metadata appears in the profile. Do not present this
+   as binary file storage, version control, access control, or a productive document repository.
 
 ## Wire plant maintenance — eight-scene walkthrough
 
@@ -87,5 +107,6 @@ Expected result: the decision updates the execution and demonstrates the governa
 ## Reset and limitations
 
 The reset button restores the seeded state stored in the browser. The demo does not send messages,
-upload files, call an AI model, validate real GPS coordinates, or persist data outside the current
-browser profile.
+store uploaded file contents, call an AI model, validate real GPS coordinates, or persist data
+outside the current browser profile. WhatsApp templates, incident attachments, warranties,
+contracts, manuals, and personnel records are simulated browser metadata.

@@ -26,7 +26,7 @@ import {
   WhatsAppOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
-import { demoNow } from "../../demo-config/clock";
+import { advanceDemoClock, demoNow } from "../../demo-config/clock";
 import { useStore } from "../store";
 import type { Notification, NotificationChannel, Role } from "../types";
 import { activeDemo, demoData } from "../../demo-config/active";
@@ -80,7 +80,7 @@ export function NotificationCenter({ role, showAll = false }: { role: Role; show
       templateName: values.channel === "WhatsApp" ? "maintenance_manual_update_v1" : undefined,
       actionLabel: values.channel === "WhatsApp" ? "Abrir en Zellship" : undefined,
       status: "Sent",
-      createdAt: demoNow().toISOString(),
+      createdAt: advanceDemoClock(1).toISOString(),
     };
     setNotifications([notification, ...notifications]);
     form.resetFields(["message"]);
@@ -105,7 +105,7 @@ export function NotificationCenter({ role, showAll = false }: { role: Role; show
       templateName: "work_order_assignment_v1",
       actionLabel: "Abrir en Zellship",
       status: "Sent",
-      createdAt: demoNow().toISOString(),
+      createdAt: advanceDemoClock(1).toISOString(),
     };
     setNotifications([event, ...notifications]);
     message.success("Trigger ejecutado: vista previa del template de WhatsApp generada");

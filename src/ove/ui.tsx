@@ -16,7 +16,7 @@ export function statusTag(s: string) {
     Inactive: { color: "default", label: "Inactivo" },
     Archived: { color: "default", label: "Archivado" },
     Open: { color: "red", label: "Abierta" },
-    Review: { color: "orange", label: "Revisión" },
+    Review: { color: "orange", label: "En seguimiento" },
     Resolved: { color: "green", label: "Resuelta" },
     Closed: { color: "default", label: "Cerrada" },
     Valid: { color: "green", label: "Válida" },
@@ -27,11 +27,12 @@ export function statusTag(s: string) {
 }
 
 export function priorityTag(p: string) {
-  const map: Record<string, string> = {
-    Low: "blue",
-    Medium: "gold",
-    High: "orange",
-    Critical: "red",
+  const map: Record<string, { color: string; label: string }> = {
+    Low: { color: "blue", label: "Baja" },
+    Medium: { color: "gold", label: "Media" },
+    High: { color: "orange", label: "Alta" },
+    Critical: { color: "red", label: "Crítica" },
   };
-  return <Tag color={map[p] ?? "default"}>{p}</Tag>;
+  const value = map[p] ?? { color: "default", label: p };
+  return <Tag color={value.color}>{value.label}</Tag>;
 }

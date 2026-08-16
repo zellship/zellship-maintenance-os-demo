@@ -39,11 +39,15 @@ import {
   UserAddOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
-import { demoNow } from "../../demo-config/clock";
+import { advanceDemoClock, demoNow } from "../../demo-config/clock";
 import { useStore } from "../store";
 import { seedSkills } from "../seed";
 import type { Notification, Person } from "../types";
 import { technicianProfiles } from "./resourceProfiles";
+import { EntityDocuments } from "../shared/EntityDocuments";
+import { ProfileSectionNav } from "../shared/ProfileSectionNav";
+import { WorkOrderDetailModal } from "./WorkOrders";
+import { PersonCapacitySummary } from "../shared/OperationalProfileSummary";
 
 const resourceTag = (status: string) => {
   const color =
@@ -81,12 +85,14 @@ export function Resources() {
     executions,
     notifications,
     setNotifications,
+    incidents,
   } = useStore();
   const technicians = people.filter((person) => person.role === "Technician");
   const [selectedId, setSelectedId] = useState("per-ana");
   const [view, setView] = useState<"list" | "profile">("list");
   const [skillsOpen, setSkillsOpen] = useState(false);
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+  const [detailScheduleId, setDetailScheduleId] = useState<string | null>(null);
   const activeReservations = reservations.filter(
     (reservation) => reservation.status === "Reserved" || reservation.status === "InUse",
   );
@@ -112,7 +118,7 @@ export function Resources() {
       event: "Mensaje desde perfil",
       message: `${person.name}: confirma disponibilidad para la siguiente ventana de mantenimiento.`,
       status: "Sent",
-      createdAt: demoNow().toISOString(),
+      createdAt: advanceDemoClock(1).toISOString(),
     };
     setNotifications([notification, ...notifications]);
     message.success(`Notificación push enviada a ${person.name}`);
@@ -147,7 +153,7 @@ export function Resources() {
       event: "Orden asignada",
       message: `${candidate.workOrder} fue asignada desde el perfil del colaborador.`,
       status: "Sent",
-      createdAt: demoNow().toISOString(),
+      createdAt: advanceDemoClock(1).toISOString(),
     };
     setNotifications([notification, ...notifications]);
     message.success(`${candidate.workOrder} asignada y template de WhatsApp simulado`);
@@ -173,10 +179,12 @@ export function Resources() {
         schedules={schedules}
         protocols={protocols}
         executions={executions}
+        incidents={incidents}
         onBack={() => setView("list")}
         onAssign={assignOrder}
         onNotify={sendNotification}
         onSkills={openSkills}
+        onOpenOrder={setDetailScheduleId}
       >
         <Modal
           title={`Actualizar skills · ${person.name}`}
@@ -202,6 +210,10 @@ export function Resources() {
             }))}
           />
         </Modal>
+        <WorkOrderDetailModal
+          scheduleId={detailScheduleId}
+          onClose={() => setDetailScheduleId(null)}
+        />
       </TechnicianProfile>
     );
   }
@@ -517,26 +529,40 @@ function TechnicianProfile({
   schedules,
   protocols,
   executions,
+  incidents,
   onBack,
   onAssign,
   onNotify,
   onSkills,
+  onOpenOrder,
   children,
 }: {
   person: Person;
   schedules: ReturnType<typeof useStore>["schedules"];
   protocols: ReturnType<typeof useStore>["protocols"];
   executions: ReturnType<typeof useStore>["executions"];
+  incidents: ReturnType<typeof useStore>["incidents"];
   onBack: () => void;
   onAssign: () => void;
   onNotify: () => void;
   onSkills: () => void;
+  onOpenOrder: (scheduleId: string) => void;
   children: ReactNode;
 }) {
   const profile = technicianProfiles[person.id];
   const relatedSchedules = schedules.filter((schedule) => schedule.operator === person.name);
   const scheduleIds = new Set(relatedSchedules.map((schedule) => schedule.id));
   const relatedExecutions = executions.filter((execution) => scheduleIds.has(execution.scheduleId));
+  const relatedIncidents = incidents.filter(
+    (incident) =>
+      Boolean(incident.scheduleId && scheduleIds.has(incident.scheduleId)) ||
+      incident.owner === person.name,
+  );
+  const todaySchedules = relatedSchedules.filter(
+    (schedule) =>
+      schedule.date === demoNow().format("YYYY-MM-DD") &&
+      (schedule.status === "Pending" || schedule.status === "InProgress"),
+  );
   const skillDetails = person.skillIds
     .map((skillId) => seedSkills.find((skill) => skill.id === skillId))
     .filter(Boolean);
@@ -554,6 +580,12 @@ function TechnicianProfile({
         protocols.find((protocol) => protocol.id === schedule.protocolId)?.name ?? "Protocolo",
       color: schedule.status === "Completed" ? "green" : "blue",
     })),
+    ...relatedIncidents.map((incident) => ({
+      at: incident.createdAt,
+      title: `Incidencia · ${incident.status}`,
+      detail: incident.description,
+      color: "red",
+    })),
   ].sort((a, b) => b.at.localeCompare(a.at));
 
   return (
@@ -568,18 +600,9 @@ function TechnicianProfile({
         </Space>
       </Space>
 
-      <div className="asset-context-bar">
-        <ProfileContext label="Entidad" value={`${person.id} · ${person.name}`} />
-        <ProfileContext label="Clave externa" value={profile.externalKey} />
-        <ProfileContext
-          label="Estado"
-          value={person.status === "Assigned" ? "Asignado" : "Disponible"}
-        />
-        <ProfileContext label="Planta" value={person.plant} />
-        <ProfileContext label="Confianza" value={`${profile.dataConfidence}%`} />
-      </div>
+      <ProfileSectionNav variant="person" />
 
-      <Card className="asset-profile-hero resource-profile-hero">
+      <Card id="profile-overview" className="asset-profile-hero resource-profile-hero">
         <div className="asset-hero-header">
           <div className="asset-hero-identity">
             <Avatar size={76} style={{ background: "linear-gradient(135deg,#7B35C1,#B57BFF)" }}>
@@ -624,30 +647,15 @@ function TechnicianProfile({
             </Button>
           </Space>
         </div>
-        <div className="resource-profile-stats">
-          <Metric
-            label="Competencia"
-            value={`${profile.competencyScore}%`}
-            icon={<SafetyCertificateOutlined />}
-          />
-          <Metric label="On-time" value={`${profile.onTime}%`} icon={<FieldTimeOutlined />} />
-          <Metric
-            label="First-time fix"
-            value={`${profile.firstTimeFix}%`}
-            icon={<ToolOutlined />}
-          />
-          <Metric
-            label="Órdenes cerradas"
-            value={String(profile.completedOrders)}
-            icon={<CheckCircleOutlined />}
-          />
-          <Metric
-            label="Calificación media"
-            value={`${profile.avgScore}%`}
-            icon={<RadarChartOutlined />}
-          />
-        </div>
       </Card>
+
+      <PersonCapacitySummary
+        person={person}
+        schedules={relatedSchedules}
+        protocols={protocols}
+        incidents={relatedIncidents}
+        onOpenOrder={onOpenOrder}
+      />
 
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
         <Col xs={24} xl={16}>
@@ -677,6 +685,68 @@ function TechnicianProfile({
             </Card>
 
             <Card
+              title={
+                <SectionTitle icon={<RadarChartOutlined />} text="Desempeño · últimos 90 días" />
+              }
+            >
+              <div className="resource-profile-stats">
+                <Metric
+                  label="Competencia"
+                  value={`${profile.competencyScore}%`}
+                  icon={<SafetyCertificateOutlined />}
+                />
+                <Metric label="On-time" value={`${profile.onTime}%`} icon={<FieldTimeOutlined />} />
+                <Metric
+                  label="First-time fix"
+                  value={`${profile.firstTimeFix}%`}
+                  icon={<ToolOutlined />}
+                />
+                <Metric
+                  label="Órdenes cerradas"
+                  value={String(profile.completedOrders)}
+                  icon={<CheckCircleOutlined />}
+                />
+                <Metric
+                  label="Calificación media"
+                  value={`${profile.avgScore}%`}
+                  icon={<RadarChartOutlined />}
+                />
+              </div>
+            </Card>
+
+            <Card
+              id="profile-work-plan"
+              title={
+                <SectionTitle icon={<CalendarOutlined />} text="Plan del turno y asignaciones" />
+              }
+              extra={<Tag color="purple">{todaySchedules.length} activas</Tag>}
+            >
+              <List
+                size="small"
+                locale={{ emptyText: "Sin asignaciones activas para hoy" }}
+                dataSource={todaySchedules}
+                renderItem={(schedule) => (
+                  <List.Item
+                    extra={
+                      <Space>
+                        {resourceTag(schedule.status === "InProgress" ? "InUse" : "Assigned")}
+                        <Button size="small" onClick={() => onOpenOrder(schedule.id)}>
+                          Ver detalle
+                        </Button>
+                      </Space>
+                    }
+                  >
+                    <List.Item.Meta
+                      title={`${schedule.workOrder} · ${protocols.find((protocol) => protocol.id === schedule.protocolId)?.name ?? "Protocolo"}`}
+                      description={`${schedule.hour} · ${schedule.assetId}`}
+                    />
+                  </List.Item>
+                )}
+              />
+            </Card>
+
+            <Card
+              id="profile-activity"
               title={
                 <SectionTitle
                   icon={<SafetyCertificateOutlined />}
@@ -713,6 +783,30 @@ function TechnicianProfile({
                 type="success"
                 showIcon
                 message={`${person.name} es elegible para ${eligibleProtocols(person, protocols)} protocolos activos`}
+              />
+            </Card>
+
+            <Card
+              id="profile-incidents"
+              title={<SectionTitle icon={<BellOutlined />} text="Incidencias relacionadas" />}
+              extra={
+                <Tag color={relatedIncidents.length ? "red" : "green"}>
+                  {relatedIncidents.length}
+                </Tag>
+              }
+            >
+              <List
+                size="small"
+                locale={{ emptyText: "Sin incidencias relacionadas" }}
+                dataSource={relatedIncidents.slice(0, 5)}
+                renderItem={(incident) => (
+                  <List.Item extra={<Tag>{incident.status}</Tag>}>
+                    <List.Item.Meta
+                      title={incident.description}
+                      description={`${incident.type} · ${dayjs(incident.createdAt).format("DD MMM YYYY · HH:mm")}`}
+                    />
+                  </List.Item>
+                )}
               />
             </Card>
 
@@ -849,16 +943,10 @@ function TechnicianProfile({
           </Space>
         </Col>
       </Row>
+      <div id="profile-documents" style={{ marginTop: 16 }}>
+        <EntityDocuments entityType="Person" entityId={person.id} />
+      </div>
       {children}
-    </div>
-  );
-}
-
-function ProfileContext({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <span>{label}</span>
-      <b>{value}</b>
     </div>
   );
 }

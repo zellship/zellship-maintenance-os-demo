@@ -41,7 +41,7 @@ import {
   WhatsAppOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
-import { demoNow } from "../../demo-config/clock";
+import { advanceDemoClock, demoNow } from "../../demo-config/clock";
 import { seedAssets, seedOperationalFlows } from "../seed";
 import { useStore } from "../store";
 import { statusTag } from "../ui";
@@ -162,7 +162,7 @@ export function OperationsLive({
       event: modeInfo[mode].label,
       message: `${schedule.workOrder} creada: ${protocol.name} · ${schedule.assetId} · ${schedule.hour}.`,
       status: "Sent",
-      createdAt: demoNow().toISOString(),
+      createdAt: advanceDemoClock(1).toISOString(),
     };
     setSchedules([schedule, ...schedules]);
     setNotifications([notification, ...notifications]);
@@ -186,7 +186,7 @@ export function OperationsLive({
       event: "Avance de flujo",
       message: `Flujo AC-01 avanzó a: ${step.name}.`,
       status: "Sent",
-      createdAt: demoNow().toISOString(),
+      createdAt: advanceDemoClock(1).toISOString(),
     };
     setNotifications([notification, ...notifications]);
     setSelectedEventId(notification.id);
@@ -208,7 +208,7 @@ export function OperationsLive({
         message:
           "AC-01 detectó vibración crítica: flujo “Respuesta a condición” detonado automáticamente.",
         status: "Sent",
-        createdAt: demoNow().toISOString(),
+        createdAt: advanceDemoClock(1).toISOString(),
       },
       {
         id: `n-related-${Date.now()}-admin`,
@@ -221,7 +221,7 @@ export function OperationsLive({
         event: "Escalamiento entre flujos",
         message: "Nuevo compromiso predictivo creado y ligado al flujo de recuperación AC-01.",
         status: "Sent",
-        createdAt: demoNow().toISOString(),
+        createdAt: advanceDemoClock(1).toISOString(),
       },
     ];
     setNotifications([...events, ...notifications]);

@@ -47,7 +47,7 @@ import {
   ToolOutlined,
 } from "@ant-design/icons";
 import dayjs, { type Dayjs } from "dayjs";
-import { demoNow } from "../../demo-config/clock";
+import { advanceDemoClock, demoNow } from "../../demo-config/clock";
 import { seedAssets } from "../seed";
 import { useStore } from "../store";
 import { priorityTag, statusTag } from "../ui";
@@ -58,6 +58,10 @@ import {
   type AssetProfileDefinition,
   type AssetRelationship,
 } from "./assetProfiles";
+import { EntityDocuments } from "../shared/EntityDocuments";
+import { ProfileSectionNav } from "../shared/ProfileSectionNav";
+import { WorkOrderDetailModal } from "./WorkOrders";
+import { AssetOperationalSummary } from "../shared/OperationalProfileSummary";
 
 type Observation = { id: string; assetId: string; text: string; author: string; at: string };
 type MaintenanceScheduleValues = {
@@ -84,6 +88,7 @@ export function Assets() {
   const [observationOpen, setObservationOpen] = useState(false);
   const [maintenanceOpen, setMaintenanceOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [detailScheduleId, setDetailScheduleId] = useState<string | null>(null);
   const [observations, setObservations] = useState<Observation[]>([]);
   const [observationForm] = Form.useForm<{ observation: string }>();
   const [maintenanceForm] = Form.useForm<MaintenanceScheduleValues>();
@@ -97,6 +102,7 @@ export function Assets() {
   );
   const relatedIncidents = incidents.filter(
     (incident) =>
+      incident.assetId === asset.id ||
       (incident.scheduleId && relatedScheduleIds.has(incident.scheduleId)) ||
       protocols
         .find((protocol) => protocol.id === incident.protocolId)
@@ -161,7 +167,7 @@ export function Assets() {
       assetId: asset.id,
       text: values.observation,
       author: "Coordinación de mantenimiento",
-      at: demoNow().toISOString(),
+      at: advanceDemoClock(1).toISOString(),
     };
     const notification: Notification = {
       id: `n-asset-${Date.now()}`,
@@ -229,7 +235,7 @@ export function Assets() {
       event: "Mantenimiento programado desde Asset Profile",
       message: `${schedule.workOrder}: ${protocol.name} asignado sobre ${asset.id} para el ${start.format("DD/MM/YYYY")} a las ${schedule.hour}.`,
       status: "Sent",
-      createdAt: demoNow().toISOString(),
+      createdAt: advanceDemoClock(1).toISOString(),
     };
     setSchedules([schedule, ...schedules]);
     setNotifications([notification, ...notifications]);
@@ -250,6 +256,7 @@ export function Assets() {
         onCapture={() => setObservationOpen(true)}
         onHistory={() => setHistoryOpen(true)}
         onSchedule={openMaintenanceScheduler}
+        onOpenOrder={setDetailScheduleId}
       >
         <ObservationModal
           open={observationOpen}
@@ -304,6 +311,10 @@ export function Assets() {
             }))}
           />
         </Modal>
+        <WorkOrderDetailModal
+          scheduleId={detailScheduleId}
+          onClose={() => setDetailScheduleId(null)}
+        />
       </AssetProfile>
     );
   }
@@ -535,6 +546,7 @@ function AssetProfile({
   onCapture,
   onHistory,
   onSchedule,
+  onOpenOrder,
   children,
 }: {
   asset: Asset;
@@ -546,6 +558,7 @@ function AssetProfile({
   onCapture: () => void;
   onHistory: () => void;
   onSchedule: () => void;
+  onOpenOrder: (scheduleId: string) => void;
   children: ReactNode;
 }) {
   const { protocols } = useStore();
@@ -553,6 +566,11 @@ function AssetProfile({
   const nextSchedule = relatedSchedules
     .filter((schedule) => schedule.status === "Pending")
     .sort((a, b) => `${a.date}${a.hour}`.localeCompare(`${b.date}${b.hour}`))[0];
+  const maintenancePlans = protocols.filter(
+    (protocol) =>
+      protocol.status === "Active" &&
+      (!protocol.assetIds?.length || protocol.assetIds.includes(asset.id)),
+  );
 
   return (
     <div className="asset-profile-page">
@@ -566,15 +584,9 @@ function AssetProfile({
         </Space>
       </Space>
 
-      <div className="asset-context-bar">
-        <ContextItem label="Entidad" value={`${asset.id} · ${asset.name}`} strong />
-        <ContextItem label="Clave externa" value={profile.externalKey} />
-        <ContextItem label="Estado" value={assetStatusLabel(asset.status)} dot={asset.status} />
-        <ContextItem label="Ubicación" value={`${asset.plant} · ${asset.area}`} />
-        <ContextItem label="Confianza del perfil" value={`${profile.dataConfidence}%`} strong />
-      </div>
+      <ProfileSectionNav variant="asset" />
 
-      <Card className="asset-profile-hero">
+      <Card id="profile-overview" className="asset-profile-hero">
         <div className="asset-hero-header">
           <div className="asset-hero-identity">
             <Avatar
@@ -628,42 +640,15 @@ function AssetProfile({
             </Button>
           </Space>
         </div>
-
-        <div className="asset-profile-stats">
-          <ProfileStat
-            icon={<DashboardOutlined />}
-            value={`${asset.health}%`}
-            label="Salud del activo"
-            helper={asset.health >= 80 ? "Condición saludable" : "Requiere atención"}
-            tone={asset.health < 70 ? "red" : "purple"}
-          />
-          <ProfileStat
-            icon={<SafetyCertificateOutlined />}
-            value={`${asset.availability}%`}
-            label="Disponibilidad"
-            helper="Últimos 30 días"
-          />
-          <ProfileStat
-            icon={<FieldTimeOutlined />}
-            value={asset.runtimeHours.toLocaleString()}
-            label="Horas de operación"
-            helper="Lectura acumulada"
-          />
-          <ProfileStat
-            icon={<ToolOutlined />}
-            value={String(relatedSchedules.length)}
-            label="Órdenes conectadas"
-            helper="Historial y pendientes"
-          />
-          <ProfileStat
-            icon={<BellOutlined />}
-            value={String(relatedIncidents.filter((item) => item.status !== "Closed").length)}
-            label="Incidencias activas"
-            helper="Requieren seguimiento"
-            tone="red"
-          />
-        </div>
       </Card>
+
+      <AssetOperationalSummary
+        asset={asset}
+        schedules={relatedSchedules}
+        protocols={protocols}
+        incidents={relatedIncidents}
+        onOpenOrder={onOpenOrder}
+      />
 
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
         <Col xs={24} xl={16}>
@@ -691,6 +676,7 @@ function AssetProfile({
             </Card>
 
             <Card
+              id="profile-activity"
               title={
                 <SectionTitle icon={<FieldTimeOutlined />} text="Actualizaciones del perfil" />
               }
@@ -723,9 +709,30 @@ function AssetProfile({
             </Card>
 
             <Card
-              title={<SectionTitle icon={<ToolOutlined />} text="Mantenimiento conectado" />}
-              extra={<Tag>{relatedSchedules.length} órdenes</Tag>}
+              id="profile-maintenance-history"
+              title={
+                <SectionTitle icon={<ToolOutlined />} text="Plan e historial de mantenimiento" />
+              }
+              extra={
+                <Space>
+                  <Tag>{maintenancePlans.length} planes</Tag>
+                  <Tag>{relatedSchedules.length} órdenes</Tag>
+                </Space>
+              }
             >
+              <Descriptions size="small" column={{ xs: 1, md: 3 }} style={{ marginBottom: 12 }}>
+                <Descriptions.Item label="Próxima intervención">
+                  {nextSchedule
+                    ? `${nextSchedule.workOrder} · ${dayjs(`${nextSchedule.date} ${nextSchedule.hour}`).format("DD MMM HH:mm")}`
+                    : "Sin orden pendiente"}
+                </Descriptions.Item>
+                <Descriptions.Item label="Plan vigente">
+                  {maintenancePlans[0]?.name ?? "Sin plan asignado"}
+                </Descriptions.Item>
+                <Descriptions.Item label="Último servicio">
+                  {dayjs(asset.lastService).format("DD MMM YYYY")}
+                </Descriptions.Item>
+              </Descriptions>
               <List
                 dataSource={relatedSchedules.slice(0, 5)}
                 locale={{ emptyText: "Sin órdenes vinculadas" }}
@@ -740,6 +747,9 @@ function AssetProfile({
                         <Space>
                           {execution?.score && <Tag color="green">{execution.score}%</Tag>}
                           {statusTag(execution?.status ?? schedule.status)}
+                          <Button size="small" onClick={() => onOpenOrder(schedule.id)}>
+                            Ver detalle
+                          </Button>
                         </Space>
                       }
                     >
@@ -862,9 +872,36 @@ function AssetProfile({
                 </Descriptions.Item>
               </Descriptions>
             </Card>
+
+            <Card
+              id="profile-incidents"
+              title={<SectionTitle icon={<BellOutlined />} text="Incidencias del equipo" />}
+              extra={
+                <Tag color={relatedIncidents.length ? "red" : "green"}>
+                  {relatedIncidents.length}
+                </Tag>
+              }
+            >
+              <List
+                size="small"
+                locale={{ emptyText: "Sin incidencias relacionadas" }}
+                dataSource={relatedIncidents.slice(0, 5)}
+                renderItem={(incident) => (
+                  <List.Item extra={statusTag(incident.status)}>
+                    <List.Item.Meta
+                      title={incident.description}
+                      description={`${incident.type} · ${dayjs(incident.createdAt).format("DD MMM YYYY · HH:mm")}`}
+                    />
+                  </List.Item>
+                )}
+              />
+            </Card>
           </Space>
         </Col>
       </Row>
+      <div id="profile-documents" style={{ marginTop: 16 }}>
+        <EntityDocuments entityType="Asset" entityId={asset.id} />
+      </div>
       {children}
     </div>
   );
@@ -1126,60 +1163,6 @@ function ObservationModal({
         </Form.Item>
       </Form>
     </Modal>
-  );
-}
-
-function ContextItem({
-  label,
-  value,
-  strong,
-  dot,
-}: {
-  label: string;
-  value: string;
-  strong?: boolean;
-  dot?: Asset["status"];
-}) {
-  return (
-    <div>
-      <span>{label}</span>
-      <b className={strong ? "strong" : ""}>
-        {dot && (
-          <i
-            style={{
-              background:
-                dot === "Risk" ? "#cf1322" : dot === "Maintenance" ? "#fa8c16" : "#52c41a",
-            }}
-          />
-        )}
-        {value}
-      </b>
-    </div>
-  );
-}
-
-function ProfileStat({
-  icon,
-  value,
-  label,
-  helper,
-  tone,
-}: {
-  icon: ReactNode;
-  value: string;
-  label: string;
-  helper: string;
-  tone?: "purple" | "red";
-}) {
-  return (
-    <div className="asset-profile-stat">
-      <span className={`asset-profile-stat-icon ${tone ?? ""}`}>{icon}</span>
-      <div>
-        <span>{label}</span>
-        <b className={tone}>{value}</b>
-        <small>{helper}</small>
-      </div>
-    </div>
   );
 }
 

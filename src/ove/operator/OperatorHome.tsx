@@ -5,6 +5,7 @@ import { demoNow } from "../../demo-config/clock";
 import { useStore } from "../store";
 import { seedAssets } from "../seed";
 import { activeDemo } from "../../demo-config/active";
+import { statusTag } from "../ui";
 
 const OPERATOR = activeDemo.context.primaryOperator;
 
@@ -15,6 +16,9 @@ export function OperatorHome({ onStart }: { onStart: (id: string) => void }) {
     .filter((s) => s.operator === OPERATOR)
     .slice()
     .sort((a, b) => `${a.date}${a.hour}`.localeCompare(`${b.date}${b.hour}`));
+  const recent = mine
+    .slice()
+    .sort((a, b) => `${b.date}${b.hour}`.localeCompare(`${a.date}${a.hour}`));
   const todayMine = mine.filter((schedule) => schedule.date === today);
   const next =
     mine.find(
@@ -98,16 +102,16 @@ export function OperatorHome({ onStart }: { onStart: (id: string) => void }) {
       <Card title="Actividad reciente" style={{ marginTop: 12 }}>
         <List
           size="small"
-          dataSource={mine.slice(0, 5)}
+          dataSource={recent.slice(0, 5)}
           renderItem={(s) => (
             <List.Item>
               <Space direction="vertical" size={0} style={{ width: "100%" }}>
                 <Space style={{ justifyContent: "space-between", width: "100%" }}>
                   <b>{protocols.find((p) => p.id === s.protocolId)?.name}</b>
-                  <Tag>{s.hour}</Tag>
+                  <Tag>{dayjs(`${s.date} ${s.hour}`).format("DD MMM · HH:mm")}</Tag>
                 </Space>
                 <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                  {s.status}
+                  {statusTag(s.status)}
                 </Typography.Text>
               </Space>
             </List.Item>
