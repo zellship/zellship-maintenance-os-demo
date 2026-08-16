@@ -25,9 +25,16 @@ const executionOnlyExclusions = new Set<DemoCapabilityId>([
   "executive-analytics",
 ]);
 
+const industrialMaintenanceExclusions = new Set<DemoCapabilityId>([
+  "service-request-intake",
+  "improvement-insights",
+  "executive-analytics",
+]);
+
 export const capabilityProfiles = {
   full: [...capabilityIds],
   "execution-only": capabilityIds.filter((id) => !executionOnlyExclusions.has(id)),
+  "industrial-maintenance": capabilityIds.filter((id) => !industrialMaintenanceExclusions.has(id)),
 } satisfies Record<string, DemoCapabilityId[]>;
 
 export type CapabilityProfileId = keyof typeof capabilityProfiles;

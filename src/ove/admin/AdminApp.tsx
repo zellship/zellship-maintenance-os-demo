@@ -236,7 +236,6 @@ export function AdminApp() {
           <Planning
             initialProtocolId={requestedProtocolId}
             initialServiceRequestId={requestedServiceRequestId}
-            onOpenOrder={(orderId) => navigate("orders", orderId)}
             onProtocolRequestConsumed={() => setRequestedProtocolId(null)}
             onServiceRequestConsumed={() => setRequestedServiceRequestId(null)}
           />

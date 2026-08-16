@@ -9,6 +9,30 @@ the ATM walkthrough uses a separate state key and fictional dataset.
 npm run demo:atm
 ```
 
+```bash
+npm run demo:wire
+```
+
+## Wire plant maintenance — eight-scene walkthrough
+
+All equipment conditions, work history, measurements, people names, tools and evidence are
+demonstration data. The scenario does not identify a real company or claim a real equipment fault.
+
+1. Enter as **Coordinación de mantenimiento** and open the neutral **Centro de control** for Planta
+   de Alambres.
+2. Open **Activos**, review the 26-equipment inventory by area, and select `TRF-03`.
+3. Connect the simulated noise-and-vibration report to `OT-ALM-2408` and its corrective protocol.
+4. Review eligibility, LOTO, vibration and thermal tools, and the assigned electromecánico.
+5. Change to **Operación técnica**, open `OT-ALM-2408`, and confirm the reserved resources.
+6. Capture the simulated before, during and after photos; complete readings, safety confirmation and
+   the operational test.
+7. Change to **Supervisión de mantenimiento**, review the evidence, and release or reopen the result.
+8. Return to coordination and open the consolidated maintenance result and report.
+
+Keep the compressor, transformer, furnace, crane and electrowelded-mesh activities visible as
+secondary proof of coverage. Do not present GPS, PLC/sensor integration, predictive AI, OEE,
+production data or spare-parts inventory as implemented capabilities.
+
 ## ATM field service — eight-scene walkthrough
 
 The presenter-ready timing, narration, safe short cut, truth boundaries, and release gate are in

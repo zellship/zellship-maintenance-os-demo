@@ -150,7 +150,7 @@ export function Resources() {
       createdAt: demoNow().toISOString(),
     };
     setNotifications([notification, ...notifications]);
-    message.success(`${candidate.workOrder} asignada y WhatsApp enviado`);
+    message.success(`${candidate.workOrder} asignada y template de WhatsApp simulado`);
   };
 
   const openSkills = () => {

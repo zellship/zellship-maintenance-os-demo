@@ -151,7 +151,11 @@ export function SendReportModal({
           <WhatsAppOutlined />
           <span>
             <strong>WhatsApp</strong>
-            <small>{contact.whatsapp ?? "Este contacto no tiene número de WhatsApp"}</small>
+            <small>
+              {contact.whatsapp
+                ? `${contact.whatsapp} · template simulado`
+                : "Este contacto no tiene número de WhatsApp"}
+            </small>
           </span>
         </label>
       </Checkbox.Group>
@@ -161,7 +165,7 @@ export function SendReportModal({
         showIcon
         icon={<FilePdfOutlined />}
         title={reportName}
-        description="Se adjuntará como PDF en formato carta. El envío y la entrega se simulan dentro de esta demo."
+        description="Correo representa un PDF adjunto. WhatsApp representa un template de utilidad con botón al reporte en Zellship. No se realiza ningún envío real."
       />
     </Modal>
   );

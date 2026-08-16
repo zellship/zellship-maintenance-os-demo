@@ -10,6 +10,7 @@ import {
   Drawer,
   Empty,
   Image,
+  Modal,
   Progress,
   Row,
   Space,
@@ -272,6 +273,51 @@ export function WorkOrders({ initialSelectedId = null }: { initialSelectedId?: s
   );
 }
 
+export function WorkOrderDetailModal({
+  scheduleId,
+  onClose,
+}: {
+  scheduleId: string | null;
+  onClose: () => void;
+}) {
+  const { schedules, protocols, executions, tools, inventory } = useStore();
+  const schedule = schedules.find((item) => item.id === scheduleId);
+  const protocol = protocols.find((item) => item.id === schedule?.protocolId);
+  const execution = executions.find((item) => item.scheduleId === schedule?.id);
+  const asset = seedAssets.find((item) => item.id === schedule?.assetId);
+  const flow = schedule ? findOrderFlow(schedule) : undefined;
+
+  return (
+    <Modal
+      width={1160}
+      title={schedule ? `${schedule.workOrder} · Detalle de la orden` : "Detalle de la orden"}
+      open={Boolean(scheduleId)}
+      onCancel={onClose}
+      footer={
+        <Button type="primary" onClick={onClose}>
+          Cerrar y volver a Programación
+        </Button>
+      }
+      styles={{ body: { maxHeight: "78vh", overflowY: "auto" } }}
+    >
+      {!schedule || !protocol ? (
+        <Empty description="No fue posible encontrar la orden programada" />
+      ) : (
+        <WorkOrderDetailPage
+          schedule={schedule}
+          protocol={protocol}
+          execution={execution}
+          asset={asset}
+          flow={flow}
+          tools={tools}
+          inventory={inventory}
+          embedded
+        />
+      )}
+    </Modal>
+  );
+}
+
 function WorkOrderDetailPage({
   schedule,
   protocol,
@@ -282,6 +328,7 @@ function WorkOrderDetailPage({
   inventory,
   onBack,
   onOpenMobile,
+  embedded = false,
 }: {
   schedule: Schedule;
   protocol: Protocol;
@@ -290,8 +337,9 @@ function WorkOrderDetailPage({
   flow?: OperationalFlow;
   tools: ReturnType<typeof useStore>["tools"];
   inventory: ReturnType<typeof useStore>["inventory"];
-  onBack: () => void;
-  onOpenMobile: () => void;
+  onBack?: () => void;
+  onOpenMobile?: () => void;
+  embedded?: boolean;
 }) {
   const step = getOrderStep(schedule, execution);
   const progress = [0, 20, 55, 85, 100][step] ?? 0;
@@ -310,14 +358,16 @@ function WorkOrderDetailPage({
 
   return (
     <div className="work-order-detail-page">
-      <Button
-        type="link"
-        className="work-order-detail-back"
-        icon={<ArrowLeftOutlined />}
-        onClick={onBack}
-      >
-        Volver a órdenes de trabajo
-      </Button>
+      {!embedded && onBack && (
+        <Button
+          type="link"
+          className="work-order-detail-back"
+          icon={<ArrowLeftOutlined />}
+          onClick={onBack}
+        >
+          Volver a órdenes de trabajo
+        </Button>
+      )}
 
       <Card className="work-order-detail-hero">
         <div className="work-order-detail-heading">
@@ -344,7 +394,7 @@ function WorkOrderDetailPage({
               {protocol.name} · avance, captura, recursos y trazabilidad en una sola vista
             </Typography.Text>
           </div>
-          {schedule.status === "Pending" && (
+          {schedule.status === "Pending" && onOpenMobile && (
             <Button type="primary" icon={<MobileOutlined />} onClick={onOpenMobile}>
               Abrir en operación móvil
             </Button>

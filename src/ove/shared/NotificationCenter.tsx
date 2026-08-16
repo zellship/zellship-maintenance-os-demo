@@ -47,6 +47,7 @@ export function NotificationCenter({ role, showAll = false }: { role: Role; show
   const [channel, setChannel] = useState<NotificationChannel | "all">("all");
   const [form] = Form.useForm();
   const composeRole = Form.useWatch("recipientRole", form) as Role | undefined;
+  const composeChannel = Form.useWatch("channel", form) as NotificationChannel | undefined;
 
   const visible = useMemo(
     () =>
@@ -74,14 +75,20 @@ export function NotificationCenter({ role, showAll = false }: { role: Role; show
       recipientRole: values.recipientRole,
       recipient: values.recipient,
       source: "OnDemand",
-      event: "Mensaje manual",
+      event: values.channel === "WhatsApp" ? "Template de utilidad" : "Mensaje manual",
       message: values.message,
+      templateName: values.channel === "WhatsApp" ? "maintenance_manual_update_v1" : undefined,
+      actionLabel: values.channel === "WhatsApp" ? "Abrir en Zellship" : undefined,
       status: "Sent",
       createdAt: demoNow().toISOString(),
     };
     setNotifications([notification, ...notifications]);
     form.resetFields(["message"]);
-    message.success(`${values.channel}: notificación enviada a ${values.recipient}`);
+    message.success(
+      values.channel === "WhatsApp"
+        ? `Vista previa del template preparada para ${values.recipient}`
+        : `${values.channel}: notificación simulada para ${values.recipient}`,
+    );
   };
 
   const automatic = () => {
@@ -95,17 +102,19 @@ export function NotificationCenter({ role, showAll = false }: { role: Role; show
       source: "Automatic",
       event: "Asignación confirmada",
       message: "Nueva orden OT-2407-021 asignada: inspección de seguimiento AC-01 a las 14:30.",
+      templateName: "work_order_assignment_v1",
+      actionLabel: "Abrir en Zellship",
       status: "Sent",
       createdAt: demoNow().toISOString(),
     };
     setNotifications([event, ...notifications]);
-    message.success("Trigger ejecutado: WhatsApp transaccional enviado al operador");
+    message.success("Trigger ejecutado: vista previa del template de WhatsApp generada");
   };
 
   const markVisibleRead = () => {
     const ids = new Set(visible.map((n) => n.id));
     setNotifications(notifications.map((n) => (ids.has(n.id) ? { ...n, status: "Read" } : n)));
-    message.success("Notificaciones recibidas y marcadas como leídas");
+    message.success("Eventos marcados como revisados");
   };
 
   const unread = visible.filter((n) => n.status === "Sent").length;
@@ -127,7 +136,7 @@ export function NotificationCenter({ role, showAll = false }: { role: Role; show
             Centro de notificaciones
           </Typography.Title>
           <Typography.Text type="secondary">
-            Mensajería transaccional, alertas automáticas y comunicación on demand por rol.
+            Eventos del sistema y vistas previas de comunicación por rol y canal.
           </Typography.Text>
         </div>
         <Button icon={<ThunderboltOutlined />} onClick={automatic}>
@@ -168,9 +177,8 @@ export function NotificationCenter({ role, showAll = false }: { role: Role; show
         <Col xs={12} md={6}>
           <Card>
             <Statistic
-              title="Entrega emulada"
-              value={100}
-              suffix="%"
+              title="Eventos simulados"
+              value={visible.length}
               prefix={<CheckCircleOutlined />}
               valueStyle={{ color: "#52c41a" }}
             />
@@ -206,11 +214,34 @@ export function NotificationCenter({ role, showAll = false }: { role: Role; show
               renderItem={(notification) => (
                 <List.Item
                   className={notification.status === "Sent" ? "notification-unread" : undefined}
-                  actions={[
-                    <Tag key="delivery" color={notification.status === "Read" ? "green" : "blue"}>
-                      {notification.status === "Read" ? "Recibida" : "Entregada"}
-                    </Tag>,
-                  ]}
+                  actions={
+                    notification.channel === "WhatsApp"
+                      ? [
+                          <Tag key="delivery" color="green">
+                            {notification.status === "Read" ? "Revisado" : "Template simulado"}
+                          </Tag>,
+                          <Button
+                            key="action"
+                            type="link"
+                            size="small"
+                            onClick={() =>
+                              message.info(
+                                "El botón abriría el registro correspondiente en Zellship.",
+                              )
+                            }
+                          >
+                            {notification.actionLabel ?? "Abrir en Zellship"}
+                          </Button>,
+                        ]
+                      : [
+                          <Tag
+                            key="delivery"
+                            color={notification.status === "Read" ? "green" : "blue"}
+                          >
+                            {notification.status === "Read" ? "Revisada" : "Generada"}
+                          </Tag>,
+                        ]
+                  }
                 >
                   <List.Item.Meta
                     avatar={
@@ -225,7 +256,7 @@ export function NotificationCenter({ role, showAll = false }: { role: Role; show
                         <Tag>{notification.source ?? "Automatic"}</Tag>
                       </Space>
                     }
-                    description={`${notification.channel} · Para ${notification.recipient ?? roleNames[notification.recipientRole as Role] ?? "Todos"} · ${notification.event ?? notification.type} · ${dayjs(notification.createdAt).format("HH:mm:ss")}`}
+                    description={`${notification.channel} · ${notification.channel === "WhatsApp" ? `Template de utilidad: ${notification.templateName ?? templateNameFor(notification.type)} · ` : ""}Para ${notification.recipient ?? roleNames[notification.recipientRole as Role] ?? "Todos"} · ${notification.event ?? notification.type} · ${dayjs(notification.createdAt).format("HH:mm:ss")}`}
                   />
                 </List.Item>
               )}
@@ -247,7 +278,7 @@ export function NotificationCenter({ role, showAll = false }: { role: Role; show
                 type="info"
                 showIcon
                 message="Simulación comercial"
-                description="El mensaje aparecerá inmediatamente en la bandeja del rol seleccionado."
+                description="Todo se mantiene dentro de la demo. WhatsApp se representa mediante templates de utilidad; no se realiza un envío real."
                 style={{ marginBottom: 14 }}
               />
               <Form
@@ -297,14 +328,31 @@ export function NotificationCenter({ role, showAll = false }: { role: Role; show
                     }))}
                   />
                 </Form.Item>
-                <Form.Item name="message" label="Mensaje" rules={[{ required: true }]}>
+                {composeChannel === "WhatsApp" && (
+                  <Alert
+                    type="success"
+                    showIcon
+                    message="Template simulado · maintenance_manual_update_v1"
+                    description="El contenido se utiliza como variable operativa del template. En una integración real, Meta debe aprobar el template y su botón de acceso."
+                    style={{ marginBottom: 14 }}
+                  />
+                )}
+                <Form.Item
+                  name="message"
+                  label={composeChannel === "WhatsApp" ? "Variable operativa" : "Mensaje"}
+                  rules={[{ required: true }]}
+                >
                   <Input.TextArea
                     rows={4}
-                    placeholder="Ej. Confirma recepción de la nueva orden..."
+                    placeholder={
+                      composeChannel === "WhatsApp"
+                        ? "Ej. OT-2407-021 · inspección AC-01 · 14:30"
+                        : "Ej. Confirma recepción de la nueva orden..."
+                    }
                   />
                 </Form.Item>
                 <Button htmlType="submit" type="primary" block icon={<SendOutlined />}>
-                  Enviar notificación
+                  {composeChannel === "WhatsApp" ? "Generar vista previa" : "Simular notificación"}
                 </Button>
               </Form>
             </Card>
@@ -313,6 +361,14 @@ export function NotificationCenter({ role, showAll = false }: { role: Role; show
       </Row>
     </div>
   );
+}
+
+function templateNameFor(type: Notification["type"]) {
+  if (type === "Assignment") return "work_order_assignment_v1";
+  if (type === "ValidationRequired") return "maintenance_validation_required_v1";
+  if (type === "Completed") return "maintenance_result_ready_v1";
+  if (type === "Incident" || type === "Escalation") return "maintenance_attention_v1";
+  return "maintenance_operational_update_v1";
 }
 
 function channelColor(channel: NotificationChannel) {

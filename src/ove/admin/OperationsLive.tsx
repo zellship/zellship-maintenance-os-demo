@@ -773,7 +773,13 @@ export function OperationsLive({
         extra={
           selectedEvent && (
             <Tag color={selectedEvent.status === "Read" ? "green" : "blue"}>
-              {selectedEvent.status === "Read" ? "Recibido" : "Entregado"}
+              {selectedEvent.channel === "WhatsApp"
+                ? selectedEvent.status === "Read"
+                  ? "Template revisado"
+                  : "Template simulado"
+                : selectedEvent.status === "Read"
+                  ? "Revisado"
+                  : "Generado"}
             </Tag>
           )
         }

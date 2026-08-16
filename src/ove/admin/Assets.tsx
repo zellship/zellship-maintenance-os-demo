@@ -79,7 +79,7 @@ export function Assets() {
     notifications,
     setNotifications,
   } = useStore();
-  const [selectedId, setSelectedId] = useState("AC-01");
+  const [selectedId, setSelectedId] = useState(seedAssets[0]?.id ?? "");
   const [view, setView] = useState<"list" | "profile">("list");
   const [observationOpen, setObservationOpen] = useState(false);
   const [maintenanceOpen, setMaintenanceOpen] = useState(false);
