@@ -1,6 +1,8 @@
 import { capabilityProfiles } from "../../capabilities";
 import { demoScenarioDescriptorSchema } from "../../schema";
 import type { DemoScenario, DemoScenarioData } from "../../types";
+import { demoNow } from "../../clock";
+import { buildScenarioDocuments } from "../../scenarioDocuments";
 import {
   branches,
   categories,
@@ -35,6 +37,7 @@ const data: DemoScenarioData = {
   notifications: seedNotifications,
   operationalFlows: seedOperationalFlows,
   serviceRequests: [],
+  documents: buildScenarioDocuments(seedAssets, seedPeople, demoNow()),
   taxonomy: {
     plants,
     branches,
@@ -46,7 +49,7 @@ const data: DemoScenarioData = {
 
 const descriptor = demoScenarioDescriptorSchema.parse({
   id: "industrial-base",
-  version: "1.0.0",
+  version: "1.2.0",
   sourceBaseline: "f12b7c85ee7ba20ca9df4168c66f4a9765abcccb",
   label: "Industrial maintenance base",
   description:
@@ -169,7 +172,7 @@ const descriptor = demoScenarioDescriptorSchema.parse({
     demoPin: "1234",
   },
   persistence: {
-    stateKey: "zellship-maintenance-os-v4",
+    stateKey: "zellship-maintenance-os-v5",
   },
   distribution: {
     classification: "public-demo",

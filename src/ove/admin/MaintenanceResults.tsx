@@ -8,7 +8,7 @@ import {
   SafetyCertificateOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
-import { demoNow } from "../../demo-config/clock";
+import { advanceDemoClock, demoNow } from "../../demo-config/clock";
 import { useStore } from "../store";
 import { MaintenanceResult } from "../shared/MaintenanceResult";
 import type { ReportDeliverySelection } from "../shared/SendReportModal";
@@ -61,7 +61,7 @@ export function MaintenanceResults() {
           event: "Resultado compartido",
           message: `${schedule?.workOrder ?? "Orden"}: resultado ${execution.score ?? 91}% y activo liberado.`,
           status: "Sent",
-          createdAt: demoNow().toISOString(),
+          createdAt: advanceDemoClock(1).toISOString(),
         }) satisfies Notification,
     );
     setNotifications([...updates, ...notifications]);

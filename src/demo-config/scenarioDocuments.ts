@@ -1,0 +1,90 @@
+import type { Dayjs } from "dayjs";
+import type { Asset, EntityDocument, Person } from "../ove/types";
+
+export function buildScenarioDocuments(assets: Asset[], people: Person[], now: Dayjs) {
+  const assetDocuments = assets.flatMap<EntityDocument>((asset, index) => [
+    {
+      id: `doc-${asset.id}-manual`,
+      entityType: "Asset",
+      entityId: asset.id,
+      name: `Manual de operación · ${asset.name}`,
+      category: "Manual",
+      version: "2.1",
+      mimeType: "application/pdf",
+      size: 1_240_000 + index * 1_200,
+      issuedAt: now.subtract(18, "month").format("YYYY-MM-DD"),
+      uploadedAt: now.subtract(10, "day").toISOString(),
+      uploadedBy: "Coordinación de mantenimiento",
+      source: "Seed",
+      summary: "Documento demostrativo con operación, seguridad y recomendaciones del fabricante.",
+    },
+    {
+      id: `doc-${asset.id}-plan`,
+      entityType: "Asset",
+      entityId: asset.id,
+      name: `Plan preventivo · ${asset.name}`,
+      category: "Plan de mantenimiento",
+      version: "2026.1",
+      mimeType: "application/pdf",
+      size: 684_000 + index * 800,
+      issuedAt: now.startOf("year").format("YYYY-MM-DD"),
+      expiresAt: now.endOf("year").format("YYYY-MM-DD"),
+      uploadedAt: now.subtract(22, "day").toISOString(),
+      uploadedBy: "Planeación de mantenimiento",
+      source: "Seed",
+      summary: "Frecuencias, protocolos aplicables y criterios demostrativos de cumplimiento.",
+    },
+    {
+      id: `doc-${asset.id}-warranty`,
+      entityType: "Asset",
+      entityId: asset.id,
+      name: `Garantía y cobertura · ${asset.name}`,
+      category: "Garantía",
+      version: "1.0",
+      mimeType: "application/pdf",
+      size: 426_000 + index * 500,
+      issuedAt: now.subtract(9, "month").format("YYYY-MM-DD"),
+      expiresAt: now.add(index % 3 === 0 ? 2 : 14, "month").format("YYYY-MM-DD"),
+      uploadedAt: now.subtract(30, "day").toISOString(),
+      uploadedBy: "Administración de activos",
+      source: "Seed",
+      summary: "Cobertura demostrativa, vigencia y condiciones de atención del activo.",
+    },
+  ]);
+
+  const peopleDocuments = people.flatMap<EntityDocument>((person, index) => [
+    {
+      id: `doc-${person.id}-safety`,
+      entityType: "Person",
+      entityId: person.id,
+      name: `Constancia de seguridad · ${person.name}`,
+      category: "Seguridad",
+      version: "2026",
+      mimeType: "application/pdf",
+      size: 318_000 + index * 300,
+      issuedAt: now.subtract(4, "month").format("YYYY-MM-DD"),
+      expiresAt: now.add(8, "month").format("YYYY-MM-DD"),
+      uploadedAt: now.subtract(16, "day").toISOString(),
+      uploadedBy: "Seguridad industrial",
+      source: "Seed",
+      summary: "Constancia ficticia para demostrar vigencia y consulta documental.",
+    },
+    {
+      id: `doc-${person.id}-skills`,
+      entityType: "Person",
+      entityId: person.id,
+      name: `Matriz de competencias · ${person.name}`,
+      category: "Competencias",
+      version: "3.0",
+      mimeType: "application/pdf",
+      size: 244_000 + index * 200,
+      issuedAt: now.subtract(2, "month").format("YYYY-MM-DD"),
+      uploadedAt: now.subtract(9, "day").toISOString(),
+      uploadedBy: "Desarrollo técnico",
+      source: "Seed",
+      summary: "Skills habilitantes y niveles simulados para elegibilidad operativa.",
+    },
+  ]);
+
+  return [...assetDocuments, ...peopleDocuments];
+}

@@ -1,6 +1,7 @@
 import type {
   Asset,
   Execution,
+  EntityDocument,
   Incident,
   InventoryItem,
   MaintenanceTool,
@@ -41,6 +42,7 @@ export type DemoScenarioData = {
   notifications: Notification[];
   operationalFlows: OperationalFlow[];
   serviceRequests: ServiceRequest[];
+  documents: EntityDocument[];
   taxonomy: {
     plants: string[];
     branches: string[];

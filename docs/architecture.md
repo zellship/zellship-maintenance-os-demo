@@ -32,12 +32,21 @@ from the active scenario. Navigation uses capability IDs rather than client-spec
 ## State and data flow
 
 `StoreProvider` owns protocols, schedules, executions, incidents, notifications, people, tools,
-inventory, and reservations. State is written to browser `localStorage` under the active scenario's
-`persistence.stateKey`. The industrial baseline keeps `zellship-maintenance-os-v4` for backward
-compatibility.
+inventory, reservations, and simulated entity-document metadata. State is written to browser
+`localStorage` under the active scenario's `persistence.stateKey`. The shared profile and document
+increment intentionally moves every scenario to a new key because the persisted shape changed.
 
 There is no remote persistence or multi-user synchronization. Resetting restores the seed data.
 Changing the storage schema requires either a new key or an explicit migration.
+
+The runtime clock has two modes. Public builds anchor seeded data to the current calendar date and
+advance a logical session clock as actions occur. Setting `VITE_DEMO_DATE` freezes the starting
+instant for deterministic QA, screenshots, and scripted walkthroughs. Temporal contract tests
+validate execution, evidence, approval, schedule, reservation, and service-request ordering for
+every registered scenario.
+When a public session opens on a different calendar date than its persisted browser state, the
+store restores the current-day seed automatically. This prevents yesterday's mutated demo state
+from being presented as today's activity.
 
 Some presentation profiles remain scenario-specific static modules. Move them into the store before
 adding editing or remote persistence behavior for those entities.

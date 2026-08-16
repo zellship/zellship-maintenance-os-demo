@@ -11,6 +11,7 @@ import type {
   InventoryItem,
   ResourceReservation,
   ServiceRequest,
+  EntityDocument,
 } from "./types";
 import {
   seedProtocols,
@@ -25,8 +26,10 @@ import {
   seedServiceRequests,
 } from "./seed";
 import { activeDemo } from "../demo-config/active";
+import { demoNow, resetDemoClock } from "../demo-config/clock";
 
 interface State {
+  scenarioDate: string;
   role: Role;
   protocols: Protocol[];
   schedules: Schedule[];
@@ -38,6 +41,7 @@ interface State {
   inventory: InventoryItem[];
   reservations: ResourceReservation[];
   serviceRequests: ServiceRequest[];
+  documents: EntityDocument[];
 }
 
 interface Store extends State {
@@ -52,6 +56,7 @@ interface Store extends State {
   setInventory: (i: InventoryItem[]) => void;
   setReservations: (r: ResourceReservation[]) => void;
   setServiceRequests: (requests: ServiceRequest[]) => void;
+  setDocuments: (documents: EntityDocument[]) => void;
   reset: () => void;
 }
 
@@ -59,6 +64,7 @@ const StoreCtx = createContext<Store | null>(null);
 const KEY = activeDemo.persistence.stateKey;
 
 const initial: State = {
+  scenarioDate: demoNow().format("YYYY-MM-DD"),
   role: activeDemo.context.defaultRole,
   protocols: seedProtocols,
   schedules: seedSchedules,
@@ -70,6 +76,7 @@ const initial: State = {
   inventory: seedInventory,
   reservations: seedReservations,
   serviceRequests: seedServiceRequests,
+  documents: activeDemo.data.documents,
 };
 
 export function StoreProvider({ children }: { children: ReactNode }) {
@@ -77,7 +84,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (typeof window === "undefined") return initial;
     try {
       const raw = localStorage.getItem(KEY);
-      if (raw) return { ...initial, ...JSON.parse(raw) };
+      if (raw) {
+        const persisted = JSON.parse(raw) as Partial<State>;
+        if (persisted.scenarioDate === initial.scenarioDate) return { ...initial, ...persisted };
+      }
     } catch {
       // Ignore invalid or unavailable device-local demo state.
     }
@@ -106,7 +116,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setInventory: (inventory) => setState((s) => ({ ...s, inventory })),
       setReservations: (reservations) => setState((s) => ({ ...s, reservations })),
       setServiceRequests: (serviceRequests) => setState((s) => ({ ...s, serviceRequests })),
-      reset: () => setState(initial),
+      setDocuments: (documents) => setState((s) => ({ ...s, documents })),
+      reset: () => {
+        resetDemoClock();
+        setState(initial);
+      },
     }),
     [state],
   );

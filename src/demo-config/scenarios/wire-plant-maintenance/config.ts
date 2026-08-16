@@ -1,6 +1,8 @@
 import { capabilityProfiles } from "../../capabilities";
 import { demoScenarioDescriptorSchema } from "../../schema";
 import type { DemoScenario, DemoScenarioData } from "../../types";
+import { demoNow } from "../../clock";
+import { buildScenarioDocuments } from "../../scenarioDocuments";
 import {
   branches,
   categories,
@@ -36,12 +38,13 @@ const data: DemoScenarioData = {
   notifications: seedNotifications,
   operationalFlows: seedOperationalFlows,
   serviceRequests: seedServiceRequests,
+  documents: buildScenarioDocuments(seedAssets, seedPeople, demoNow()),
   taxonomy: { plants, branches, operators, supervisors, categories },
 };
 
 const descriptor = demoScenarioDescriptorSchema.parse({
   id: "wire-plant-maintenance",
-  version: "0.1.0",
+  version: "0.3.0",
   sourceBaseline: "ae475d5cac324f59ee654c2b2db1825bbdc9de60",
   label: "Wire plant maintenance",
   description:
@@ -142,7 +145,7 @@ const descriptor = demoScenarioDescriptorSchema.parse({
     },
     demoPin: "1234",
   },
-  persistence: { stateKey: "zellship-maintenance-os-wire-plant-v1" },
+  persistence: { stateKey: "zellship-maintenance-os-wire-plant-v2" },
   distribution: {
     classification: "public-demo",
     containsClientIdentifiableData: false,

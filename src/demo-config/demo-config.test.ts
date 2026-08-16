@@ -12,12 +12,55 @@ describe("demo scenario registry", () => {
     const scenario = resolveDemoScenario("industrial-base");
 
     expect(scenario.id).toBe("industrial-base");
-    expect(scenario.version).toBe("1.0.0");
+    expect(scenario.version).toBe("1.2.0");
     expect(scenario.sourceBaseline).toBe("f12b7c85ee7ba20ca9df4168c66f4a9765abcccb");
-    expect(scenario.persistence.stateKey).toBe("zellship-maintenance-os-v4");
+    expect(scenario.persistence.stateKey).toBe("zellship-maintenance-os-v5");
     expect(scenario.data.assets).toHaveLength(4);
     expect(scenario.data.protocols).toHaveLength(4);
     expect(scenario.data.schedules).toHaveLength(7);
+    expect(scenario.data.documents.length).toBeGreaterThan(0);
+  });
+
+  it.each([industrialBaseScenario, atmFieldServiceScenario, wirePlantMaintenanceScenario])(
+    "$id separates availability from operational condition",
+    (scenario) => {
+      for (const asset of scenario.data.assets) {
+        expect(asset.availabilityStatus, asset.id).toBeDefined();
+        expect(asset.operationalCondition, asset.id).toBeDefined();
+        if (
+          asset.operationalCondition === "Quarantine" ||
+          asset.operationalCondition === "OutOfService"
+        ) {
+          expect(asset.availabilityStatus, asset.id).toBe("Unavailable");
+        }
+        if (asset.estimatedReleaseAt) {
+          expect(new Date(asset.estimatedReleaseAt).getTime(), asset.id).toBeGreaterThan(
+            resolveDemoNow().valueOf(),
+          );
+        }
+      }
+
+      for (const asset of scenario.data.assets.filter(
+        (candidate) => candidate.availabilityStatus === "Assigned",
+      )) {
+        expect(
+          scenario.data.schedules.some(
+            (schedule) =>
+              schedule.assetId === asset.id &&
+              (schedule.status === "Pending" || schedule.status === "InProgress"),
+          ),
+          asset.id,
+        ).toBe(true);
+      }
+    },
+  );
+
+  it("demonstrates quarantine as a distinct wire-plant condition", () => {
+    expect(
+      wirePlantMaintenanceScenario.data.assets.some(
+        (asset) => asset.operationalCondition === "Quarantine",
+      ),
+    ).toBe(true);
   });
 
   it("fails fast when a build requests an unknown scenario", () => {
@@ -41,6 +84,7 @@ describe("demo scenario registry", () => {
     expect(scenario.capabilities).not.toContain("improvement-insights");
     expect(scenario.capabilities).not.toContain("executive-analytics");
     expect(scenario.persistence.stateKey).not.toBe(industrialBaseScenario.persistence.stateKey);
+    expect(scenario.persistence.stateKey).toBe("zellship-maintenance-os-atm-v3");
     expect(scenario.distribution).toEqual({
       classification: "public-demo",
       containsClientIdentifiableData: false,
@@ -97,6 +141,7 @@ describe("demo scenario registry", () => {
     expect(scenario.data.assets).toHaveLength(26);
     expect(scenario.data.people).toHaveLength(11);
     expect(scenario.data.serviceRequests).toHaveLength(0);
+    expect(scenario.persistence.stateKey).toBe("zellship-maintenance-os-wire-plant-v2");
     expect(scenario.distribution).toEqual({
       classification: "public-demo",
       containsClientIdentifiableData: false,

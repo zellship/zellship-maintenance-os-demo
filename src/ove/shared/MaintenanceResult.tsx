@@ -61,6 +61,13 @@ export function MaintenanceResult({
   const startedAt = dayjs(execution.startAt);
   const completedAt = dayjs(execution.endAt ?? execution.startAt);
   const eventTime = (moment: dayjs.Dayjs) => moment.format("HH:mm");
+  const chronologicalEvidence = execution.evidences
+    .slice()
+    .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+  const firstEvidenceAt = dayjs(chronologicalEvidence[0]?.timestamp ?? execution.startAt);
+  const lastEvidenceAt = dayjs(
+    chronologicalEvidence[chronologicalEvidence.length - 1]?.timestamp ?? execution.endAt,
+  );
   const showImprovement = hasCapability("improvement-insights");
   const durationMinutes = Math.max(0, completedAt.diff(startedAt, "minute"));
   const isFieldService = Boolean(schedule?.classification);
@@ -326,7 +333,10 @@ export function MaintenanceResult({
                   color: "green",
                   children: (
                     <>
-                      <b>{eventTime(startedAt.add(3, "minute"))} · Recursos confirmados</b>
+                      <b>
+                        {eventTime(dayjs(execution.resourceCheckInAt ?? startedAt))} · Recursos
+                        confirmados
+                      </b>
                       <br />
                       <Typography.Text type="secondary">
                         Skills, herramientas e inventario confirmados
@@ -338,7 +348,7 @@ export function MaintenanceResult({
                   color: "green",
                   children: (
                     <>
-                      <b>{eventTime(completedAt.subtract(20, "minute"))} · Evidencia capturada</b>
+                      <b>{eventTime(firstEvidenceAt)} · Evidencia capturada</b>
                       <br />
                       <Typography.Text type="secondary">
                         Toma móvil · ángulo oblicuo · imagen original
@@ -350,7 +360,7 @@ export function MaintenanceResult({
                   color: "purple",
                   children: (
                     <>
-                      <b>{eventTime(completedAt.subtract(19, "minute"))} · Análisis automático</b>
+                      <b>{eventTime(firstEvidenceAt.add(1, "minute"))} · Análisis automático</b>
                       <br />
                       <Typography.Text type="secondary">
                         Validación visual simulada · {aiScore}%
@@ -362,7 +372,7 @@ export function MaintenanceResult({
                   color: "green",
                   children: (
                     <>
-                      <b>{eventTime(completedAt.subtract(2, "minute"))} · Formulario y firma</b>
+                      <b>{eventTime(lastEvidenceAt)} · Formulario y firma</b>
                       <br />
                       <Typography.Text type="secondary">5 inputs · firma vinculada</Typography.Text>
                     </>

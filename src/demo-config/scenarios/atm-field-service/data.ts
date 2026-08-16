@@ -64,6 +64,9 @@ export const seedAssets: Asset[] = [
     area: "Comercio · Acceso principal",
     criticality: "High",
     status: "Maintenance",
+    availabilityStatus: "Assigned",
+    operationalCondition: "Maintenance",
+    estimatedReleaseAt: demoNow().hour(10).minute(40).toISOString(),
     availability: 96.4,
     health: 82,
     runtimeHours: 18420,
@@ -77,6 +80,8 @@ export const seedAssets: Asset[] = [
     area: "Sucursal bancaria · Vestíbulo",
     criticality: "Critical",
     status: "Available",
+    availabilityStatus: "Available",
+    operationalCondition: "Operating",
     availability: 99.1,
     health: 94,
     runtimeHours: 23110,
@@ -90,6 +95,8 @@ export const seedAssets: Asset[] = [
     area: "Torre residencial · Lobby",
     criticality: "Medium",
     status: "Risk",
+    availabilityStatus: "Unavailable",
+    operationalCondition: "Review",
     availability: 92.8,
     health: 71,
     runtimeHours: 12780,
@@ -103,6 +110,8 @@ export const seedAssets: Asset[] = [
     area: "Mall · Pasillo central",
     criticality: "High",
     status: "Available",
+    availabilityStatus: "Available",
+    operationalCondition: "Operating",
     availability: 97.6,
     health: 89,
     runtimeHours: 15390,
@@ -408,7 +417,7 @@ export const seedServiceRequests: ServiceRequest[] = [
         label: "Cita previa confirmada",
         required: true,
         completed: true,
-        detail: "14 ago · 10:00",
+        detail: `${demoNow().format("DD/MM")} · 10:00`,
       },
       {
         id: "identification",
@@ -729,9 +738,9 @@ export const seedReservations: ResourceReservation[] = [
   },
 ];
 
-const evidence = (executionId: string) => {
+const evidence = (executionId: string, capturedAt: string) => {
   const gps = { lat: 25.6866, lng: -100.3161 };
-  const timestamp = demoNow().toISOString();
+  const timestamp = capturedAt;
   return [
     {
       id: `${executionId}-gps`,
@@ -781,10 +790,10 @@ export const seedExecutions: Execution[] = [
     scheduleId: "s-atm-closed",
     protocolId: "p-atm-corrective-mall",
     startAt: demoNow().hour(8).minute(2).toISOString(),
-    endAt: demoNow().hour(9).minute(50).toISOString(),
+    endAt: demoNow().hour(8).minute(55).toISOString(),
     operator: "Luis Campos",
     status: "Validated",
-    evidences: evidence("e-atm-closed"),
+    evidences: evidence("e-atm-closed", demoNow().hour(8).minute(40).toISOString()),
     formAnswers: {
       diagnosis: "Desgaste exterior y holgura menor en acceso.",
       operation: "Operación correcta",
@@ -798,7 +807,7 @@ export const seedExecutions: Execution[] = [
       supervisor: "Sofía Vega",
       decision: "Approved",
       comments: "Evidencia y cierre completos.",
-      at: demoNow().toISOString(),
+      at: demoNow().hour(9).minute(5).toISOString(),
     },
     score: 96,
     revision: 2,
@@ -811,7 +820,7 @@ export const seedExecutions: Execution[] = [
     endAt: demoNow().hour(8).minute(48).toISOString(),
     operator: "Andrea Morales",
     status: "PendingValidation",
-    evidences: evidence("e-atm-review"),
+    evidences: evidence("e-atm-review", demoNow().hour(8).minute(20).toISOString()),
     formAnswers: {
       diagnosis: "Ajuste físico y limpieza del frente.",
       operation: "Operación con observaciones",
@@ -834,7 +843,10 @@ export const seedIncidents: Incident[] = [
     type: "Escalated",
     status: "Review",
     description: "La evidencia final requiere revisión de encuadre antes del cierre.",
-    createdAt: demoNow().toISOString(),
+    createdAt: demoNow().hour(9).minute(0).toISOString(),
+    assetId: "ATM-063",
+    priority: "High",
+    owner: "Andrea Morales",
   },
 ];
 

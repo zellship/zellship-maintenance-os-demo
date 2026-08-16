@@ -212,6 +212,8 @@ export interface Schedule {
   serviceRequestId?: string;
   classification?: ServiceClassification;
   accessRequirements?: AccessRequirement[];
+  priority?: Protocol["priority"];
+  createdAt?: string;
 }
 
 export interface EvidenceRecord {
@@ -268,6 +270,9 @@ export interface Asset {
   area: string;
   criticality: "Low" | "Medium" | "High" | "Critical";
   status: "Available" | "Maintenance" | "Risk";
+  availabilityStatus?: "Available" | "Assigned" | "Unavailable";
+  operationalCondition?: "Operating" | "Maintenance" | "Review" | "Quarantine" | "OutOfService";
+  estimatedReleaseAt?: string;
   availability: number;
   health: number;
   runtimeHours: number;
@@ -283,6 +288,50 @@ export interface Incident {
   status: IncidentStatus;
   description: string;
   createdAt: string;
+  assetId?: string;
+  priority?: Protocol["priority"];
+  owner?: string;
+  resolutionSummary?: string;
+  resolvedAt?: string;
+  closedAt?: string;
+  updates?: IncidentUpdate[];
+  attachments?: IncidentAttachment[];
+}
+
+export interface IncidentUpdate {
+  id: string;
+  at: string;
+  actor: string;
+  type: "Created" | "Comment" | "StatusChanged" | "Attachment" | "WorkOrderLinked";
+  text: string;
+}
+
+export interface IncidentAttachment {
+  id: string;
+  name: string;
+  mimeType: string;
+  size: number;
+  uploadedAt: string;
+  uploadedBy: string;
+}
+
+export type DocumentEntityType = "Asset" | "Person" | "Tool";
+
+export interface EntityDocument {
+  id: string;
+  entityType: DocumentEntityType;
+  entityId: string;
+  name: string;
+  category: string;
+  version: string;
+  mimeType: string;
+  size: number;
+  issuedAt: string;
+  expiresAt?: string;
+  uploadedAt: string;
+  uploadedBy: string;
+  source: "Seed" | "SessionUpload";
+  summary: string;
 }
 
 export interface Notification {
