@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import {
   Alert,
   Badge,
@@ -10,6 +10,7 @@ import {
   InputNumber,
   List,
   Progress,
+  Rate,
   Segmented,
   Space,
   Steps,
@@ -21,9 +22,8 @@ import {
   ArrowLeftOutlined,
   BellOutlined,
   CameraOutlined,
-  CheckCircleFilled,
   CustomerServiceOutlined,
-  EditOutlined,
+  DeleteOutlined,
   InboxOutlined,
   ShopOutlined,
   UnorderedListOutlined,
@@ -38,6 +38,8 @@ import { StoreSupportRequestModal } from "./StoreSupportRequestModal";
 
 const STORE = "Boutique Norte";
 const OPERATOR = "Valeria Santos";
+const RECEIPT_PHOTO = `${import.meta.env.BASE_URL}retail-merchandise-receipt-v1.png`;
+const CLEANING_PHOTO = `${import.meta.env.BASE_URL}retail-cleaning-evidence-v1.png`;
 
 type MobileRoute = "home" | "assignment";
 type MobileTab = "program" | "support";
@@ -50,6 +52,8 @@ export function RetailMobileStoreApp() {
     protocols,
     notifications,
     setNotifications,
+    inventory,
+    setInventory,
   } = useStore();
   const [route, setRoute] = useState<MobileRoute>("home");
   const [tab, setTab] = useState<MobileTab>("program");
@@ -235,6 +239,30 @@ export function RetailMobileStoreApp() {
                   }
                   onDone={() => setRoute("home")}
                 />
+              ) : selected.protocolId === "retail-cleaning" ? (
+                <CleaningProtocol
+                  assignment={selected}
+                  onComplete={(completed) => {
+                    setStoreAssignments(
+                      storeAssignments.map((item) => (item.id === completed.id ? completed : item)),
+                    );
+                    const cleaner = Number(
+                      completed.submission?.formAnswers.cleanerConsumedMl ?? 0,
+                    );
+                    const cloths = Number(completed.submission?.formAnswers.clothsConsumed ?? 0);
+                    setInventory(
+                      inventory.map((item) =>
+                        item.id === "retail-cleaner"
+                          ? { ...item, onHand: Math.max(0, item.onHand - cleaner) }
+                          : item.id === "retail-cloths"
+                            ? { ...item, onHand: Math.max(0, item.onHand - cloths) }
+                            : item,
+                      ),
+                    );
+                    message.success("Limpieza registrada con evidencia y consumo");
+                    setRoute("home");
+                  }}
+                />
               ) : (
                 <SimpleMobileProtocol
                   assignment={selected}
@@ -281,16 +309,21 @@ export function RetailMobileStoreApp() {
                     description={
                       <Space direction="vertical" size={4}>
                         <span>{item.message}</span>
-                        {item.actionLabel === "Atender recepción" && (
+                        {["Atender recepción", "Atender limpieza"].includes(
+                          item.actionLabel ?? "",
+                        ) && (
                           <Button
                             type="link"
                             style={{ padding: 0 }}
                             onClick={() => {
-                              const receipt = assignments.find(
+                              const target = assignments.find(
                                 (assignment) =>
-                                  assignment.protocolId === "retail-merchandise-receipt",
+                                  assignment.protocolId ===
+                                  (item.actionLabel === "Atender recepción"
+                                    ? "retail-merchandise-receipt"
+                                    : "retail-cleaning"),
                               );
-                              if (receipt) openAssignment(receipt);
+                              if (target) openAssignment(target);
                               setNotificationsOpen(false);
                             }}
                           >
@@ -461,7 +494,7 @@ function ReceivingProtocol({
   const [photo, setPhoto] = useState(false);
   const [signed, setSigned] = useState(false);
   const [notes, setNotes] = useState("");
-  const [capturedAt] = useState(() => advanceDemoClock(1));
+  const [capturedAt, setCapturedAt] = useState(() => advanceDemoClock(1));
   const discrepancy = received !== 48 || damaged > 0;
 
   const submit = () => {
@@ -543,17 +576,17 @@ function ReceivingProtocol({
 
       {step === 1 && (
         <Card size="small" title="Evidencia de recepción">
-          <button
-            type="button"
-            className={`retail-receipt-photo ${photo ? "is-captured" : ""}`}
-            onClick={() => setPhoto(true)}
-          >
-            {photo ? <CheckCircleFilled /> : <CameraOutlined />}
-            <b>{photo ? "Foto capturada" : "Tomar foto"}</b>
-            <span>
-              {photo ? "48 paquetes · Muelle de tienda" : "Incluye paquetes y condición visible"}
-            </span>
-          </button>
+          <MobilePhotoCapture
+            imageUrl={RECEIPT_PHOTO}
+            alt="Mercancía recibida en el área de tienda"
+            subject="Mercancía y condición de paquetes"
+            captured={photo}
+            onCaptured={() => {
+              setCapturedAt(advanceDemoClock(1));
+              setPhoto(true);
+            }}
+            onRetake={() => setPhoto(false)}
+          />
           <div className="retail-capture-audit">
             <span>Fecha y hora</span>
             <b>{capturedAt.format("DD MMM YYYY · HH:mm")}</b>
@@ -579,17 +612,7 @@ function ReceivingProtocol({
             message={discrepancy ? "Recepción con observaciones" : "Cantidades conformes"}
             description={`${received} recibidos · ${damaged} con daño`}
           />
-          <button
-            type="button"
-            className={`retail-signature-pad ${signed ? "is-signed" : ""}`}
-            onClick={() => setSigned(true)}
-          >
-            {signed ? <span>Valeria Santos</span> : <EditOutlined />}
-            <b>{signed ? "Firma registrada" : "Toca para firmar"}</b>
-          </button>
-          <Checkbox checked={signed} onChange={(event) => setSigned(event.target.checked)}>
-            Confirmo los datos registrados
-          </Checkbox>
+          <MobileSignaturePad signed={signed} onSigned={setSigned} />
           <Button block onClick={onReport}>
             Reportar un problema
           </Button>
@@ -598,6 +621,281 @@ function ReceivingProtocol({
           </Button>
         </Card>
       )}
+    </div>
+  );
+}
+
+function MobilePhotoCapture({
+  imageUrl,
+  alt,
+  subject,
+  captured,
+  onCaptured,
+  onRetake,
+}: {
+  imageUrl: string;
+  alt: string;
+  subject: string;
+  captured: boolean;
+  onCaptured: () => void;
+  onRetake: () => void;
+}) {
+  const [flash, setFlash] = useState(false);
+  const takePhoto = () => {
+    setFlash(true);
+    window.setTimeout(() => {
+      setFlash(false);
+      onCaptured();
+    }, 380);
+  };
+
+  return (
+    <div className="retail-mobile-camera-capture">
+      <div
+        className={`retail-mobile-camera-stage ${flash ? "is-flashing" : ""}`}
+        aria-live="polite"
+      >
+        {captured ? (
+          <img src={imageUrl} alt={alt} />
+        ) : (
+          <div className="retail-mobile-camera-ready">
+            <CameraOutlined />
+            <b>{subject}</b>
+            <span>Alinea el área dentro del marco</span>
+          </div>
+        )}
+        {flash && <div className="camera-flash" />}
+        {!captured && (
+          <div className="camera-reticle">
+            <span />
+            <span />
+            <span />
+            <span />
+          </div>
+        )}
+        {captured && (
+          <div className="retail-mobile-photo-stamp">
+            <b>Boutique Norte · evidencia simulada</b>
+            <span>25.6866° N, 100.3161° W</span>
+          </div>
+        )}
+      </div>
+      {!captured ? (
+        <Button block size="large" type="primary" icon={<CameraOutlined />} onClick={takePhoto}>
+          Tomar fotografía
+        </Button>
+      ) : (
+        <Space.Compact block>
+          <Button onClick={onRetake}>Retomar</Button>
+          <Button type="primary" style={{ flex: 1 }} disabled>
+            Evidencia confirmada
+          </Button>
+        </Space.Compact>
+      )}
+    </div>
+  );
+}
+
+function MobileSignaturePad({
+  signed,
+  onSigned,
+}: {
+  signed: boolean;
+  onSigned: (signed: boolean) => void;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const drawingRef = useRef(false);
+  const [strokeCount, setStrokeCount] = useState(0);
+
+  const point = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current!;
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: ((event.clientX - rect.left) / rect.width) * canvas.width,
+      y: ((event.clientY - rect.top) / rect.height) * canvas.height,
+    };
+  };
+  const start = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current!;
+    const ctx = canvas.getContext("2d")!;
+    const current = point(event);
+    canvas.setPointerCapture(event.pointerId);
+    drawingRef.current = true;
+    ctx.beginPath();
+    ctx.moveTo(current.x, current.y);
+    ctx.strokeStyle = "#7041da";
+    ctx.lineWidth = 3;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+  };
+  const draw = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+    if (!drawingRef.current) return;
+    const current = point(event);
+    const ctx = canvasRef.current!.getContext("2d")!;
+    ctx.lineTo(current.x, current.y);
+    ctx.stroke();
+    setStrokeCount((count) => count + 1);
+    onSigned(false);
+  };
+  const stop = () => {
+    drawingRef.current = false;
+  };
+  const clear = () => {
+    const canvas = canvasRef.current!;
+    canvas.getContext("2d")!.clearRect(0, 0, canvas.width, canvas.height);
+    setStrokeCount(0);
+    onSigned(false);
+  };
+
+  return (
+    <div className="retail-mobile-signature">
+      <div className="retail-mobile-signature-heading">
+        <div>
+          <b>Firma de quien recibe</b>
+          <span>Dibuja dentro del recuadro</span>
+        </div>
+        {signed && <Tag color="green">Confirmada</Tag>}
+      </div>
+      <canvas
+        ref={canvasRef}
+        width={600}
+        height={220}
+        aria-label="Área para dibujar la firma"
+        onPointerDown={start}
+        onPointerMove={draw}
+        onPointerUp={stop}
+        onPointerCancel={stop}
+      />
+      <Space.Compact block>
+        <Button icon={<DeleteOutlined />} onClick={clear}>
+          Limpiar
+        </Button>
+        <Button
+          type="primary"
+          style={{ flex: 1 }}
+          disabled={strokeCount < 5}
+          onClick={() => onSigned(true)}
+        >
+          Confirmar firma
+        </Button>
+      </Space.Compact>
+    </div>
+  );
+}
+
+function CleaningProtocol({
+  assignment,
+  onComplete,
+}: {
+  assignment: StoreAssignment;
+  onComplete: (assignment: StoreAssignment) => void;
+}) {
+  const [photo, setPhoto] = useState(false);
+  const [rating, setRating] = useState(0);
+  const [comments, setComments] = useState("");
+  const [cleaner, setCleaner] = useState(120);
+  const [cloths, setCloths] = useState(1);
+  const [capturedAt, setCapturedAt] = useState(() => advanceDemoClock(1));
+
+  const submit = () => {
+    const completedAt = advanceDemoClock(2).toISOString();
+    onComplete({
+      ...assignment,
+      status: "Completed",
+      progress: 100,
+      completedAt,
+      submission: {
+        submittedAt: completedAt,
+        submittedBy: OPERATOR,
+        evidenceLabels: ["Foto final de limpieza", "Fecha y hora"],
+        formAnswers: {
+          selfRating: rating,
+          cleanerConsumedMl: cleaner,
+          clothsConsumed: cloths,
+        },
+        signatureCaptured: false,
+        notes: comments,
+      },
+    });
+  };
+
+  return (
+    <div className="retail-mobile-protocol retail-cleaning-protocol">
+      <Tag color="cyan">LIMPIEZA</Tag>
+      <Typography.Title level={4}>Limpieza y presentación</Typography.Title>
+      <Typography.Paragraph type="secondary">
+        Un cierre simple: evidencia, criterio propio e insumos utilizados.
+      </Typography.Paragraph>
+      <Card size="small" title="1. Foto del resultado">
+        <MobilePhotoCapture
+          imageUrl={CLEANING_PHOTO}
+          alt="Sala de ventas limpia, ordenada y lista"
+          subject="Sala de ventas terminada"
+          captured={photo}
+          onCaptured={() => {
+            setCapturedAt(advanceDemoClock(1));
+            setPhoto(true);
+          }}
+          onRetake={() => setPhoto(false)}
+        />
+        {photo && (
+          <div className="retail-capture-audit">
+            <span>Fecha y hora</span>
+            <b>{capturedAt.format("DD MMM YYYY · HH:mm")}</b>
+            <span>Usuario</span>
+            <b>{OPERATOR}</b>
+          </div>
+        )}
+      </Card>
+      <Card size="small" title="2. Tu evaluación">
+        <div className="retail-cleaning-rating">
+          <Typography.Text type="secondary">¿Cómo quedó el área?</Typography.Text>
+          <Rate value={rating} onChange={setRating} />
+          <Typography.Text strong>
+            {rating === 0
+              ? "Sin evaluar"
+              : rating >= 4
+                ? "Lista para operar"
+                : "Requiere una revisión adicional"}
+          </Typography.Text>
+        </div>
+        <Input.TextArea
+          rows={3}
+          value={comments}
+          onChange={(event) => setComments(event.target.value)}
+          placeholder="Comentarios u observaciones (opcional)"
+        />
+      </Card>
+      <Card size="small" title="3. Consumo de productos">
+        <div className="retail-cleaning-consumption">
+          <label>
+            <span>Limpiador neutro</span>
+            <InputNumber
+              min={0}
+              max={500}
+              value={cleaner}
+              addonAfter="ml"
+              onChange={(value) => setCleaner(value ?? 0)}
+            />
+          </label>
+          <label>
+            <span>Paños de microfibra</span>
+            <InputNumber
+              min={0}
+              max={5}
+              value={cloths}
+              addonAfter="pza"
+              onChange={(value) => setCloths(value ?? 0)}
+            />
+          </label>
+        </div>
+        <Typography.Text type="secondary">
+          El consumo descuenta existencias sólo dentro de esta simulación.
+        </Typography.Text>
+      </Card>
+      <Button block size="large" type="primary" disabled={!photo || rating === 0} onClick={submit}>
+        Completar limpieza
+      </Button>
     </div>
   );
 }
