@@ -26,9 +26,14 @@ import { formatShortDate } from "./retail-format";
 type Props = {
   onOpenProgram: () => void;
   onOpenSupport: (caseId?: string) => void;
+  onNewAssignment?: () => void;
 };
 
-export function RetailOperationsDashboard({ onOpenProgram, onOpenSupport }: Props) {
+export function RetailOperationsDashboard({
+  onOpenProgram,
+  onOpenSupport,
+  onNewAssignment,
+}: Props) {
   const { storeAssignments, supportCases, protocols } = useStore();
   const activeCases = supportCases.filter(
     (item) => item.status !== "Closed" && item.status !== "Draft",
@@ -47,9 +52,16 @@ export function RetailOperationsDashboard({ onOpenProgram, onOpenSupport }: Prop
             Programa del día, condición operativa y soporte en una sola vista.
           </Typography.Paragraph>
         </div>
-        <Button type="primary" icon={<CustomerServiceOutlined />} onClick={() => onOpenSupport()}>
-          Abrir centro de soporte
-        </Button>
+        <Space wrap>
+          {onNewAssignment && (
+            <Button icon={<ShopOutlined />} onClick={onNewAssignment}>
+              Nueva asignación
+            </Button>
+          )}
+          <Button type="primary" icon={<CustomerServiceOutlined />} onClick={() => onOpenSupport()}>
+            Abrir centro de soporte
+          </Button>
+        </Space>
       </div>
 
       {mainCase?.status === "Draft" && (

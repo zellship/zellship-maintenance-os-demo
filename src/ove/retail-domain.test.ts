@@ -9,6 +9,8 @@ import {
   reportSupportCase,
   requestEscalation,
   startDiagnostic,
+  createStoreAssignments,
+  createDirectSupportCase,
 } from "./retail-domain";
 
 describe("retail support case lifecycle", () => {
@@ -55,5 +57,56 @@ describe("retail support case lifecycle", () => {
   it("does not close a case before store confirmation", () => {
     const draft = seedSupportCases[0];
     expect(() => closeSupportCase(draft, "2026-08-19T18:04:00.000Z", "Elena Ríos")).toThrow();
+  });
+});
+
+describe("retail store initiated work", () => {
+  it("creates independent assignments for every selected store", () => {
+    const assignments = createStoreAssignments({
+      existing: [],
+      protocolId: "retail-cleaning",
+      stores: ["Boutique Norte", "Boutique Centro"],
+      responsible: "Valeria Santos",
+      dueAt: "2026-08-20T16:00:00.000Z",
+      requiresValidation: false,
+      comments: "Revisar presentación antes de abrir.",
+    });
+
+    expect(assignments).toHaveLength(2);
+    expect(new Set(assignments.map((item) => item.id)).size).toBe(2);
+    expect(assignments.every((item) => item.status === "Assigned")).toBe(true);
+    expect(assignments.every((item) => item.comments?.includes("presentación"))).toBe(true);
+  });
+
+  it("creates direct store support with optional assignment context", () => {
+    const sourceAssignment = createStoreAssignments({
+      existing: [],
+      protocolId: "retail-opening",
+      stores: ["Boutique Norte"],
+      responsible: "Valeria Santos",
+      dueAt: "2026-08-20T16:00:00.000Z",
+      requiresValidation: true,
+    })[0];
+    const supportCase = createDirectSupportCase({
+      existing: [],
+      storeLabel: "Boutique Norte",
+      actor: "Valeria Santos",
+      category: "Punto de venta",
+      symptom: "La terminal no permite completar el cobro",
+      impact: "critical",
+      reportedAt: "2026-08-20T15:00:00.000Z",
+      acknowledgementDueAt: "2026-08-20T15:05:00.000Z",
+      resolutionTargetAt: "2026-08-20T17:00:00.000Z",
+      sourceAssignment,
+      photoIncluded: true,
+    });
+
+    expect(supportCase).toMatchObject({
+      status: "Reported",
+      suggestedPriority: "P1",
+      sourceAssignmentId: sourceAssignment.id,
+      sourceProtocolId: sourceAssignment.protocolId,
+      currentOwner: "Centro de soporte",
+    });
   });
 });

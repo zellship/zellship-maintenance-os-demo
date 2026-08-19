@@ -18,7 +18,7 @@ import type { StoreAssignment } from "../types";
 import { AssignmentStatusTag } from "./retail-ui";
 import { formatShortDate } from "./retail-format";
 
-export function StoreProgram() {
+export function StoreProgram({ onNew }: { onNew: () => void }) {
   const { storeAssignments, setStoreAssignments, protocols } = useStore();
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<string>("all");
@@ -112,7 +112,7 @@ export function StoreProgram() {
             Distribuye protocolos, confirma recepción y da seguimiento al cumplimiento por tienda.
           </Typography.Paragraph>
         </div>
-        <Button type="primary" icon={<SendOutlined />}>
+        <Button type="primary" icon={<SendOutlined />} onClick={onNew}>
           Nueva asignación
         </Button>
       </div>

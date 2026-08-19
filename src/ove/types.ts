@@ -53,6 +53,7 @@ export interface StoreAssignment {
   progress: number;
   scheduleId?: string;
   requiresValidation: boolean;
+  comments?: string;
   completedAt?: string;
 }
 

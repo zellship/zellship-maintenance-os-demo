@@ -31,9 +31,12 @@ All store names, people, providers, assets and operational records are fictitiou
 sign in as **Centro de soporte**, and keep `RTL-SUP-2048` as the primary story.
 
 1. Review **Centro de tiendas**: six locations, today’s operational program, and active support.
-2. Open **Programa de tiendas** and publish the draft assignment for Boutique Aeropuerto.
-3. Change to **Mi tienda** and start `RTL-ASG-1024`, the opening protocol for Boutique Norte.
-4. Register the simulated 27.8 °C deviation and use **Solicitar apoyo** without leaving the protocol.
+2. Use the quick action **Nueva asignación**, select a protocol and one or more stores, and publish
+   independent assignments.
+3. Change to **Mi tienda**. On a narrow screen, open **Programa**, select an assignment, and use
+   **Atender** to start it.
+4. Use **Solicitar asistencia** from the store home to create a direct case, or execute
+   `RTL-ASG-1024` and report the simulated 27.8 °C deviation without leaving its protocol.
 5. Return to **Centro de soporte**, open `RTL-SUP-2048`, and assign the safe remote diagnostic.
 6. In **Mi tienda**, complete only the visible checks and select **El problema continúa**.
 7. In support, assign the simulated external provider and register the service resolution.

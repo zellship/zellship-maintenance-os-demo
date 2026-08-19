@@ -183,6 +183,11 @@
   background: #f5f6fa;
 }
 
+.retail-mobile-launchpad,
+.retail-mobile-task-nav {
+  display: none;
+}
+
 .retail-store-context {
   position: sticky;
   top: 65px;
@@ -242,6 +247,12 @@
   align-items: center;
   margin-top: auto;
   padding-top: 32px;
+}
+
+.retail-context-support-button {
+  margin-top: 22px;
+  border-color: rgb(255 255 255 / 32%) !important;
+  color: #fff !important;
 }
 
 .retail-store-workspace {
@@ -322,18 +333,134 @@
     grid-template-columns: 1fr;
   }
 
+  .retail-operator-view {
+    min-height: calc(100vh - 108px);
+    background: #f5f6fa;
+  }
+
+  .retail-operator-view.mobile-home .retail-mobile-launchpad {
+    display: block;
+  }
+
+  .retail-operator-view.mobile-home .retail-operator-shell {
+    display: none;
+  }
+
+  .retail-operator-view.mobile-task .retail-mobile-launchpad {
+    display: none;
+  }
+
   .retail-operator-shell {
-    grid-template-columns: 1fr;
+    display: block;
+    min-height: calc(100vh - 108px);
   }
 
   .retail-store-context {
-    position: static;
-    min-height: auto;
-    padding: 28px;
+    display: none;
   }
 
-  .retail-context-bottom {
-    margin-top: 18px;
+  .retail-store-workspace {
+    padding: 16px 14px 36px;
+  }
+
+  .retail-mobile-task-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+  }
+
+  .retail-mobile-launchpad {
+    max-width: 560px;
+    min-height: calc(100vh - 108px);
+    margin: 0 auto;
+    padding: 22px 16px 40px;
+  }
+
+  .retail-mobile-hero {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+
+  .retail-mobile-hero .ant-typography {
+    margin: 0 0 4px;
+  }
+
+  .retail-mobile-hero > div > .ant-typography:first-child {
+    color: #7041da;
+    font-size: 11px;
+    font-weight: 750;
+    letter-spacing: 0.12em;
+  }
+
+  .retail-mobile-support-cta {
+    height: 50px;
+    margin-bottom: 14px;
+    box-shadow: 0 10px 24px rgb(112 65 218 / 22%);
+  }
+
+  .retail-mobile-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .retail-mobile-summary-grid .ant-card-body {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 3px 9px;
+    align-items: center;
+    padding: 13px;
+  }
+
+  .retail-mobile-summary-grid .anticon {
+    grid-row: span 2;
+    color: #7041da;
+    font-size: 20px;
+  }
+
+  .retail-mobile-summary-grid b {
+    font-size: 20px;
+    line-height: 1;
+  }
+
+  .retail-mobile-summary-grid span:last-child {
+    color: #737780;
+    font-size: 11px;
+    line-height: 1.25;
+  }
+
+  .retail-mobile-list {
+    margin-top: 14px;
+  }
+
+  .retail-mobile-list .ant-list-item {
+    padding: 0 0 10px;
+    border: 0;
+  }
+
+  .retail-mobile-record-card {
+    width: 100%;
+    border-color: #e4e4eb;
+    box-shadow: 0 8px 22px rgb(24 24 35 / 5%);
+  }
+
+  .retail-mobile-record-card .ant-typography {
+    margin: 0;
+  }
+
+  .retail-store-workspace > .retail-page-heading .ant-space,
+  .retail-store-workspace > .retail-page-heading .ant-btn {
+    width: 100%;
+  }
+
+  .retail-primary-task-card .ant-card-body,
+  .retail-action-stage .ant-card-body {
+    padding: 18px;
   }
 }
 
