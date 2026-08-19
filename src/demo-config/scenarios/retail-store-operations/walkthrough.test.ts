@@ -51,6 +51,22 @@ describe("retail store operations walkthrough", () => {
     });
   });
 
+  it("keeps the cleaning protocol intentionally lightweight", () => {
+    const cleaning = data.protocols.find((item) => item.id === "retail-cleaning");
+    const assignment = data.storeAssignments?.find((item) => item.id === "RTL-ASG-1029");
+
+    expect(cleaning?.evidenceConfig).toMatchObject([
+      { type: "Photo", required: true, humanRating: true },
+    ]);
+    expect(cleaning?.formConfig.map((item) => item.id)).toEqual(["selfRating", "comments"]);
+    expect(cleaning?.materialRequirements).toHaveLength(2);
+    expect(assignment).toMatchObject({
+      protocolId: "retail-cleaning",
+      storeLabel: "Boutique Norte",
+      status: "Assigned",
+    });
+  });
+
   it("uses neutral fictitious data in the public artifact", () => {
     expect(JSON.stringify(data)).not.toMatch(/Harris|Frank/i);
     expect(retailStoreOperationsScenario.distribution.classification).toBe("public-demo");

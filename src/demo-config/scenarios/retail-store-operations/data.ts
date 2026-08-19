@@ -197,7 +197,32 @@ export const seedTools: MaintenanceTool[] = [
   },
 ];
 
-export const seedInventory: InventoryItem[] = [];
+export const seedInventory: InventoryItem[] = [
+  {
+    id: "retail-cleaner",
+    sku: "RTL-CLN-01",
+    name: "Limpiador neutro",
+    unit: "ml",
+    plant: "Boutique Norte",
+    warehouse: "Insumos de tienda",
+    onHand: 3800,
+    reserved: 0,
+    quarantine: 0,
+    reorderPoint: 1000,
+  },
+  {
+    id: "retail-cloths",
+    sku: "RTL-PAN-02",
+    name: "Paño de microfibra",
+    unit: "pza",
+    plant: "Boutique Norte",
+    warehouse: "Insumos de tienda",
+    onHand: 18,
+    reserved: 0,
+    quarantine: 0,
+    reorderPoint: 6,
+  },
+];
 
 const commonStoreEvidence = [
   { id: "gps", type: "GPS" as const, required: true, radius: 80, label: "Ubicación de tienda" },
@@ -306,10 +331,25 @@ export const seedProtocols: Protocol[] = [
     branches: plants,
     recurrence: "Daily",
     schedule: [{ hour: "13:00", tolerance: 30 }],
-    evidenceConfig: commonStoreEvidence,
+    evidenceConfig: [
+      {
+        id: "cleaning-photo",
+        type: "Photo",
+        required: true,
+        minCount: 1,
+        label: "Foto final de limpieza",
+        guidance: "Captura una vista amplia del área terminada sin incluir clientes.",
+        humanRating: true,
+      },
+    ],
     formConfig: [
-      { id: "floor", type: "yesno", label: "Piso y mobiliario limpios", required: true },
-      { id: "fitting", type: "yesno", label: "Probadores listos", required: true },
+      {
+        id: "selfRating",
+        type: "rating",
+        label: "Evaluación propia del resultado",
+        required: true,
+      },
+      { id: "comments", type: "textarea", label: "Comentarios u observaciones" },
     ],
     supervisors,
     operators,
@@ -318,6 +358,10 @@ export const seedProtocols: Protocol[] = [
     requiresValidation: false,
     activationMode: "Recurring",
     estimatedMinutes: 12,
+    materialRequirements: [
+      { inventoryItemId: "retail-cleaner", mode: "Variable", min: 0, max: 500 },
+      { inventoryItemId: "retail-cloths", mode: "Variable", min: 0, max: 5 },
+    ],
   },
   {
     id: "retail-sales-intentions",
@@ -488,6 +532,20 @@ export const seedIncidents: Incident[] = [];
 
 export const seedNotifications: Notification[] = [
   {
+    id: "not-retail-cleaning",
+    type: "Assignment",
+    channel: "Push",
+    actor: "Gerencia de sucursales",
+    recipientRole: "operator",
+    recipient: "Valeria Santos",
+    source: "Automatic",
+    event: "Limpieza programada",
+    message: "Completa la limpieza y presentación de Boutique Norte antes de las 13:30.",
+    actionLabel: "Atender limpieza",
+    status: "Sent",
+    createdAt: demoNow().subtract(3, "minute").toISOString(),
+  },
+  {
     id: "not-retail-receipt",
     type: "Assignment",
     channel: "Push",
@@ -563,6 +621,19 @@ export const seedOperationalFlows: OperationalFlow[] = [
 export const seedServiceRequests: ServiceRequest[] = [];
 
 export const seedStoreAssignments: StoreAssignment[] = [
+  {
+    id: "RTL-ASG-1029",
+    protocolId: "retail-cleaning",
+    storeId: "store-north",
+    storeLabel: "Boutique Norte",
+    responsible: "Valeria Santos",
+    dueAt: demoNow().hour(13).minute(30).toISOString(),
+    status: "Assigned",
+    protocolVersion: "2.2",
+    progress: 0,
+    requiresValidation: false,
+    comments: "Foto final, evaluación propia y consumo real de insumos.",
+  },
   {
     id: "RTL-ASG-1028",
     protocolId: "retail-merchandise-receipt",

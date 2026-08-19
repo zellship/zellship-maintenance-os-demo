@@ -162,7 +162,7 @@ describe("demo scenario registry", () => {
     expect(scenario.data.taxonomy.plants).toHaveLength(6);
     expect(scenario.data.storeAssignments?.length).toBeGreaterThan(0);
     expect(scenario.data.supportCases?.some((item) => item.sourceProtocolId)).toBe(true);
-    expect(scenario.persistence.stateKey).toBe("zellship-store-operations-retail-v2");
+    expect(scenario.persistence.stateKey).toBe("zellship-store-operations-retail-v3");
     expect(scenario.distribution).toEqual({
       classification: "public-demo",
       containsClientIdentifiableData: false,

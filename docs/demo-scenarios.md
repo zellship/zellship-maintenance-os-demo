@@ -36,14 +36,17 @@ sign in as **Centro de soporte**, and keep `RTL-SUP-2048` as the primary story.
 3. Change to **Mi tienda** and use the visible **Escritorio / Móvil** selector. **Escritorio** keeps
    the operational overview; **Móvil** opens the floor-execution emulator even on a wide display.
 4. In **Móvil**, open the merchandise notification and execute `RTL-ASG-1028`: confirm the 48
-   packages, capture the simulated photo, verify the date, time and user, sign, and submit. Change a
-   quantity or damaged-package value to demonstrate the contextual **Reportar** action.
-5. Execute `RTL-ASG-1024` from the same mobile program to demonstrate opening checks and the
+   packages, use the guided camera with flash and retake, verify the date, time, user and simulated
+   location, draw the signature, and submit. Change a quantity or damaged-package value to
+   demonstrate the contextual **Reportar** action.
+5. Execute `RTL-ASG-1029` to demonstrate the lightweight cleaning close: one final photo, the
+   employee's own rating, optional comments and actual simulated consumption of cleaner and cloths.
+6. Execute `RTL-ASG-1024` from the same mobile program to demonstrate opening checks and the
    simulated 27.8 °C deviation. Use **Solicitar asistencia** without leaving the protocol.
-6. Use **Solicitar asistencia** from the store home to create a direct case, or execute
+7. Use **Solicitar asistencia** from the store home to create a direct case, or execute
    `RTL-ASG-1024` and report the simulated 27.8 °C deviation without leaving its protocol.
-7. Return to **Centro de soporte**, open `RTL-SUP-2048`, and assign the safe remote diagnostic.
-8. In support, assign the simulated external provider and register the service resolution. Return
+8. Return to **Centro de soporte**, open `RTL-SUP-2048`, assign the safe remote diagnostic, then
+   assign the simulated external provider and register the service resolution. Return
    to the store to confirm restored operation; then use **Supervisión** or support to validate and
    close the case.
 
@@ -52,8 +55,9 @@ cases. The case must remain linked to its source assignment and protocol through
 Store confirmation is required before final closure. Do not present the simulated messages,
 diagnostics, provider dispatch, location, or evidence as live integrations.
 
-Retail `0.2.0` uses the explicit browser-state key `zellship-store-operations-retail-v2` so existing
-visitors receive the new merchandise-receiving seed instead of retaining an incomplete `v1` state.
+Retail `0.3.0` uses the explicit browser-state key `zellship-store-operations-retail-v3` so existing
+visitors receive the enriched receiving and cleaning protocols instead of retaining an incomplete
+previous state.
 
 ## Shared operational-profile walkthrough
 

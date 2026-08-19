@@ -617,6 +617,142 @@
   transform: rotate(-4deg);
 }
 
+.retail-mobile-camera-capture {
+  display: grid;
+  gap: 10px;
+}
+
+.retail-mobile-camera-stage {
+  position: relative;
+  overflow: hidden;
+  min-height: 205px;
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 50% 42%, rgb(112 65 218 / 24%), transparent 34%),
+    linear-gradient(145deg, #171923, #292d3c);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 12%);
+}
+
+.retail-mobile-camera-stage > img {
+  display: block;
+  width: 100%;
+  height: 225px;
+  object-fit: cover;
+}
+
+.retail-mobile-camera-ready {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  color: #fff;
+  text-align: center;
+}
+
+.retail-mobile-camera-ready .anticon {
+  font-size: 38px;
+}
+
+.retail-mobile-camera-ready span {
+  color: rgb(255 255 255 / 66%);
+  font-size: 11px;
+}
+
+.retail-mobile-photo-stamp {
+  position: absolute;
+  right: 9px;
+  bottom: 9px;
+  left: 9px;
+  display: flex;
+  flex-direction: column;
+  padding: 7px 9px;
+  color: #fff;
+  border: 1px solid rgb(255 255 255 / 24%);
+  border-radius: 8px;
+  background: rgb(16 20 28 / 76%);
+  backdrop-filter: blur(7px);
+  font-size: 9px;
+}
+
+.retail-mobile-photo-stamp span {
+  color: rgb(255 255 255 / 72%);
+}
+
+.retail-mobile-camera-stage.is-flashing .camera-flash {
+  display: block;
+}
+
+.retail-mobile-signature {
+  display: grid;
+  gap: 9px;
+}
+
+.retail-mobile-signature-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.retail-mobile-signature-heading > div {
+  display: flex;
+  flex-direction: column;
+}
+
+.retail-mobile-signature-heading span {
+  color: #777c87;
+  font-size: 11px;
+}
+
+.retail-mobile-signature canvas {
+  width: 100%;
+  height: 130px;
+  touch-action: none;
+  border: 1px dashed #b9bbc3;
+  border-radius: 12px;
+  background:
+    linear-gradient(transparent calc(100% - 28px), #e6e7eb calc(100% - 28px) 1px, transparent 1px),
+    #fff;
+  cursor: crosshair;
+}
+
+.retail-cleaning-protocol {
+  display: grid;
+  gap: 12px;
+}
+
+.retail-cleaning-protocol > .ant-typography,
+.retail-cleaning-protocol > .ant-tag {
+  justify-self: start;
+  margin-bottom: -7px;
+}
+
+.retail-cleaning-rating {
+  display: grid;
+  gap: 6px;
+}
+
+.retail-cleaning-consumption {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.retail-cleaning-consumption label {
+  display: grid;
+  gap: 5px;
+  color: #626875;
+  font-size: 11px;
+}
+
+.retail-cleaning-consumption .ant-input-number-group-wrapper,
+.retail-cleaning-consumption .ant-input-number {
+  width: 100%;
+}
+
 .retail-phone-screen .retail-phone-drawer {
   position: absolute;
 }
