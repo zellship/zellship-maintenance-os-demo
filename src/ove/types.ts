@@ -55,6 +55,16 @@ export interface StoreAssignment {
   requiresValidation: boolean;
   comments?: string;
   completedAt?: string;
+  submission?: StoreAssignmentSubmission;
+}
+
+export interface StoreAssignmentSubmission {
+  submittedAt: string;
+  submittedBy: string;
+  evidenceLabels: string[];
+  formAnswers: Record<string, string | number | boolean>;
+  signatureCaptured: boolean;
+  notes?: string;
 }
 
 export interface SupportCaseUpdate {

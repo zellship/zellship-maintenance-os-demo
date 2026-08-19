@@ -28,6 +28,29 @@ describe("retail store operations walkthrough", () => {
     expect(data.supportInterventions?.some((item) => item.route === "External")).toBe(true);
   });
 
+  it("includes a mobile merchandise receiving assignment with traceable evidence", () => {
+    const receipt = data.protocols.find((item) => item.id === "retail-merchandise-receipt");
+    const assignment = data.storeAssignments?.find((item) => item.id === "RTL-ASG-1028");
+    const notification = data.notifications.find((item) => item.id === "not-retail-receipt");
+
+    expect(receipt?.evidenceConfig.map((item) => item.type)).toEqual([
+      "Photo",
+      "Timestamp",
+      "Signature",
+    ]);
+    expect(assignment).toMatchObject({
+      protocolId: receipt?.id,
+      storeLabel: "Boutique Norte",
+      responsible: "Valeria Santos",
+      status: "Assigned",
+    });
+    expect(notification).toMatchObject({
+      recipient: "Valeria Santos",
+      actionLabel: "Atender recepción",
+      status: "Sent",
+    });
+  });
+
   it("uses neutral fictitious data in the public artifact", () => {
     expect(JSON.stringify(data)).not.toMatch(/Harris|Frank/i);
     expect(retailStoreOperationsScenario.distribution.classification).toBe("public-demo");

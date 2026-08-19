@@ -19,6 +19,8 @@ type Props = {
   open: boolean;
   onCancel: () => void;
   defaultAssignmentId?: string;
+  defaultCategory?: string;
+  defaultSymptom?: string;
   onCreated?: (caseId: string) => void;
 };
 
@@ -26,6 +28,8 @@ export function StoreSupportRequestModal({
   open,
   onCancel,
   defaultAssignmentId,
+  defaultCategory = "Climatización",
+  defaultSymptom = "",
   onCreated,
 }: Props) {
   const { storeAssignments, supportCases, setSupportCases, notifications, setNotifications } =
@@ -47,14 +51,14 @@ export function StoreSupportRequestModal({
   useEffect(() => {
     if (!open) return;
     form.setFieldsValue({
-      category: "Climatización",
+      category: defaultCategory,
       assetId: assets[0]?.id,
       sourceAssignmentId: defaultAssignmentId,
       impact: "partial",
       photoIncluded: true,
-      symptom: "",
+      symptom: defaultSymptom,
     });
-  }, [assets, defaultAssignmentId, form, open]);
+  }, [assets, defaultAssignmentId, defaultCategory, defaultSymptom, form, open]);
 
   const submit = async () => {
     const values = await form.validateFields();
@@ -141,6 +145,7 @@ export function StoreSupportRequestModal({
               "Iluminación e instalaciones",
               "Acceso y seguridad",
               "Operación de tienda",
+              "Recepción de mercancía",
               "Otro",
             ].map((value) => ({ value, label: value }))}
           />

@@ -36,6 +36,7 @@ export const operators = ["Valeria Santos", "Sergio Luna", "Camila Torres"];
 export const supervisors = ["Laura Mendoza", "Elena Ríos"];
 export const categories = [
   "Apertura y presentación",
+  "Recepción de mercancía",
   "Limpieza y orden",
   "Climatización",
   "Ventas e intenciones",
@@ -212,6 +213,52 @@ const commonStoreEvidence = [
 ];
 
 export const seedProtocols: Protocol[] = [
+  {
+    id: "retail-merchandise-receipt",
+    name: "Recepción de mercancía en tienda",
+    description:
+      "Confirma entrega, cantidades, condición de paquetes, evidencia y conformidad de la persona que recibe.",
+    category: "Recepción de mercancía",
+    priority: "High",
+    status: "Active",
+    branches: plants,
+    recurrence: "Once",
+    schedule: [{ hour: "11:30", tolerance: 30 }],
+    evidenceConfig: [
+      {
+        id: "receipt-photo",
+        type: "Photo",
+        required: true,
+        minCount: 1,
+        label: "Foto de recepción",
+        guidance: "Captura los paquetes y su condición sin incluir datos personales.",
+      },
+      { id: "receipt-time", type: "Timestamp", required: true, label: "Fecha y hora" },
+      { id: "receipt-signature", type: "Signature", required: true, label: "Firma de recepción" },
+    ],
+    formConfig: [
+      { id: "deliveryReference", type: "text", label: "Referencia de entrega", required: true },
+      { id: "expectedQuantity", type: "number", label: "Cantidad esperada", required: true },
+      { id: "receivedQuantity", type: "number", label: "Cantidad recibida", required: true },
+      { id: "damagedQuantity", type: "number", label: "Paquetes con daño", required: true },
+      {
+        id: "condition",
+        type: "select",
+        label: "Condición general",
+        required: true,
+        options: ["Conforme", "Con observaciones", "Rechazada"],
+      },
+      { id: "comments", type: "textarea", label: "Comentarios o diferencias" },
+    ],
+    supervisors,
+    operators,
+    channels: ["System", "Push"],
+    preAlertMinutes: 30,
+    requiresValidation: true,
+    activationMode: "OnDemand",
+    estimatedMinutes: 12,
+    safetyInstructions: ["No firmar como conforme si existen diferencias sin registrar."],
+  },
   {
     id: "retail-opening",
     name: "Apertura, imagen y condición de tienda",
@@ -441,6 +488,20 @@ export const seedIncidents: Incident[] = [];
 
 export const seedNotifications: Notification[] = [
   {
+    id: "not-retail-receipt",
+    type: "Assignment",
+    channel: "Push",
+    actor: "Centro de distribución",
+    recipientRole: "operator",
+    recipient: "Valeria Santos",
+    source: "Automatic",
+    event: "Recepción programada",
+    message: "Tienes una recepción de 48 paquetes asignada para Boutique Norte.",
+    actionLabel: "Atender recepción",
+    status: "Sent",
+    createdAt: demoNow().subtract(8, "minute").toISOString(),
+  },
+  {
     id: "not-retail-1",
     type: "Assignment",
     channel: "Push",
@@ -502,6 +563,19 @@ export const seedOperationalFlows: OperationalFlow[] = [
 export const seedServiceRequests: ServiceRequest[] = [];
 
 export const seedStoreAssignments: StoreAssignment[] = [
+  {
+    id: "RTL-ASG-1028",
+    protocolId: "retail-merchandise-receipt",
+    storeId: "store-north",
+    storeLabel: "Boutique Norte",
+    responsible: "Valeria Santos",
+    dueAt: demoNow().add(2, "hour").startOf("hour").toISOString(),
+    status: "Assigned",
+    protocolVersion: "1.0",
+    progress: 0,
+    requiresValidation: true,
+    comments: "Entrega OC-DEMO-2481 · Distribución Norte Demo · 48 paquetes esperados.",
+  },
   {
     id: "RTL-ASG-1024",
     protocolId: "retail-opening",

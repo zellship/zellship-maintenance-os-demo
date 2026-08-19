@@ -50,7 +50,7 @@ const data: DemoScenarioData = {
 
 const descriptor = demoScenarioDescriptorSchema.parse({
   id: "retail-store-operations",
-  version: "0.1.0",
+  version: "0.2.0",
   sourceBaseline: "ca74d6b7fac34af82972c6eae74cc5534a4440c8",
   label: "Retail store operations",
   description:
@@ -148,7 +148,7 @@ const descriptor = demoScenarioDescriptorSchema.parse({
     },
     demoPin: "1234",
   },
-  persistence: { stateKey: "zellship-store-operations-retail-v1" },
+  persistence: { stateKey: "zellship-store-operations-retail-v2" },
   distribution: {
     classification: "public-demo",
     containsClientIdentifiableData: false,

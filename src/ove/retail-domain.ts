@@ -1,9 +1,34 @@
-import type { StoreAssignment, SupportCase, SupportIntervention, SupportPriority } from "./types";
+import type {
+  StoreAssignment,
+  StoreAssignmentSubmission,
+  SupportCase,
+  SupportIntervention,
+  SupportPriority,
+} from "./types";
 
 type CaseTransition = {
   supportCase: SupportCase;
   intervention?: SupportIntervention;
 };
+
+export function completeStoreAssignment(
+  assignment: StoreAssignment,
+  submission: StoreAssignmentSubmission,
+): StoreAssignment {
+  if (!submission.evidenceLabels.includes("Foto de recepción")) {
+    throw new Error("A receiving submission requires a photo");
+  }
+  if (!submission.signatureCaptured) {
+    throw new Error("A receiving submission requires a signature");
+  }
+  return {
+    ...assignment,
+    status: assignment.requiresValidation ? "Submitted" : "Completed",
+    progress: 100,
+    completedAt: submission.submittedAt,
+    submission,
+  };
+}
 
 export function createStoreAssignments(input: {
   existing: StoreAssignment[];
