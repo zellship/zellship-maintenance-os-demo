@@ -44,6 +44,7 @@ import { advanceDemoClock } from "../../demo-config/clock";
 import { RetailOperationsDashboard } from "../retail/RetailOperationsDashboard";
 import { RetailSupportCases } from "../retail/RetailSupportCases";
 import { StoreProgram } from "../retail/StoreProgram";
+import { NewStoreAssignmentModal } from "../retail/NewStoreAssignmentModal";
 
 type Key =
   | "dashboard"
@@ -75,6 +76,7 @@ export function AdminApp() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobile, setMobile] = useState(false);
   const [quickOrderOpen, setQuickOrderOpen] = useState(false);
+  const [assignmentOpen, setAssignmentOpen] = useState(false);
   const [quickOrderContext, setQuickOrderContext] = useState<{
     assetId?: string;
     note?: string;
@@ -223,6 +225,23 @@ export function AdminApp() {
           style={{ borderRight: 0, paddingTop: 12 }}
           items={dashboardItems}
         />
+        {hasCapability("store-operations") && (
+          <div className={`sidebar-quick-order ${collapsed ? "is-collapsed" : ""}`}>
+            <Tooltip title={collapsed ? "Nueva asignación" : undefined} placement="right">
+              <Button
+                type="primary"
+                size="large"
+                shape={collapsed ? "circle" : "default"}
+                block={!collapsed}
+                icon={<PlusOutlined />}
+                aria-label="Crear nueva asignación para tienda"
+                onClick={() => setAssignmentOpen(true)}
+              >
+                {!collapsed && "Nueva asignación"}
+              </Button>
+            </Tooltip>
+          </div>
+        )}
         {!hasCapability("store-operations") && (
           <div className={`sidebar-quick-order ${collapsed ? "is-collapsed" : ""}`}>
             <Tooltip title={collapsed ? "Nueva orden" : undefined} placement="right">
@@ -254,6 +273,18 @@ export function AdminApp() {
       <Layout.Content
         style={{ padding: 24, background: "#f5f6fa", minHeight: "calc(100vh - 64px)" }}
       >
+        {mobile && hasCapability("store-operations") && (
+          <div className="quick-order-action-bar">
+            <Button
+              type="primary"
+              size="large"
+              icon={<PlusOutlined />}
+              onClick={() => setAssignmentOpen(true)}
+            >
+              Nueva asignación
+            </Button>
+          </div>
+        )}
         {mobile && !hasCapability("store-operations") && (
           <div className="quick-order-action-bar">
             <Button
@@ -272,6 +303,7 @@ export function AdminApp() {
         {key === "dashboard" && hasCapability("store-operations") && (
           <RetailOperationsDashboard
             onOpenProgram={() => navigate("store-program")}
+            onNewAssignment={() => setAssignmentOpen(true)}
             onOpenSupport={(caseId) => {
               setRequestedSupportCaseId(caseId ?? null);
               navigate("support");
@@ -298,7 +330,7 @@ export function AdminApp() {
             }}
           />
         )}
-        {key === "store-program" && <StoreProgram />}
+        {key === "store-program" && <StoreProgram onNew={() => setAssignmentOpen(true)} />}
         {key === "support" && <RetailSupportCases initialCaseId={requestedSupportCaseId} />}
         {key === "catalog" && <ProtocolCatalog onNew={() => setKey("new")} />}
         {key === "flows" && <OperationalFlows />}
@@ -379,6 +411,16 @@ export function AdminApp() {
               }
               setQuickOrderOpen(false);
               setQuickOrderContext({});
+            }}
+          />
+        )}
+        {hasCapability("store-operations") && (
+          <NewStoreAssignmentModal
+            open={assignmentOpen}
+            onCancel={() => setAssignmentOpen(false)}
+            onCreated={() => {
+              setAssignmentOpen(false);
+              navigate("store-program");
             }}
           />
         )}

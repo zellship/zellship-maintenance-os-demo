@@ -1,9 +1,97 @@
-import type { SupportCase, SupportIntervention } from "./types";
+import type { StoreAssignment, SupportCase, SupportIntervention, SupportPriority } from "./types";
 
 type CaseTransition = {
   supportCase: SupportCase;
   intervention?: SupportIntervention;
 };
+
+export function createStoreAssignments(input: {
+  existing: StoreAssignment[];
+  protocolId: string;
+  stores: string[];
+  responsible: string;
+  dueAt: string;
+  requiresValidation: boolean;
+  comments?: string;
+}): StoreAssignment[] {
+  const baseNumber = Math.max(
+    1027,
+    ...input.existing.map((item) => Number(item.id.split("-").at(-1)) || 0),
+  );
+  return input.stores.map((storeLabel, index) => ({
+    id: `RTL-ASG-${baseNumber + index + 1}`,
+    protocolId: input.protocolId,
+    storeId: storeLabel.toLowerCase().replaceAll(" ", "-"),
+    storeLabel,
+    responsible: input.responsible,
+    dueAt: input.dueAt,
+    status: "Assigned",
+    protocolVersion: "1.0",
+    progress: 0,
+    requiresValidation: input.requiresValidation,
+    comments: input.comments,
+  }));
+}
+
+export function supportPriorityForImpact(
+  impact: "critical" | "partial" | "minor",
+): SupportPriority {
+  return impact === "critical" ? "P1" : impact === "partial" ? "P2" : "P3";
+}
+
+export function createDirectSupportCase(input: {
+  existing: SupportCase[];
+  storeLabel: string;
+  actor: string;
+  category: string;
+  symptom: string;
+  impact: "critical" | "partial" | "minor";
+  reportedAt: string;
+  acknowledgementDueAt: string;
+  resolutionTargetAt: string;
+  assetId?: string;
+  sourceAssignment?: StoreAssignment;
+  photoIncluded: boolean;
+}): SupportCase {
+  const baseNumber = Math.max(
+    2048,
+    ...input.existing.map((item) => Number(item.id.split("-").at(-1)) || 0),
+  );
+  const id = `RTL-SUP-${baseNumber + 1}`;
+  return {
+    id,
+    title: `${input.category}: ${input.symptom.trim().slice(0, 72)}`,
+    storeId: input.storeLabel.toLowerCase().replaceAll(" ", "-"),
+    storeLabel: input.storeLabel,
+    areaLabel: input.category,
+    assetId: input.assetId,
+    sourceAssignmentId: input.sourceAssignment?.id,
+    sourceProtocolId: input.sourceAssignment?.protocolId,
+    symptom: input.symptom.trim(),
+    operationalImpact:
+      input.impact === "critical"
+        ? "La tienda no puede continuar una operación crítica."
+        : input.impact === "partial"
+          ? "La tienda continúa operando con afectación parcial."
+          : "La operación continúa; se requiere seguimiento preventivo.",
+    suggestedPriority: supportPriorityForImpact(input.impact),
+    status: "Reported",
+    route: "Unassigned",
+    currentOwner: "Centro de soporte",
+    reportedAt: input.reportedAt,
+    acknowledgementDueAt: input.acknowledgementDueAt,
+    resolutionTargetAt: input.resolutionTargetAt,
+    updates: [
+      {
+        id: `${id}-1`,
+        at: input.reportedAt,
+        actor: input.actor,
+        label: "Solicitud directa desde tienda",
+        detail: `${input.photoIncluded ? "Foto demostrativa incluida. " : ""}${input.sourceAssignment ? `Vinculada a ${input.sourceAssignment.id}.` : "Creada fuera de un protocolo."}`,
+      },
+    ],
+  };
+}
 
 function requireStatus(supportCase: SupportCase, allowed: SupportCase["status"][]) {
   if (!allowed.includes(supportCase.status)) {
