@@ -34,7 +34,7 @@ jobs:
       - name: Validate all scenarios
         run: npm run check:release
 
-      - name: Assemble ATM and wire-plant public sites
+      - name: Assemble ATM, wire-plant, and retail public sites
         run: npm run build:pages:all
 
       - name: Configure Pages

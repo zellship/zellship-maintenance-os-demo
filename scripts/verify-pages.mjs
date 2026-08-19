@@ -6,11 +6,19 @@ const routes = [
     name: "ATM",
     htmlPath: "dist-pages/index.html",
     base: "/zellship-maintenance-os-demo/",
+    artifactRoot: "dist-pages",
   },
   {
     name: "Planta de Alambres",
     htmlPath: "dist-pages/wire/index.html",
     base: "/zellship-maintenance-os-demo/wire/",
+    artifactRoot: "dist-pages/wire",
+  },
+  {
+    name: "Retail Store Operations",
+    htmlPath: "dist-pages/retail/index.html",
+    base: "/zellship-maintenance-os-demo/retail/",
+    artifactRoot: "dist-pages/retail",
   },
 ];
 
@@ -24,11 +32,7 @@ for (const route of routes) {
     throw new Error(`${route.name}: JavaScript asset does not use ${route.base}`);
   }
 
-  const artifactPath = resolve("dist-pages", scriptSrc.replace(route.base, ""));
-  const routeArtifactPath =
-    route.name === "ATM"
-      ? artifactPath
-      : resolve("dist-pages/wire", scriptSrc.replace(route.base, ""));
+  const routeArtifactPath = resolve(route.artifactRoot, scriptSrc.replace(route.base, ""));
   if (!existsSync(routeArtifactPath)) {
     throw new Error(`${route.name}: missing compiled asset ${routeArtifactPath}`);
   }

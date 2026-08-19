@@ -14,6 +14,9 @@ import type {
   Schedule,
   ServiceRequest,
   Skill,
+  StoreAssignment,
+  SupportCase,
+  SupportIntervention,
 } from "../ove/types";
 import type { CapabilityProfileId, DemoCapabilityId } from "./capabilities";
 
@@ -42,6 +45,9 @@ export type DemoScenarioData = {
   notifications: Notification[];
   operationalFlows: OperationalFlow[];
   serviceRequests: ServiceRequest[];
+  storeAssignments?: StoreAssignment[];
+  supportCases?: SupportCase[];
+  supportInterventions?: SupportIntervention[];
   documents: EntityDocument[];
   taxonomy: {
     plants: string[];
@@ -72,6 +78,7 @@ export type DemoScenario = {
   };
   context: {
     defaultPlant: string;
+    locationLabel?: string;
     plantOptions: string[];
     terminals: string[];
     primaryOperator: string;

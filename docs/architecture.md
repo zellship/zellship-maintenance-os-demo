@@ -21,6 +21,10 @@ transitive security advisories must be reviewed before any server deployment.
   material consumption.
 - Supervision: alerts, pending validations, notifications, and KPIs.
 
+The `retail-store-support` capability profile adapts those role shells without introducing a
+second application: Administration becomes the store-support center, Mobile operations becomes
+the store-responsible workspace, and Supervision becomes the confirmation and closure queue.
+
 The shared domain contracts live in `src/ove/types.ts`. Initial entities and scenarios live in
 `src/demo-config/scenarios/`. `src/ove/seed.ts` is a compatibility adapter that exposes data from
 the active scenario to existing screens.
@@ -32,7 +36,8 @@ from the active scenario. Navigation uses capability IDs rather than client-spec
 ## State and data flow
 
 `StoreProvider` owns protocols, schedules, executions, incidents, notifications, people, tools,
-inventory, reservations, and simulated entity-document metadata. State is written to browser
+inventory, reservations, store assignments, support cases, interventions, and simulated
+entity-document metadata. State is written to browser
 `localStorage` under the active scenario's `persistence.stateKey`. The shared profile and document
 increment intentionally moves every scenario to a new key because the persisted shape changed.
 
@@ -57,10 +62,14 @@ adding editing or remote persistence behavior for those entities.
   `dist-pages`.
 - `npm run build:ssr`: TanStack Start build in `dist`; secondary compatibility artifact.
 - GitHub Pages base paths: `/zellship-maintenance-os-demo/` for ATM and
-  `/zellship-maintenance-os-demo/wire/` for the neutral wire-plant scenario.
-- `.github/workflows/deploy-pages.yml`: validates all scenarios and deploys both public routes from
+  `/zellship-maintenance-os-demo/wire/` for the neutral wire-plant scenario, and
+  `/zellship-maintenance-os-demo/retail/` for the neutral retail scenario.
+- `.github/workflows/deploy-pages.yml`: validates all scenarios and deploys all three public routes from
   `main`.
 - `.github/workflows/ci.yml`: validates pull requests.
 
-The default Pages base, the wire route build variable and social image URL must change if the
+`npm run build:retail:fixed` validates the Retail artifact locally; `build:pages:all` assembles it
+under the independent `/retail/` route after its public distribution authorization.
+
+The default Pages base, the wire and retail route build variables, and social image URL must change if the
 repository is renamed, forked to a different path, or moved to a custom domain.

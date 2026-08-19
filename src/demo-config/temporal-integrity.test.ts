@@ -4,8 +4,14 @@ import { resolveDemoNow } from "./clock";
 import { industrialBaseScenario } from "./scenarios/industrial-base/config";
 import { atmFieldServiceScenario } from "./scenarios/atm-field-service/config";
 import { wirePlantMaintenanceScenario } from "./scenarios/wire-plant-maintenance/config";
+import { retailStoreOperationsScenario } from "./scenarios/retail-store-operations/config";
 
-const scenarios = [industrialBaseScenario, atmFieldServiceScenario, wirePlantMaintenanceScenario];
+const scenarios = [
+  industrialBaseScenario,
+  atmFieldServiceScenario,
+  wirePlantMaintenanceScenario,
+  retailStoreOperationsScenario,
+];
 
 describe.each(scenarios)("$id temporal integrity", (scenario) => {
   const { data } = scenario;

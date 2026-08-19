@@ -15,6 +15,94 @@ export type ProtocolActivation = "Recurring" | "Triggered" | "OnDemand";
 export type NotificationChannel = "System" | "Push" | "WhatsApp" | "Email" | "SMS";
 export type ServiceRequestStatus = "Received" | "Accepted" | "Declined" | "Expired" | "Planned";
 
+export type StoreAssignmentStatus =
+  | "Draft"
+  | "Assigned"
+  | "Acknowledged"
+  | "InProgress"
+  | "Submitted"
+  | "Returned"
+  | "Validated"
+  | "Completed";
+
+export type SupportPriority = "P1" | "P2" | "P3" | "P4";
+export type SupportRoute = "Unassigned" | "Internal" | "External";
+export type SupportCaseStatus =
+  | "Draft"
+  | "Reported"
+  | "DiagnosticProtocolAssigned"
+  | "Diagnosing"
+  | "EscalationRequired"
+  | "InternalAssigned"
+  | "ExternalAssigned"
+  | "InService"
+  | "PendingStoreConfirmation"
+  | "PendingSupportValidation"
+  | "Closed"
+  | "Reopened";
+
+export interface StoreAssignment {
+  id: string;
+  protocolId: string;
+  storeId: string;
+  storeLabel: string;
+  responsible: string;
+  dueAt: string;
+  status: StoreAssignmentStatus;
+  protocolVersion: string;
+  progress: number;
+  scheduleId?: string;
+  requiresValidation: boolean;
+  completedAt?: string;
+}
+
+export interface SupportCaseUpdate {
+  id: string;
+  at: string;
+  actor: string;
+  label: string;
+  detail: string;
+}
+
+export interface SupportIntervention {
+  id: string;
+  caseId: string;
+  route: Exclude<SupportRoute, "Unassigned">;
+  assignee: string;
+  specialty: string;
+  scheduledAt: string;
+  status: "Assigned" | "Scheduled" | "InService" | "Resolved";
+  resolution?: string;
+  evidenceLabel?: string;
+}
+
+export interface SupportCase {
+  id: string;
+  title: string;
+  storeId: string;
+  storeLabel: string;
+  areaLabel: string;
+  assetId?: string;
+  sourceAssignmentId?: string;
+  sourceProtocolId?: string;
+  symptom: string;
+  operationalImpact: string;
+  suggestedPriority: SupportPriority;
+  confirmedPriority?: SupportPriority;
+  status: SupportCaseStatus;
+  route: SupportRoute;
+  currentOwner: string;
+  reportedAt?: string;
+  acknowledgementDueAt?: string;
+  resolutionTargetAt?: string;
+  diagnosticProtocolId?: string;
+  interventionId?: string;
+  storeConfirmedAt?: string;
+  closedAt?: string;
+  resolutionSummary?: string;
+  updates: SupportCaseUpdate[];
+}
+
 export interface ServiceClassification {
   serviceType: string;
   installationClass: string;
