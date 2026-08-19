@@ -322,6 +322,367 @@
   background: #f6ffed;
 }
 
+.retail-store-channel {
+  min-height: calc(100vh - 65px);
+  background: #f5f6fa;
+}
+
+.retail-store-channel-switch {
+  position: relative;
+  z-index: 8;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  min-height: 64px;
+  padding: 10px clamp(18px, 3vw, 42px);
+  border-bottom: 1px solid #e8e8ee;
+  background: rgb(255 255 255 / 96%);
+  box-shadow: 0 4px 18px rgb(24 24 35 / 4%);
+}
+
+.retail-store-channel-switch > div:first-child {
+  display: flex;
+  flex-direction: column;
+}
+
+.retail-store-channel .retail-operator-shell,
+.retail-store-channel .retail-store-context {
+  min-height: calc(100vh - 129px);
+}
+
+.retail-store-channel .retail-store-context {
+  top: 129px;
+}
+
+.retail-mobile-demo-stage {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) minmax(360px, 420px) minmax(220px, 0.8fr);
+  gap: clamp(22px, 4vw, 64px);
+  align-items: center;
+  min-height: calc(100vh - 129px);
+  padding: clamp(28px, 4vw, 56px);
+  background: radial-gradient(circle at 50% 35%, rgb(112 65 218 / 10%), transparent 30%), #f5f6fa;
+}
+
+.retail-mobile-demo-context,
+.retail-mobile-demo-notes {
+  max-width: 390px;
+}
+
+.retail-mobile-demo-context {
+  padding: 30px;
+  color: #fff;
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 15% 8%, rgb(112 65 218 / 45%), transparent 38%),
+    linear-gradient(155deg, #151821 0%, #23203e 100%);
+  box-shadow: 0 24px 60px rgb(24 24 35 / 16%);
+}
+
+.retail-mobile-demo-context .ant-typography,
+.retail-mobile-demo-context p {
+  color: inherit;
+}
+
+.retail-mobile-demo-context p {
+  color: rgb(255 255 255 / 68%);
+}
+
+.retail-mobile-demo-notes {
+  padding: 8px;
+}
+
+.retail-mobile-demo-notes ol {
+  display: grid;
+  gap: 12px;
+  margin: 18px 0 26px;
+  padding-left: 22px;
+  color: #555b68;
+  line-height: 1.5;
+}
+
+.retail-phone-frame {
+  position: relative;
+  justify-self: center;
+  width: min(100%, 400px);
+  height: min(760px, calc(100vh - 175px));
+  min-height: 610px;
+  padding: 10px;
+  overflow: hidden;
+  border: 1px solid #262a32;
+  border-radius: 38px;
+  background: #171a20;
+  box-shadow: 0 30px 80px rgb(24 24 35 / 24%);
+}
+
+.retail-phone-hardware {
+  position: absolute;
+  z-index: 5;
+  top: 18px;
+  left: 50%;
+  width: 94px;
+  height: 22px;
+  transform: translateX(-50%);
+  border-radius: 16px;
+  background: #151821;
+}
+
+.retail-phone-screen {
+  position: relative;
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  border-radius: 29px;
+  background: #f6f7fa;
+}
+
+.retail-phone-header {
+  position: sticky;
+  z-index: 4;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 76px;
+  padding: 24px 18px 10px;
+  border-bottom: 1px solid #e7e8ed;
+  background: rgb(255 255 255 / 95%);
+  backdrop-filter: blur(12px);
+}
+
+.retail-phone-header > div:first-child {
+  display: flex;
+  flex-direction: column;
+}
+
+.retail-phone-header > div:first-child > span:last-child {
+  color: #777c87;
+  font-size: 12px;
+}
+
+.retail-phone-home,
+.retail-phone-task {
+  padding: 18px 14px 30px;
+}
+
+.retail-phone-greeting .ant-typography {
+  margin: 0 0 3px;
+}
+
+.retail-phone-greeting > .ant-typography:first-child {
+  color: #7041da;
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.12em;
+}
+
+.retail-phone-home > .ant-btn-primary {
+  height: 46px;
+  margin: 10px 0 14px;
+  box-shadow: 0 10px 22px rgb(112 65 218 / 20%);
+}
+
+.retail-phone-list {
+  margin-top: 14px;
+}
+
+.retail-phone-list .ant-list-item {
+  padding: 0 0 10px;
+  border: 0;
+}
+
+.retail-phone-assignment-card {
+  width: 100%;
+  border-color: #e4e5eb;
+  box-shadow: 0 7px 20px rgb(24 24 35 / 5%);
+}
+
+.retail-phone-assignment-card .ant-typography {
+  margin: 0;
+}
+
+.retail-phone-task-nav {
+  display: flex;
+  justify-content: space-between;
+  margin: -6px -8px 10px;
+}
+
+.retail-mobile-protocol > .ant-typography {
+  margin-top: 5px;
+  margin-bottom: 4px;
+}
+
+.retail-mobile-protocol > .ant-steps,
+.retail-mobile-protocol > .ant-progress {
+  margin: 12px 0 16px;
+}
+
+.retail-mobile-protocol .ant-card {
+  border-color: #e2e3e9;
+  box-shadow: 0 8px 24px rgb(24 24 35 / 6%);
+}
+
+.retail-mobile-protocol .ant-card-body {
+  display: grid;
+  gap: 13px;
+}
+
+.retail-receipt-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.retail-receipt-metrics label {
+  display: grid;
+  gap: 5px;
+  color: #6c7280;
+  font-size: 11px;
+}
+
+.retail-receipt-metrics .ant-input-number {
+  width: 100%;
+}
+
+.retail-receipt-photo,
+.retail-signature-pad {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-height: 146px;
+  padding: 18px;
+  color: #7041da;
+  border: 1px dashed #bda7ea;
+  border-radius: 14px;
+  background: #faf7ff;
+  cursor: pointer;
+}
+
+.retail-receipt-photo .anticon,
+.retail-signature-pad .anticon {
+  font-size: 30px;
+}
+
+.retail-receipt-photo b,
+.retail-receipt-photo span,
+.retail-signature-pad b,
+.retail-signature-pad span {
+  display: block;
+}
+
+.retail-receipt-photo span {
+  color: #747986;
+  font-size: 11px;
+}
+
+.retail-receipt-photo.is-captured {
+  color: #237804;
+  border-style: solid;
+  border-color: #95de64;
+  background:
+    linear-gradient(rgb(246 255 237 / 88%), rgb(246 255 237 / 88%)),
+    repeating-linear-gradient(45deg, #d9d9d9 0 10px, #efefef 10px 20px);
+}
+
+.retail-capture-audit {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 5px 14px;
+  padding: 12px;
+  border-radius: 10px;
+  background: #f2f3f7;
+  font-size: 11px;
+}
+
+.retail-capture-audit span {
+  color: #777c87;
+}
+
+.retail-capture-audit b {
+  text-align: right;
+}
+
+.retail-signature-pad {
+  min-height: 122px;
+  color: #767b86;
+  border-color: #cfd1d8;
+  background: #fff;
+}
+
+.retail-signature-pad.is-signed span {
+  color: #20232a;
+  font-family: cursive;
+  font-size: 28px;
+  transform: rotate(-4deg);
+}
+
+.retail-phone-screen .retail-phone-drawer {
+  position: absolute;
+}
+
+.retail-phone-drawer .ant-drawer-content-wrapper {
+  max-width: 100%;
+}
+
+@media (max-width: 1180px) {
+  .retail-mobile-demo-stage {
+    grid-template-columns: minmax(230px, 0.8fr) minmax(360px, 410px);
+  }
+
+  .retail-mobile-demo-notes {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .retail-store-channel-switch {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .retail-store-channel-switch .ant-segmented {
+    width: 100%;
+  }
+
+  .retail-store-channel-switch .ant-segmented-item {
+    flex: 1;
+  }
+
+  .retail-mobile-demo-stage {
+    display: block;
+    min-height: auto;
+    padding: 0;
+  }
+
+  .retail-mobile-demo-context,
+  .retail-mobile-demo-notes {
+    display: none;
+  }
+
+  .retail-phone-frame {
+    width: 100%;
+    height: calc(100vh - 169px);
+    min-height: 600px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .retail-phone-hardware {
+    display: none;
+  }
+
+  .retail-phone-screen {
+    border-radius: 0;
+  }
+
+  .retail-phone-header {
+    padding-top: 12px;
+  }
+}
+
 @media (max-width: 900px) {
   .retail-page-heading,
   .retail-case-title-row {

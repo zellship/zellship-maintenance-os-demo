@@ -11,6 +11,7 @@ import {
   startDiagnostic,
   createStoreAssignments,
   createDirectSupportCase,
+  completeStoreAssignment,
 } from "./retail-domain";
 
 describe("retail support case lifecycle", () => {
@@ -61,6 +62,47 @@ describe("retail support case lifecycle", () => {
 });
 
 describe("retail store initiated work", () => {
+  it("completes a receiving assignment with photo, audit data and signature", () => {
+    const assignment = createStoreAssignments({
+      existing: [],
+      protocolId: "retail-merchandise-receipt",
+      stores: ["Boutique Norte"],
+      responsible: "Valeria Santos",
+      dueAt: "2026-08-20T16:00:00.000Z",
+      requiresValidation: true,
+    })[0];
+    const completed = completeStoreAssignment(assignment, {
+      submittedAt: "2026-08-20T15:30:00.000Z",
+      submittedBy: "Valeria Santos",
+      evidenceLabels: ["Foto de recepción", "Fecha y hora"],
+      formAnswers: { expectedQuantity: 48, receivedQuantity: 48, damagedQuantity: 0 },
+      signatureCaptured: true,
+    });
+
+    expect(completed).toMatchObject({ status: "Submitted", progress: 100 });
+    expect(completed.submission?.submittedBy).toBe("Valeria Santos");
+  });
+
+  it("rejects a receiving submission without its required evidence", () => {
+    const assignment = createStoreAssignments({
+      existing: [],
+      protocolId: "retail-merchandise-receipt",
+      stores: ["Boutique Norte"],
+      responsible: "Valeria Santos",
+      dueAt: "2026-08-20T16:00:00.000Z",
+      requiresValidation: false,
+    })[0];
+    expect(() =>
+      completeStoreAssignment(assignment, {
+        submittedAt: "2026-08-20T15:30:00.000Z",
+        submittedBy: "Valeria Santos",
+        evidenceLabels: [],
+        formAnswers: {},
+        signatureCaptured: false,
+      }),
+    ).toThrow(/photo/i);
+  });
+
   it("creates independent assignments for every selected store", () => {
     const assignments = createStoreAssignments({
       existing: [],

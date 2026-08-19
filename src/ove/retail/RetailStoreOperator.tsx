@@ -21,7 +21,9 @@ import {
   CameraOutlined,
   CheckCircleOutlined,
   CustomerServiceOutlined,
+  DesktopOutlined,
   EnvironmentOutlined,
+  MobileOutlined,
   PlayCircleOutlined,
   SafetyCertificateOutlined,
   ShopOutlined,
@@ -40,12 +42,37 @@ import type { StoreAssignment, SupportCase } from "../types";
 import { formatShortDate } from "./retail-format";
 import { AssignmentStatusTag, PriorityTag, SupportStatusTag } from "./retail-ui";
 import { StoreSupportRequestModal } from "./StoreSupportRequestModal";
+import { RetailMobileStoreApp } from "./RetailMobileStoreApp";
 
 const CASE_ID = "RTL-SUP-2048";
 const PRIMARY_ASSIGNMENT_ID = "RTL-ASG-1024";
 const STORE = "Boutique Norte";
 
 export function RetailStoreOperator() {
+  const [viewMode, setViewMode] = useState<"desktop" | "mobile">("desktop");
+
+  return (
+    <div className={`retail-store-channel retail-store-channel-${viewMode}`}>
+      <div className="retail-store-channel-switch">
+        <div>
+          <Typography.Text strong>Mi tienda</Typography.Text>
+          <Typography.Text type="secondary">Mismo programa, dos contextos de uso</Typography.Text>
+        </div>
+        <Segmented
+          value={viewMode}
+          onChange={(value) => setViewMode(value as "desktop" | "mobile")}
+          options={[
+            { label: "Escritorio", value: "desktop", icon: <DesktopOutlined /> },
+            { label: "Móvil", value: "mobile", icon: <MobileOutlined /> },
+          ]}
+        />
+      </div>
+      {viewMode === "desktop" ? <RetailStoreDesktop /> : <RetailMobileStoreApp />}
+    </div>
+  );
+}
+
+function RetailStoreDesktop() {
   const { storeAssignments, setStoreAssignments, supportCases, setSupportCases, protocols } =
     useStore();
   const [selectedAssignmentId, setSelectedAssignmentId] = useState(PRIMARY_ASSIGNMENT_ID);

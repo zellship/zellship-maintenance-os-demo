@@ -33,19 +33,27 @@ sign in as **Centro de soporte**, and keep `RTL-SUP-2048` as the primary story.
 1. Review **Centro de tiendas**: six locations, today’s operational program, and active support.
 2. Use the quick action **Nueva asignación**, select a protocol and one or more stores, and publish
    independent assignments.
-3. Change to **Mi tienda**. On a narrow screen, open **Programa**, select an assignment, and use
-   **Atender** to start it.
-4. Use **Solicitar asistencia** from the store home to create a direct case, or execute
+3. Change to **Mi tienda** and use the visible **Escritorio / Móvil** selector. **Escritorio** keeps
+   the operational overview; **Móvil** opens the floor-execution emulator even on a wide display.
+4. In **Móvil**, open the merchandise notification and execute `RTL-ASG-1028`: confirm the 48
+   packages, capture the simulated photo, verify the date, time and user, sign, and submit. Change a
+   quantity or damaged-package value to demonstrate the contextual **Reportar** action.
+5. Execute `RTL-ASG-1024` from the same mobile program to demonstrate opening checks and the
+   simulated 27.8 °C deviation. Use **Solicitar asistencia** without leaving the protocol.
+6. Use **Solicitar asistencia** from the store home to create a direct case, or execute
    `RTL-ASG-1024` and report the simulated 27.8 °C deviation without leaving its protocol.
-5. Return to **Centro de soporte**, open `RTL-SUP-2048`, and assign the safe remote diagnostic.
-6. In **Mi tienda**, complete only the visible checks and select **El problema continúa**.
-7. In support, assign the simulated external provider and register the service resolution.
-8. In the store, confirm restored operation; then use **Supervisión** or support to validate and
+7. Return to **Centro de soporte**, open `RTL-SUP-2048`, and assign the safe remote diagnostic.
+8. In support, assign the simulated external provider and register the service resolution. Return
+   to the store to confirm restored operation; then use **Supervisión** or support to validate and
    close the case.
 
-The case must remain linked to its source assignment and protocol throughout the walkthrough.
+Desktop and mobile read and update the same browser-local assignments, notifications and support
+cases. The case must remain linked to its source assignment and protocol throughout the walkthrough.
 Store confirmation is required before final closure. Do not present the simulated messages,
 diagnostics, provider dispatch, location, or evidence as live integrations.
+
+Retail `0.2.0` uses the explicit browser-state key `zellship-store-operations-retail-v2` so existing
+visitors receive the new merchandise-receiving seed instead of retaining an incomplete `v1` state.
 
 ## Shared operational-profile walkthrough
 
