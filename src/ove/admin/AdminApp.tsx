@@ -19,6 +19,8 @@ import {
   MenuUnfoldOutlined,
   SafetyCertificateOutlined,
   PlusOutlined,
+  CustomerServiceOutlined,
+  ShopOutlined,
 } from "@ant-design/icons";
 import { ProtocolCatalog } from "./ProtocolCatalog";
 import { ProtocolWizard } from "./ProtocolWizard";
@@ -39,6 +41,9 @@ import { useStore } from "../store";
 import { SupervisorValidations } from "../supervisor/SupervisorValidations";
 import { QuickWorkOrderModal } from "./QuickWorkOrderModal";
 import { advanceDemoClock } from "../../demo-config/clock";
+import { RetailOperationsDashboard } from "../retail/RetailOperationsDashboard";
+import { RetailSupportCases } from "../retail/RetailSupportCases";
+import { StoreProgram } from "../retail/StoreProgram";
 
 type Key =
   | "dashboard"
@@ -49,6 +54,8 @@ type Key =
   | "orders"
   | "results"
   | "requests"
+  | "store-program"
+  | "support"
   | "validations"
   | "assets"
   | "resources"
@@ -64,6 +71,7 @@ export function AdminApp() {
   const [requestedServiceRequestId, setRequestedServiceRequestId] = useState<string | null>(null);
   const [requestedProtocolId, setRequestedProtocolId] = useState<string | null>(null);
   const [requestedExecutionId, setRequestedExecutionId] = useState<string | null>(null);
+  const [requestedSupportCaseId, setRequestedSupportCaseId] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState(false);
   const [mobile, setMobile] = useState(false);
   const [quickOrderOpen, setQuickOrderOpen] = useState(false);
@@ -79,6 +87,12 @@ export function AdminApp() {
   };
 
   const executionItems = [
+    ...(hasCapability("store-operations")
+      ? [{ key: "store-program", icon: <ShopOutlined />, label: "Programa de tiendas" }]
+      : []),
+    ...(hasCapability("support-case-management")
+      ? [{ key: "support", icon: <CustomerServiceOutlined />, label: "Solicitudes de soporte" }]
+      : []),
     ...(hasCapability("planning")
       ? [{ key: "planning", icon: <CalendarOutlined />, label: "Programación" }]
       : []),
@@ -124,7 +138,11 @@ export function AdminApp() {
         {
           key: "dashboard",
           icon: <DashboardOutlined />,
-          label: serviceRequests.length ? "Centro operativo" : "Centro de control",
+          label: hasCapability("store-operations")
+            ? "Centro de tiendas"
+            : serviceRequests.length
+              ? "Centro operativo"
+              : "Centro de control",
         },
       ]
     : [];
@@ -205,24 +223,26 @@ export function AdminApp() {
           style={{ borderRight: 0, paddingTop: 12 }}
           items={dashboardItems}
         />
-        <div className={`sidebar-quick-order ${collapsed ? "is-collapsed" : ""}`}>
-          <Tooltip title={collapsed ? "Nueva orden" : undefined} placement="right">
-            <Button
-              type="primary"
-              size="large"
-              shape={collapsed ? "circle" : "default"}
-              block={!collapsed}
-              icon={<PlusOutlined />}
-              aria-label="Crear nueva orden de trabajo"
-              onClick={() => {
-                setQuickOrderContext({});
-                setQuickOrderOpen(true);
-              }}
-            >
-              {!collapsed && "Nueva orden"}
-            </Button>
-          </Tooltip>
-        </div>
+        {!hasCapability("store-operations") && (
+          <div className={`sidebar-quick-order ${collapsed ? "is-collapsed" : ""}`}>
+            <Tooltip title={collapsed ? "Nueva orden" : undefined} placement="right">
+              <Button
+                type="primary"
+                size="large"
+                shape={collapsed ? "circle" : "default"}
+                block={!collapsed}
+                icon={<PlusOutlined />}
+                aria-label="Crear nueva orden de trabajo"
+                onClick={() => {
+                  setQuickOrderContext({});
+                  setQuickOrderOpen(true);
+                }}
+              >
+                {!collapsed && "Nueva orden"}
+              </Button>
+            </Tooltip>
+          </div>
+        )}
         <Menu
           mode="inline"
           selectedKeys={[key]}
@@ -234,7 +254,7 @@ export function AdminApp() {
       <Layout.Content
         style={{ padding: 24, background: "#f5f6fa", minHeight: "calc(100vh - 64px)" }}
       >
-        {mobile && (
+        {mobile && !hasCapability("store-operations") && (
           <div className="quick-order-action-bar">
             <Button
               type="primary"
@@ -249,7 +269,16 @@ export function AdminApp() {
             </Button>
           </div>
         )}
-        {key === "dashboard" && (
+        {key === "dashboard" && hasCapability("store-operations") && (
+          <RetailOperationsDashboard
+            onOpenProgram={() => navigate("store-program")}
+            onOpenSupport={(caseId) => {
+              setRequestedSupportCaseId(caseId ?? null);
+              navigate("support");
+            }}
+          />
+        )}
+        {key === "dashboard" && !hasCapability("store-operations") && (
           <OperationsLive
             onNav={(nextKey) => navigate(nextKey as Key)}
             onOpenOrder={(orderId) => navigate("orders", orderId)}
@@ -269,6 +298,8 @@ export function AdminApp() {
             }}
           />
         )}
+        {key === "store-program" && <StoreProgram />}
+        {key === "support" && <RetailSupportCases initialCaseId={requestedSupportCaseId} />}
         {key === "catalog" && <ProtocolCatalog onNew={() => setKey("new")} />}
         {key === "flows" && <OperationalFlows />}
         {key === "new" && <ProtocolWizard onDone={() => setKey("catalog")} />}
@@ -311,44 +342,46 @@ export function AdminApp() {
         )}
         {key === "bitacora" && <Bitacora />}
         {key === "reportes" && <Reportes />}
-        <QuickWorkOrderModal
-          open={quickOrderOpen}
-          initialAssetId={quickOrderContext.assetId}
-          initialNote={quickOrderContext.note}
-          onCancel={() => setQuickOrderOpen(false)}
-          onOpenPlanning={() => {
-            setQuickOrderOpen(false);
-            navigate("planning");
-          }}
-          onCreated={(scheduleId) => {
-            if (quickOrderContext.incidentId) {
-              const at = advanceDemoClock(1).toISOString();
-              setIncidents(
-                incidents.map((incident) =>
-                  incident.id === quickOrderContext.incidentId
-                    ? {
-                        ...incident,
-                        scheduleId,
-                        status: "Review" as const,
-                        updates: [
-                          ...(incident.updates ?? []),
-                          {
-                            id: `iu-order-${Date.now()}`,
-                            at,
-                            actor: "Coordinación de mantenimiento",
-                            type: "WorkOrderLinked" as const,
-                            text: "Orden de trabajo creada y vinculada desde la incidencia.",
-                          },
-                        ],
-                      }
-                    : incident,
-                ),
-              );
-            }
-            setQuickOrderOpen(false);
-            setQuickOrderContext({});
-          }}
-        />
+        {!hasCapability("store-operations") && (
+          <QuickWorkOrderModal
+            open={quickOrderOpen}
+            initialAssetId={quickOrderContext.assetId}
+            initialNote={quickOrderContext.note}
+            onCancel={() => setQuickOrderOpen(false)}
+            onOpenPlanning={() => {
+              setQuickOrderOpen(false);
+              navigate("planning");
+            }}
+            onCreated={(scheduleId) => {
+              if (quickOrderContext.incidentId) {
+                const at = advanceDemoClock(1).toISOString();
+                setIncidents(
+                  incidents.map((incident) =>
+                    incident.id === quickOrderContext.incidentId
+                      ? {
+                          ...incident,
+                          scheduleId,
+                          status: "Review" as const,
+                          updates: [
+                            ...(incident.updates ?? []),
+                            {
+                              id: `iu-order-${Date.now()}`,
+                              at,
+                              actor: "Coordinación de mantenimiento",
+                              type: "WorkOrderLinked" as const,
+                              text: "Orden de trabajo creada y vinculada desde la incidencia.",
+                            },
+                          ],
+                        }
+                      : incident,
+                  ),
+                );
+              }
+              setQuickOrderOpen(false);
+              setQuickOrderContext({});
+            }}
+          />
+        )}
       </Layout.Content>
     </Layout>
   );

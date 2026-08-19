@@ -6,7 +6,7 @@ Public development and production commands use the current calendar date. Use th
 development commands only when the walkthrough must reproduce the audited date exactly.
 
 Select the scenario at build or development time. The industrial walkthrough remains the default;
-the ATM walkthrough uses a separate state key and fictional dataset.
+the ATM, Wire, and Retail walkthroughs use separate state keys and fictional datasets.
 
 ```bash
 npm run demo:atm
@@ -15,6 +15,34 @@ npm run demo:atm
 ```bash
 npm run demo:wire
 ```
+
+The Retail scenario uses the same public-safe fictitious dataset and is published under its own
+GitHub Pages route:
+
+```bash
+npm run demo:retail:fixed
+```
+
+Public route: `/zellship-maintenance-os-demo/retail/`.
+
+## Retail store operations — eight-scene walkthrough
+
+All store names, people, providers, assets and operational records are fictitious. Reset the demo,
+sign in as **Centro de soporte**, and keep `RTL-SUP-2048` as the primary story.
+
+1. Review **Centro de tiendas**: six locations, today’s operational program, and active support.
+2. Open **Programa de tiendas** and publish the draft assignment for Boutique Aeropuerto.
+3. Change to **Mi tienda** and start `RTL-ASG-1024`, the opening protocol for Boutique Norte.
+4. Register the simulated 27.8 °C deviation and use **Solicitar apoyo** without leaving the protocol.
+5. Return to **Centro de soporte**, open `RTL-SUP-2048`, and assign the safe remote diagnostic.
+6. In **Mi tienda**, complete only the visible checks and select **El problema continúa**.
+7. In support, assign the simulated external provider and register the service resolution.
+8. In the store, confirm restored operation; then use **Supervisión** or support to validate and
+   close the case.
+
+The case must remain linked to its source assignment and protocol throughout the walkthrough.
+Store confirmation is required before final closure. Do not present the simulated messages,
+diagnostics, provider dispatch, location, or evidence as live integrations.
 
 ## Shared operational-profile walkthrough
 

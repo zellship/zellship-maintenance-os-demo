@@ -13,10 +13,17 @@ import { SupervisorValidations } from "./SupervisorValidations";
 import { SupervisorKPIs } from "./SupervisorKPIs";
 import { NotificationCenter } from "../shared/NotificationCenter";
 import { hasCapability } from "../../demo-config/active";
+import { RetailSupervisorApp } from "../retail/RetailSupervisorApp";
 
 type SupervisorSection = "alerts" | "validations" | "notifications" | "kpis";
 
 export function SupervisorApp() {
+  if (hasCapability("support-case-management")) return <RetailSupervisorApp />;
+
+  return <MaintenanceSupervisorApp />;
+}
+
+function MaintenanceSupervisorApp() {
   const [key, setKey] = useState<SupervisorSection>("validations");
   const [collapsed, setCollapsed] = useState(false);
   const [mobile, setMobile] = useState(false);

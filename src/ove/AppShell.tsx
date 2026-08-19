@@ -108,7 +108,7 @@ function Inner() {
 
             <Space size={12}>
               <Select
-                aria-label="Planta activa"
+                aria-label={activeDemo.context.locationLabel ?? "Planta activa"}
                 value={plant}
                 onChange={(value) => {
                   setPlant(value);

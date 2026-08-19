@@ -12,6 +12,9 @@ import type {
   ResourceReservation,
   ServiceRequest,
   EntityDocument,
+  StoreAssignment,
+  SupportCase,
+  SupportIntervention,
 } from "./types";
 import {
   seedProtocols,
@@ -42,6 +45,9 @@ interface State {
   reservations: ResourceReservation[];
   serviceRequests: ServiceRequest[];
   documents: EntityDocument[];
+  storeAssignments: StoreAssignment[];
+  supportCases: SupportCase[];
+  supportInterventions: SupportIntervention[];
 }
 
 interface Store extends State {
@@ -57,6 +63,9 @@ interface Store extends State {
   setReservations: (r: ResourceReservation[]) => void;
   setServiceRequests: (requests: ServiceRequest[]) => void;
   setDocuments: (documents: EntityDocument[]) => void;
+  setStoreAssignments: (assignments: StoreAssignment[]) => void;
+  setSupportCases: (cases: SupportCase[]) => void;
+  setSupportInterventions: (interventions: SupportIntervention[]) => void;
   reset: () => void;
 }
 
@@ -77,6 +86,9 @@ const initial: State = {
   reservations: seedReservations,
   serviceRequests: seedServiceRequests,
   documents: activeDemo.data.documents,
+  storeAssignments: activeDemo.data.storeAssignments ?? [],
+  supportCases: activeDemo.data.supportCases ?? [],
+  supportInterventions: activeDemo.data.supportInterventions ?? [],
 };
 
 export function StoreProvider({ children }: { children: ReactNode }) {
@@ -117,6 +129,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setReservations: (reservations) => setState((s) => ({ ...s, reservations })),
       setServiceRequests: (serviceRequests) => setState((s) => ({ ...s, serviceRequests })),
       setDocuments: (documents) => setState((s) => ({ ...s, documents })),
+      setStoreAssignments: (storeAssignments) => setState((s) => ({ ...s, storeAssignments })),
+      setSupportCases: (supportCases) => setState((s) => ({ ...s, supportCases })),
+      setSupportInterventions: (supportInterventions) =>
+        setState((s) => ({ ...s, supportInterventions })),
       reset: () => {
         resetDemoClock();
         setState(initial);

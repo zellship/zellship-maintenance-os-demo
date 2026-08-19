@@ -11,7 +11,12 @@ export const demoScenarioDescriptorSchema = z
     sourceBaseline: z.string().regex(/^[0-9a-f]{40}$/),
     label: z.string().min(1),
     description: z.string().min(1),
-    capabilityProfile: z.enum(["full", "execution-only", "industrial-maintenance"]),
+    capabilityProfile: z.enum([
+      "full",
+      "execution-only",
+      "industrial-maintenance",
+      "retail-store-support",
+    ]),
     capabilities: z.array(capabilitySchema).min(1),
     branding: z.object({
       brandName: z.string().min(1),
@@ -25,6 +30,7 @@ export const demoScenarioDescriptorSchema = z
     }),
     context: z.object({
       defaultPlant: z.string().min(1),
+      locationLabel: z.string().min(1).optional(),
       plantOptions: z.array(z.string().min(1)).min(1),
       terminals: z.array(z.string().min(1)).min(1),
       primaryOperator: z.string().min(1),

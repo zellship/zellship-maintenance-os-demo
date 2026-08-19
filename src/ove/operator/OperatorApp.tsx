@@ -38,6 +38,8 @@ import { NotificationCenter } from "../shared/NotificationCenter";
 import { useStore } from "../store";
 import { seedAssets } from "../seed";
 import { activeDemo } from "../../demo-config/active";
+import { hasCapability } from "../../demo-config/active";
+import { RetailStoreOperator } from "../retail/RetailStoreOperator";
 
 const OPERATOR = activeDemo.context.primaryOperator;
 const OPERATOR_PROFILE = activeDemo.context.loginProfiles.find(
@@ -45,6 +47,12 @@ const OPERATOR_PROFILE = activeDemo.context.loginProfiles.find(
 );
 
 export function OperatorApp() {
+  if (hasCapability("store-operations")) return <RetailStoreOperator />;
+
+  return <MaintenanceOperatorApp />;
+}
+
+function MaintenanceOperatorApp() {
   const { schedules, protocols, notifications } = useStore();
   const [tab, setTab] = useState("home");
   const [activeSchedule, setActiveSchedule] = useState<string | null>(null);

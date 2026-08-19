@@ -6,6 +6,7 @@ import { demoScenarioDescriptorSchema } from "./schema";
 import { industrialBaseScenario } from "./scenarios/industrial-base/config";
 import { atmFieldServiceScenario } from "./scenarios/atm-field-service/config";
 import { wirePlantMaintenanceScenario } from "./scenarios/wire-plant-maintenance/config";
+import { retailStoreOperationsScenario } from "./scenarios/retail-store-operations/config";
 
 describe("demo scenario registry", () => {
   it("preserves the audited industrial baseline contract", () => {
@@ -21,39 +22,41 @@ describe("demo scenario registry", () => {
     expect(scenario.data.documents.length).toBeGreaterThan(0);
   });
 
-  it.each([industrialBaseScenario, atmFieldServiceScenario, wirePlantMaintenanceScenario])(
-    "$id separates availability from operational condition",
-    (scenario) => {
-      for (const asset of scenario.data.assets) {
-        expect(asset.availabilityStatus, asset.id).toBeDefined();
-        expect(asset.operationalCondition, asset.id).toBeDefined();
-        if (
-          asset.operationalCondition === "Quarantine" ||
-          asset.operationalCondition === "OutOfService"
-        ) {
-          expect(asset.availabilityStatus, asset.id).toBe("Unavailable");
-        }
-        if (asset.estimatedReleaseAt) {
-          expect(new Date(asset.estimatedReleaseAt).getTime(), asset.id).toBeGreaterThan(
-            resolveDemoNow().valueOf(),
-          );
-        }
+  it.each([
+    industrialBaseScenario,
+    atmFieldServiceScenario,
+    wirePlantMaintenanceScenario,
+    retailStoreOperationsScenario,
+  ])("$id separates availability from operational condition", (scenario) => {
+    for (const asset of scenario.data.assets) {
+      expect(asset.availabilityStatus, asset.id).toBeDefined();
+      expect(asset.operationalCondition, asset.id).toBeDefined();
+      if (
+        asset.operationalCondition === "Quarantine" ||
+        asset.operationalCondition === "OutOfService"
+      ) {
+        expect(asset.availabilityStatus, asset.id).toBe("Unavailable");
       }
+      if (asset.estimatedReleaseAt) {
+        expect(new Date(asset.estimatedReleaseAt).getTime(), asset.id).toBeGreaterThan(
+          resolveDemoNow().valueOf(),
+        );
+      }
+    }
 
-      for (const asset of scenario.data.assets.filter(
-        (candidate) => candidate.availabilityStatus === "Assigned",
-      )) {
-        expect(
-          scenario.data.schedules.some(
-            (schedule) =>
-              schedule.assetId === asset.id &&
-              (schedule.status === "Pending" || schedule.status === "InProgress"),
-          ),
-          asset.id,
-        ).toBe(true);
-      }
-    },
-  );
+    for (const asset of scenario.data.assets.filter(
+      (candidate) => candidate.availabilityStatus === "Assigned",
+    )) {
+      expect(
+        scenario.data.schedules.some(
+          (schedule) =>
+            schedule.assetId === asset.id &&
+            (schedule.status === "Pending" || schedule.status === "InProgress"),
+        ),
+        asset.id,
+      ).toBe(true);
+    }
+  });
 
   it("demonstrates quarantine as a distinct wire-plant condition", () => {
     expect(
@@ -147,6 +150,24 @@ describe("demo scenario registry", () => {
       containsClientIdentifiableData: false,
     });
   });
+
+  it("registers an isolated retail store-operations scenario", () => {
+    const scenario = resolveDemoScenario("retail-store-operations");
+
+    expect(scenario).toBe(retailStoreOperationsScenario);
+    expect(scenario.capabilityProfile).toBe("retail-store-support");
+    expect(scenario.capabilities).toContain("store-operations");
+    expect(scenario.capabilities).toContain("support-case-management");
+    expect(scenario.capabilities).not.toContain("work-orders");
+    expect(scenario.data.taxonomy.plants).toHaveLength(6);
+    expect(scenario.data.storeAssignments?.length).toBeGreaterThan(0);
+    expect(scenario.data.supportCases?.some((item) => item.sourceProtocolId)).toBe(true);
+    expect(scenario.persistence.stateKey).toBe("zellship-store-operations-retail-v1");
+    expect(scenario.distribution).toEqual({
+      classification: "public-demo",
+      containsClientIdentifiableData: false,
+    });
+  });
 });
 
 describe("capability profiles", () => {
@@ -161,6 +182,13 @@ describe("capability profiles", () => {
     expect(capabilityProfiles["industrial-maintenance"]).not.toContain("service-request-intake");
     expect(capabilityProfiles["industrial-maintenance"]).not.toContain("improvement-insights");
     expect(capabilityProfiles["industrial-maintenance"]).not.toContain("executive-analytics");
+  });
+
+  it("keeps maintenance work orders outside retail store support", () => {
+    expect(capabilityProfiles["retail-store-support"]).toContain("store-operations");
+    expect(capabilityProfiles["retail-store-support"]).toContain("support-case-management");
+    expect(capabilityProfiles["retail-store-support"]).not.toContain("work-orders");
+    expect(capabilityProfiles["retail-store-support"]).not.toContain("maintenance-results");
   });
 });
 
