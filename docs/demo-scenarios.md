@@ -8,6 +8,11 @@ development commands only when the walkthrough must reproduce the audited date e
 Select the scenario at build or development time. The industrial walkthrough remains the default;
 the ATM, Wire, and Retail walkthroughs use separate state keys and fictional datasets.
 
+The exact authorized ATM Field Service RC4 checkpoint (`9ce4361`) is rebuilt from its own source
+commit and published independently at `/zellship-maintenance-os-demo/atm/`. This route is the
+canonical presentation link for the ATM walkthrough; it does not inherit later shared-runtime or
+Retail changes.
+
 ```bash
 npm run demo:atm
 ```

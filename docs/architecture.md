@@ -58,13 +58,14 @@ adding editing or remote persistence behavior for those entities.
 
 ## Builds and hosting
 
-- `npm run build:pages:all`: assembles the public ATM root and wire-plant `/wire/` route in
-  `dist-pages`.
+- `npm run build:pages:all`: assembles the evolving ATM root, authorized ATM RC4 `/atm/`, wire-plant
+  `/wire/`, and Retail `/retail/` routes in `dist-pages`.
 - `npm run build:ssr`: TanStack Start build in `dist`; secondary compatibility artifact.
-- GitHub Pages base paths: `/zellship-maintenance-os-demo/` for ATM and
+- GitHub Pages base paths: `/zellship-maintenance-os-demo/atm/` for the authorized ATM RC4,
+  `/zellship-maintenance-os-demo/` for the evolving shared ATM build,
   `/zellship-maintenance-os-demo/wire/` for the neutral wire-plant scenario, and
   `/zellship-maintenance-os-demo/retail/` for the neutral retail scenario.
-- `.github/workflows/deploy-pages.yml`: validates all scenarios and deploys all three public routes from
+- `.github/workflows/deploy-pages.yml`: validates all scenarios and deploys all four public routes from
   `main`.
 - `.github/workflows/ci.yml`: validates pull requests.
 
