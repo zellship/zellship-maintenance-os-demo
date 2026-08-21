@@ -47,9 +47,9 @@ for (const route of routes) {
 
   if (route.name === "ATM autorizado RC4") {
     const bundle = readFileSync(routeArtifactPath, "utf8");
-    for (const marker of ["Reiniciar móvil", "Contexto móvil reiniciado"]) {
+    for (const marker of ["Ocultar contexto", "Mostrar contexto"]) {
       if (!bundle.includes(marker)) {
-        throw new Error(`${route.name}: missing mobile reset marker: ${marker}`);
+        throw new Error(`${route.name}: missing mobile context marker: ${marker}`);
       }
     }
   }
