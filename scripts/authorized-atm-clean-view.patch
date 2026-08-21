@@ -1,0 +1,80 @@
+diff --git a/src/ove/operator/OperatorApp.tsx b/src/ove/operator/OperatorApp.tsx
+--- a/src/ove/operator/OperatorApp.tsx
++++ b/src/ove/operator/OperatorApp.tsx
+@@ -20,6 +20,8 @@ import {
+   CompressOutlined,
+   EnvironmentOutlined,
+   ExpandOutlined,
++  EyeInvisibleOutlined,
++  EyeOutlined,
+   HistoryOutlined,
+   HomeOutlined,
+   SafetyCertificateOutlined,
+@@ -48,6 +50,7 @@ export function OperatorApp() {
+   const [tab, setTab] = useState("home");
+   const [activeSchedule, setActiveSchedule] = useState<string | null>(null);
+   const [expanded, setExpanded] = useState(false);
++  const [showContext, setShowContext] = useState(true);
+ 
+   const start = (id: string) => setActiveSchedule(id);
+   const back = () => setActiveSchedule(null);
+@@ -70,7 +73,9 @@ export function OperatorApp() {
+   );
+ 
+   return (
+-    <div className={`operator-demo-stage ${expanded ? "expanded" : ""}`}>
++    <div
++      className={`operator-demo-stage ${expanded ? "expanded" : ""} ${showContext ? "" : "context-hidden"}`}
++    >
+       <aside className="operator-context-panel operator-context-left">
+         <Space direction="vertical" size={14} style={{ width: "100%" }}>
+           <div>
+@@ -144,13 +151,23 @@ export function OperatorApp() {
+             <span className="live-dot" />
+             <Typography.Text strong>Vista del operador</Typography.Text>
+           </Space>
+-          <Button
+-            size="small"
+-            icon={expanded ? <CompressOutlined /> : <ExpandOutlined />}
+-            onClick={() => setExpanded(!expanded)}
+-          >
+-            {expanded ? "Vista teléfono" : "Ampliar app"}
+-          </Button>
++          <Space size={8}>
++            <Button
++              size="small"
++              icon={showContext ? <EyeInvisibleOutlined /> : <EyeOutlined />}
++              onClick={() => setShowContext((visible) => !visible)}
++              aria-pressed={!showContext}
++            >
++              {showContext ? "Ocultar contexto" : "Mostrar contexto"}
++            </Button>
++            <Button
++              size="small"
++              icon={expanded ? <CompressOutlined /> : <ExpandOutlined />}
++              onClick={() => setExpanded(!expanded)}
++            >
++              {expanded ? "Vista teléfono" : "Ampliar app"}
++            </Button>
++          </Space>
+         </div>
+ 
+         <div className="operator-phone-frame">
+diff --git a/src/styles.css b/src/styles.css
+--- a/src/styles.css
++++ b/src/styles.css
+@@ -4705,6 +4705,14 @@
+   display: none;
+ }
+ 
++.operator-demo-stage.context-hidden {
++  grid-template-columns: minmax(390px, 440px);
++}
++
++.operator-demo-stage.context-hidden .operator-context-panel {
++  display: none;
++}
++
+ .resource-person-meta {
+   display: block;
+   font-size: 11px;
