@@ -9,6 +9,12 @@ const routes = [
     artifactRoot: "dist-pages",
   },
   {
+    name: "ATM autorizado RC4",
+    htmlPath: "dist-pages/atm/index.html",
+    base: "/zellship-maintenance-os-demo/atm/",
+    artifactRoot: "dist-pages/atm",
+  },
+  {
     name: "Planta de Alambres",
     htmlPath: "dist-pages/wire/index.html",
     base: "/zellship-maintenance-os-demo/wire/",

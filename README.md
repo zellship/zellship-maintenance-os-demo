@@ -4,8 +4,9 @@ Interactive frontend demo for industrial maintenance operations. It connects pro
 planning, work orders, mobile execution, evidence, supervisor validation, incidents, resources,
 and operational KPIs in one browser-based experience.
 
-- [Open the ATM field-service demo](https://zellship.github.io/zellship-maintenance-os-demo/)
+- [Open the authorized ATM field-service RC4 demo](https://zellship.github.io/zellship-maintenance-os-demo/atm/)
 - [Open the neutral wire-plant demo](https://zellship.github.io/zellship-maintenance-os-demo/wire/)
+- [Open the neutral retail demo](https://zellship.github.io/zellship-maintenance-os-demo/retail/)
 
 ## Demo boundaries
 
@@ -98,5 +99,5 @@ in [docs/demo-scenarios.md](docs/demo-scenarios.md).
 ## Deployment
 
 Pushes to `main` are validated and published by `.github/workflows/deploy-pages.yml`. The workflow
-keeps the ATM variant at the repository root, builds the neutral wire-plant variant under `/wire/`,
-and uploads the combined `dist-pages` artifact using GitHub's official Pages actions.
+keeps the evolving ATM variant at the repository root, rebuilds the authorized ATM RC4 checkpoint
+under `/atm/`, and keeps the neutral wire-plant and Retail variants under `/wire/` and `/retail/`.
