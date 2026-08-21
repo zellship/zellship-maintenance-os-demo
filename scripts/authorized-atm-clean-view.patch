@@ -14,7 +14,7 @@ diff --git a/src/ove/operator/OperatorApp.tsx b/src/ove/operator/OperatorApp.tsx
    const [tab, setTab] = useState("home");
    const [activeSchedule, setActiveSchedule] = useState<string | null>(null);
    const [expanded, setExpanded] = useState(false);
-+  const [showContext, setShowContext] = useState(true);
++  const [showContext, setShowContext] = useState(false);
  
    const start = (id: string) => setActiveSchedule(id);
    const back = () => setActiveSchedule(null);
