@@ -17,6 +17,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -29,3 +31,6 @@ jobs:
 
       - name: Validate
         run: npm run check
+
+      - name: Verify public routes
+        run: npm run build:pages:all
