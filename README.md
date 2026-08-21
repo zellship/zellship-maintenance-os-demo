@@ -100,4 +100,5 @@ in [docs/demo-scenarios.md](docs/demo-scenarios.md).
 
 Pushes to `main` are validated and published by `.github/workflows/deploy-pages.yml`. The workflow
 keeps the evolving ATM variant at the repository root, rebuilds the authorized ATM RC4 checkpoint
-under `/atm/`, and keeps the neutral wire-plant and Retail variants under `/wire/` and `/retail/`.
+under `/atm/` with its documented mobile-reset overlay, and keeps the neutral wire-plant and Retail
+variants under `/wire/` and `/retail/`.

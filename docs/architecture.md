@@ -58,8 +58,8 @@ adding editing or remote persistence behavior for those entities.
 
 ## Builds and hosting
 
-- `npm run build:pages:all`: assembles the evolving ATM root, authorized ATM RC4 `/atm/`, wire-plant
-  `/wire/`, and Retail `/retail/` routes in `dist-pages`.
+- `npm run build:pages:all`: assembles the evolving ATM root, authorized ATM RC4 `/atm/` with its
+  mobile-reset overlay, wire-plant `/wire/`, and Retail `/retail/` routes in `dist-pages`.
 - `npm run build:ssr`: TanStack Start build in `dist`; secondary compatibility artifact.
 - GitHub Pages base paths: `/zellship-maintenance-os-demo/atm/` for the authorized ATM RC4,
   `/zellship-maintenance-os-demo/` for the evolving shared ATM build,

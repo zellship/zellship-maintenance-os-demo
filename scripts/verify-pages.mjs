@@ -44,4 +44,13 @@ for (const route of routes) {
   }
 
   console.log(`${route.name}: ${route.htmlPath} and ${scriptSrc} verified`);
+
+  if (route.name === "ATM autorizado RC4") {
+    const bundle = readFileSync(routeArtifactPath, "utf8");
+    for (const marker of ["Reiniciar móvil", "Contexto móvil reiniciado"]) {
+      if (!bundle.includes(marker)) {
+        throw new Error(`${route.name}: missing mobile reset marker: ${marker}`);
+      }
+    }
+  }
 }
