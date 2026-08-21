@@ -18,6 +18,7 @@ const authorizedCommit = "9ce4361";
 const originalBase = "/zellship-maintenance-os-demo/";
 const authorizedBase = "/zellship-maintenance-os-demo/atm/";
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const authorizedOverlay = join(repositoryRoot, "scripts", "authorized-atm-mobile-reset.patch");
 const temporaryWorktree = mkdtempSync(join(tmpdir(), "zellship-atm-rc4-"));
 const targetDirectory = join(repositoryRoot, "dist-pages", "atm");
 let worktreeAdded = false;
@@ -42,6 +43,11 @@ try {
     stdio: "inherit",
   });
   worktreeAdded = true;
+
+  execFileSync("git", ["apply", authorizedOverlay], {
+    cwd: temporaryWorktree,
+    stdio: "inherit",
+  });
 
   const sharedNodeModules = join(repositoryRoot, "node_modules");
   if (!existsSync(sharedNodeModules)) {
