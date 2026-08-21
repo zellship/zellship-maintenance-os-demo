@@ -10,9 +10,9 @@ the ATM, Wire, and Retail walkthroughs use separate state keys and fictional dat
 
 The authorized ATM Field Service RC4 checkpoint (`9ce4361`) is rebuilt from its own source commit
 and published independently at `/zellship-maintenance-os-demo/atm/`. A documented presentation-only
-overlay adds **Ocultar contexto** so the operator walkthrough can remove the explanatory side cards
-without expanding the application or inheriting later shared-runtime or Retail changes. This route
-is the canonical presentation link for the ATM walkthrough.
+overlay opens the operator walkthrough without explanatory side cards and exposes **Mostrar
+contexto** to restore them without expanding the application or inheriting later shared-runtime or
+Retail changes. This route is the canonical presentation link for the ATM walkthrough.
 
 ```bash
 npm run demo:atm
