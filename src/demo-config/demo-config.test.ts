@@ -139,6 +139,8 @@ describe("demo scenario registry", () => {
     expect(scenario.capabilities).toContain("asset-management");
     expect(scenario.capabilities).toContain("mobile-execution");
     expect(scenario.capabilities).not.toContain("service-request-intake");
+    expect(scenario.capabilities).not.toContain("store-operations");
+    expect(scenario.capabilities).not.toContain("support-case-management");
     expect(scenario.capabilities).not.toContain("improvement-insights");
     expect(scenario.capabilities).not.toContain("executive-analytics");
     expect(scenario.data.assets).toHaveLength(26);
@@ -176,10 +178,14 @@ describe("capability profiles", () => {
     expect(capabilityProfiles.full).toContain("executive-analytics");
     expect(capabilityProfiles["execution-only"]).not.toContain("improvement-insights");
     expect(capabilityProfiles["execution-only"]).not.toContain("executive-analytics");
+    expect(capabilityProfiles["execution-only"]).not.toContain("store-operations");
+    expect(capabilityProfiles["execution-only"]).not.toContain("support-case-management");
   });
 
   it("keeps client intake and executive analytics outside industrial maintenance", () => {
     expect(capabilityProfiles["industrial-maintenance"]).not.toContain("service-request-intake");
+    expect(capabilityProfiles["industrial-maintenance"]).not.toContain("store-operations");
+    expect(capabilityProfiles["industrial-maintenance"]).not.toContain("support-case-management");
     expect(capabilityProfiles["industrial-maintenance"]).not.toContain("improvement-insights");
     expect(capabilityProfiles["industrial-maintenance"]).not.toContain("executive-analytics");
   });

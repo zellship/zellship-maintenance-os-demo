@@ -22,16 +22,29 @@ export const capabilityIds = [
 
 export type DemoCapabilityId = (typeof capabilityIds)[number];
 
-const executionOnlyExclusions = new Set<DemoCapabilityId>([
-  "improvement-insights",
-  "executive-analytics",
+const maintenanceCapabilities = [
+  "admin-control-center",
+  "protocol-management",
+  "planning",
+  "work-orders",
+  "maintenance-results",
+  "asset-management",
+  "resource-management",
+  "incident-management",
+  "notifications",
+  "audit-log",
+  "operational-flows",
+  "mobile-execution",
+  "supervisor-alerts",
+  "supervisor-validation",
+] satisfies DemoCapabilityId[];
+
+const executionOnlyCapabilities = new Set<DemoCapabilityId>([
+  ...maintenanceCapabilities,
+  "service-request-intake",
 ]);
 
-const industrialMaintenanceExclusions = new Set<DemoCapabilityId>([
-  "service-request-intake",
-  "improvement-insights",
-  "executive-analytics",
-]);
+const industrialMaintenanceCapabilities = new Set<DemoCapabilityId>(maintenanceCapabilities);
 
 const retailStoreSupportCapabilities = new Set<DemoCapabilityId>([
   "admin-control-center",
@@ -51,8 +64,8 @@ const retailStoreSupportCapabilities = new Set<DemoCapabilityId>([
 
 export const capabilityProfiles = {
   full: [...capabilityIds],
-  "execution-only": capabilityIds.filter((id) => !executionOnlyExclusions.has(id)),
-  "industrial-maintenance": capabilityIds.filter((id) => !industrialMaintenanceExclusions.has(id)),
+  "execution-only": capabilityIds.filter((id) => executionOnlyCapabilities.has(id)),
+  "industrial-maintenance": capabilityIds.filter((id) => industrialMaintenanceCapabilities.has(id)),
   "retail-store-support": capabilityIds.filter((id) => retailStoreSupportCapabilities.has(id)),
 } satisfies Record<string, DemoCapabilityId[]>;
 
