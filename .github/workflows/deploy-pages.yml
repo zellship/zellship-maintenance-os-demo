@@ -39,6 +39,14 @@ jobs:
       - name: Assemble ATM, wire-plant, and retail public sites
         run: npm run build:pages:all
 
+      - name: Add the approved OEE Experience Hub cut
+        run: |
+          mkdir -p dist-pages/oee
+          cp -R public-experiences/oee/. dist-pages/oee/
+          test -f dist-pages/oee/index.html
+          test -f dist-pages/oee/assets/favicon.svg
+          test -f dist-pages/oee/assets/og.png
+
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
