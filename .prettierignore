@@ -1,6 +1,7 @@
 node_modules
 dist
 dist-pages
+public-experiences
 .output
 .vinxi
 pnpm-lock.yaml
